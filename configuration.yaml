@@ -23,7 +23,6 @@ http:
     - http://localhost:8124
     - !secret http_cors_origin_1
     - !secret http_cors_origin_2
-    - https://cast.home-assistant.io
     - !secret http_cors_origin_3
 
 logbook:
