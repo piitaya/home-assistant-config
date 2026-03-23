@@ -4,6 +4,13 @@ My personal [Home Assistant](https://www.home-assistant.io/) configuration.
 
 ![HA Version](https://img.shields.io/badge/Home%20Assistant-2026.3.3-blue)
 
+## Setup
+
+After cloning, enable git hooks:
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Structure
 
 ```

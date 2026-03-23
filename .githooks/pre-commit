@@ -1,0 +1,8 @@
+#!/bin/sh
+# Update HA version badge in README.md from .HA_VERSION
+
+if [ -f ".HA_VERSION" ] && [ -f "README.md" ]; then
+  HA_VERSION=$(cat .HA_VERSION)
+  sed -i "s|Home%20Assistant-[^-]*-blue|Home%20Assistant-${HA_VERSION}-blue|" README.md
+  git add README.md
+fi
