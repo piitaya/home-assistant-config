@@ -1,0 +1,480 @@
+garbage_take_out:
+  alias: Sortir les poubelles
+  sequence:
+  - if:
+    - condition: state
+      entity_id: binary_sensor.take_out_non_recyclable_garbage
+      state: 'off'
+    - condition: state
+      entity_id: binary_sensor.take_out_recyclable_garbage
+      state: 'off'
+    then:
+    - stop: Pas besoin de sortir les poubelles
+    enabled: true
+  - if:
+    - condition: state
+      entity_id: input_boolean.garbage_out
+      state: 'on'
+    then:
+    - stop: Poubelles déjà sorties
+    enabled: true
+  - service: input_boolean.turn_on
+    data: {}
+    target:
+      entity_id: input_boolean.garbage_out
+  mode: restart
+  icon: mdi:delete-empty
+clean_ground_floor_selected_rooms:
+  alias: Nettoyer les pièces sélectionnées (Alfred)
+  sequence:
+  - alias: Passer l'aspirateur dans les pièces sélectionnées
+    if:
+    - alias: Si au moins une pièce est sélectionnée
+      condition: numeric_state
+      entity_id: sensor.pieces_selectionnees_alfred
+      above: '0'
+    then:
+    - alias: Passer l'aspirateur dans les pièces sélectionnées
+      action: vacuum.clean_area
+      target:
+        entity_id:
+        - vacuum.edgar
+      data:
+        cleaning_area_id: '{{ state_attr(''sensor.pieces_selectionnees_alfred'', ''area_ids'')
+          }}'
+      enabled: true
+  - alias: Désélectionner toutes les pièces
+    data: {}
+    target:
+      entity_id: "{{ expand(states.input_boolean)  \n    | selectattr('attributes.vacuum_name',
+        'eq', 'alfred')\n    | map(attribute='entity_id') \n    | list \n}}\n"
+    action: input_boolean.turn_off
+  mode: single
+  icon: mdi:vacuum
+clean_first_floor_selected_rooms:
+  alias: Nettoyer les pièces sélectionnées (Edgar)
+  sequence:
+  - alias: Passer l'aspirateur dans les pièces sélectionnées
+    if:
+    - alias: Si au moins une pièce est sélectionnée
+      condition: numeric_state
+      entity_id: sensor.pieces_selectionnees_edgar
+      above: '0'
+    then:
+    - alias: Passer l'aspirateur dans les pièces sélectionnées
+      action: vacuum.clean_area
+      target:
+        entity_id:
+        - vacuum.edgar
+      data:
+        cleaning_area_id: '{{ state_attr(''sensor.pieces_selectionnees_edgar'', ''area_ids'')
+          }}'
+      enabled: true
+  - alias: Désélectionner toutes les pièces
+    data: {}
+    target:
+      entity_id: "{{ expand(states.input_boolean)  \n    | selectattr('attributes.vacuum_name',
+        'eq', 'edgar')\n    | map(attribute='entity_id') \n    | list \n}}\n"
+    action: input_boolean.turn_off
+  mode: single
+  icon: mdi:vacuum
+play_cinema_mode_scene:
+  alias: Jouer la scene correspond au mode cinéma
+  fields:
+    transition_duration:
+      name: Transition
+      description: Durée de la transition de la scene
+      selector:
+        number:
+          min: 0
+          max: 60
+          step: 1
+          unit_of_measurement: secondes
+          mode: slider
+  sequence:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.cinema_mode
+        state: Tamisé
+      sequence:
+      - target:
+          entity_id: scene.cinema_dim
+        data:
+          transition: '{{ transition_duration }}'
+        action: scene.turn_on
+    - conditions:
+      - condition: state
+        entity_id: input_select.cinema_mode
+        state: Noir complet
+      sequence:
+      - data:
+          transition: '{{ transition_duration }}'
+        target:
+          entity_id: scene.cinema_black
+        action: scene.turn_on
+    default: []
+  mode: single
+  icon: mdi:theater
+lights_during_play:
+  alias: Régler les lumières durant la lecture
+  sequence:
+  - service: light.turn_off
+    data:
+      transition: 1
+    alias: Éteindre la lumière du salon
+    target:
+      entity_id:
+      - light.living_room_ceiling_light
+      - light.living_room_sideboard_lamp
+      - light.living_room_floor_lamp
+      - light.dining_room_ceiling_light
+  mode: single
+  icon: mdi:television-play
+lights_during_pause:
+  alias: Régler les lumières durant la pause
+  sequence:
+  - parallel:
+    - service: light.turn_on
+      data:
+        transition: 2
+        brightness_pct: 60
+      target:
+        entity_id: light.living_room_floor_lamp
+      alias: Allumer la lampe sur pied à 60%
+    - service: light.turn_on
+      data:
+        transition: 10
+        brightness_pct: 30
+      target:
+        entity_id: light.living_room_sideboard_lamp
+      alias: Allumer la lampe du buffet à 30%
+    alias: En parallèle
+  mode: single
+  icon: mdi:television-pause
+lights_after_play:
+  alias: Régler les lumières après la lecture
+  sequence:
+  - parallel:
+    - service: light.turn_on
+      data:
+        transition: 10
+        brightness_pct: 100
+      target:
+        entity_id: light.living_room_floor_lamp
+      alias: Allumer la lampe sur pied à 100%
+    - service: light.turn_on
+      data:
+        transition: 10
+        brightness_pct: 40
+      target:
+        entity_id: light.living_room_sideboard_lamp
+      alias: Allumer la lampe du buffet à 40%
+    - service: light.turn_on
+      data:
+        transition: 10
+        brightness_pct: 60
+      target:
+        entity_id: light.living_room_ceiling_light
+      alias: Allumer les spots du salon 60%
+    alias: En parallèle
+  mode: single
+  icon: mdi:television-stop
+set_cover_for_cat:
+  alias: Régler les volets pour le chat
+  sequence:
+  - service: cover.set_cover_position
+    data:
+      position: 30
+    target:
+      entity_id:
+      - cover.living_room_cemetery_shutter
+      - cover.living_room_garden_shutter
+  mode: single
+france_inter:
+  alias: France Inter
+  sequence:
+  - if:
+    - condition: state
+      entity_id: media_player.kitchen_homepod
+      state: playing
+    then:
+    - service: media_player.media_stop
+      target:
+        entity_id:
+        - media_player.kitchen_homepod
+      data: {}
+    else:
+    - service: media_player.play_media
+      target:
+        entity_id: media_player.kitchen_homepod
+      data:
+        media_content_id: media-source://radio_browser/71ab8906-a508-4f98-a498-8840b41b79d5
+        media_content_type: audio/mpeg
+      metadata:
+        title: France Inter
+        thumbnail: https://www.radiofrance.fr/client/immutable/assets/franceinter.8675ea98.svg#franceinter-square
+        media_class: music
+        children_media_class:
+        navigateIds:
+        - {}
+        - media_content_type: app
+          media_content_id: media-source://radio_browser
+        - media_content_type: music
+          media_content_id: media-source://radio_browser/country/FR
+  mode: parallel
+  icon: mdi:radio
+coucher_sieste_ariane:
+  alias: Coucher/Sieste Ariane
+  sequence:
+  - condition: state
+    entity_id: cover.ariane_bedroom_shutter
+    state: open
+  - parallel:
+    - service: cover.close_cover
+      metadata: {}
+      data: {}
+      target:
+        floor_id: first_floor
+    - service: light.turn_on
+      metadata: {}
+      data:
+        brightness_pct: 100
+      target:
+        entity_id:
+        - light.study_ceiling_light
+        - light.ariane_bedroom_bedside_lamp
+  description: ''
+regler_la_pergola_en_position_soleil:
+  alias: Régler la pergola en position soleil
+  sequence:
+  - target:
+      entity_id: cover.pergola
+    data:
+      tilt_position: '{{ states(''sensor.pergola_sun_slat_tilt'') | int(0) }}'
+    action: cover.set_cover_tilt_position
+  description: ''
+  icon: cil:sun-angle
+ouvrir_les_lames_de_la_pergola:
+  alias: Ouvrir les lames de la pergola
+  sequence:
+  - action: cover.set_cover_tilt_position
+    target:
+      entity_id: cover.pergola
+    data:
+      tilt_position: 55
+  description: ''
+  icon: mush:pergola-blade-open
+fermer_les_lames_de_la_pergola:
+  alias: Fermer les lames de la pergola
+  sequence:
+  - target:
+      entity_id: cover.pergola
+    action: cover.close_cover_tilt
+    data: {}
+  description: ''
+  icon: mush:pergola-blade-closed
+notifier_des_fenetres_ouvertes_a_l_etage:
+  alias: Notifier - fenêtres de l'étage ouvertes
+  use_blueprint:
+    path: jlo/power_notification_creator.yaml
+    input:
+      target: send_to_persons_in_zones
+      zones:
+      - zone.home
+      discard_when:
+      - trigger: state
+        entity_id:
+        - binary_sensor.first_floor_windows_opening
+        to: 'off'
+      default_tag: 4ab1a7e7-f4f1-43e9-b54d-1975e339d334
+      persons: []
+      notification_data_advanced: {}
+      default_message: Fenêtre(s) ouverte(s) à l'étage
+  description: ''
+  icon: mdi:window-closed-variant
+notifier_porte_du_frigo_de_la_cuisine_ouvert:
+  alias: Notifier - Porte du frigo de la cuisine ouverte
+  use_blueprint:
+    path: jlo/power_notification_creator.yaml
+    input:
+      target: send_to_persons_in_zones
+      zones:
+      - zone.home
+      default_message: La porte du frigo de la cuisine est restée ouverte
+      discard_when:
+      - trigger: state
+        entity_id:
+        - binary_sensor.kitchen_fridge_door
+        to: 'off'
+      default_tag: 604e7672-cb07-4ac7-825a-4844d2cae17d
+      persons: []
+  description: ''
+  icon: mdi:fridge-alert
+notifier_porte_du_frigo_du_garage_ouverte:
+  alias: Notifier - Porte du frigo du garage ouverte
+  use_blueprint:
+    path: jlo/power_notification_creator.yaml
+    input:
+      target: send_to_persons_in_zones
+      zones:
+      - zone.home
+      default_message: La porte du frigo de la garage est restée ouverte
+      discard_when:
+      - trigger: state
+        entity_id:
+        - binary_sensor.garage_fridge_door
+        to: 'off'
+      default_tag: 604e7672-cb07-4ac7-825a-4844d2cae17d
+      persons: []
+  description: ''
+  icon: mdi:fridge-alert
+notifier_porte_du_congelateur_ouverte:
+  alias: Notifier - Porte du congélateur ouverte
+  use_blueprint:
+    path: jlo/power_notification_creator.yaml
+    input:
+      target: send_to_persons_in_zones
+      zones:
+      - zone.home
+      default_message: La porte du congélateur est restée ouverte
+      discard_when:
+      - trigger: state
+        entity_id:
+        - binary_sensor.freezer_door
+        to: 'off'
+      default_tag: 1ca5944c-ab9c-47a9-84ec-77759c2e94f1
+      persons: []
+  description: ''
+  icon: mdi:fridge-alert
+notifier_fenetres_du_rez_de_chaussee_ouvertes:
+  alias: Notifier - fenêtres du rez-de-chaussée ouvertes
+  use_blueprint:
+    path: jlo/power_notification_creator.yaml
+    input:
+      target: send_to_persons_in_zones
+      zones:
+      - zone.home
+      discard_when:
+      - trigger: state
+        entity_id:
+        - binary_sensor.ground_floor_windows_opening
+        to: 'off'
+      default_tag: 85d19b0b-c475-4a09-b165-7d431a55e8cd
+      persons: []
+      notification_data_advanced: {}
+      default_message: Fenêtre(s) ouverte(s) au rez-de-chaussée
+  description: ''
+  icon: mdi:window-closed-variant
+notifier_fuite_machine_a_cafe:
+  alias: Notifier - fuite machine à café
+  use_blueprint:
+    path: jlo/power_notification_creator.yaml
+    input:
+      target: send_to_all
+      zones:
+      - zone.home
+      discard_when:
+      - trigger: state
+        entity_id:
+        - binary_sensor.coffee_machine_leak_sensor
+        to: 'off'
+      default_tag: 30800807-3fb3-45ed-905b-414f8f7933ba
+      persons: []
+      notification_data_advanced: {}
+      default_message: "Une fuite a été détectée au niveau de la machine à café \U0001F640"
+      default_importance: false
+  description: ''
+  icon: mdi:coffee-maker
+notifier_machine_a_laver_terminee:
+  use_blueprint:
+    path: jlo/power_notification_creator.yaml
+    input:
+      default_tag: 2c5482a2-fea3-4420-b4ab-8d328a819315
+      persons: []
+      target: send_to_persons_in_zones
+      zones:
+      - zone.home
+      default_message: "La machine à laver a terminé son cycle \U0001F9FA"
+      discard_when:
+      - trigger: state
+        entity_id:
+        - binary_sensor.washing_machine
+        to: 'on'
+        from: 'off'
+      - trigger: state
+        entity_id:
+        - binary_sensor.dryer
+        to: 'on'
+        from: 'off'
+  alias: Notifier - Machine à laver terminée
+  description: ''
+notifier_barriere_escalier:
+  alias: Notifier - barrière escalier ouverte
+  use_blueprint:
+    path: jlo/power_notification_creator.yaml
+    input:
+      target: send_to_persons_in_zones
+      zones:
+      - zone.home
+      discard_when:
+      - trigger: state
+        entity_id:
+        - binary_sensor.barriere_escalier_etat
+        to: 'off'
+      default_tag: 9e3ad412-0175-4eb7-a710-851a5eb184a5
+      persons: []
+      notification_data_advanced: {}
+      default_message: "La barrière de l'escalier est restée ouverte \U0001F648"
+  description: ''
+  icon: mdi:gate-alert
+notifier_fuite_machine_a_laver:
+  alias: Notifier - fuite machine à laver
+  use_blueprint:
+    path: jlo/power_notification_creator.yaml
+    input:
+      target: send_to_all
+      zones:
+      - zone.home
+      discard_when: []
+      default_tag: 30800807-3fb3-45ed-905b-414f8f7933ba
+      persons: []
+      notification_data_advanced: {}
+      default_message: "Une fuite a été détectée au niveau de la machine à laver \U0001F640"
+      default_importance: false
+  description: ''
+  icon: mdi:washing-machine-alert
+bulletin_meteo_quotidien:
+  sequence:
+  - action: input_text.set_value
+    metadata: {}
+    target:
+      entity_id: input_text.bulletin_meteo
+    data:
+      value: ''
+  - action: weather.get_forecasts
+    data:
+      type: hourly
+    target:
+      entity_id: weather.nieppe
+    response_variable: forecast
+  - action: ai_task.generate_data
+    metadata: {}
+    data:
+      entity_id: ai_task.home_assistant_cloud_ai
+      instructions: "L'heure actuelle est: {{now()}}\n\nResume la météo pour le reste
+        de la journée en une phrase de moins de 150 caractères : \n- ne parle du vent
+        QUE S'IL est supérieur a 50 km/h sinon, N'EN PARLES PAS !\n- indique la période
+        de la journée\n- indique toujours la pluie et la/les températures\n- ajoute
+        un émoji la fin\n\nLes previsions météorologiques sont: {{forecast}}"
+      task_name: Bulletin Méteo
+    response_variable: report
+  - action: input_text.set_value
+    metadata: {}
+    target:
+      entity_id: input_text.bulletin_meteo
+    data:
+      value: '{{ report.data }}'
+  alias: Bulletin Météo Quotidien
+  description: Génère un mini bulletin météo pour afficher sur le dashboard en haut,
+    en utilisant les prévisions horaires.

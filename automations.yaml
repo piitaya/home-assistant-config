@@ -1,0 +1,3277 @@
+- id: '1665214752087'
+  alias: Poubelles - Passage
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.take_out_recyclable_garbage
+    to: 'off'
+  - trigger: state
+    entity_id:
+    - binary_sensor.take_out_non_recyclable_garbage
+    to: 'off'
+  conditions: []
+  actions:
+  - data: {}
+    target:
+      entity_id: input_boolean.garbage_out
+    action: input_boolean.turn_off
+  mode: single
+- id: '1665214777980'
+  alias: Poubelles - Rappel
+  description: ''
+  triggers:
+  - at: '20:00'
+    alias: À 20:00
+    trigger: time
+  - at: '23:00'
+    alias: À 23:00
+    trigger: time
+  conditions:
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: binary_sensor.take_out_non_recyclable_garbage
+      state: 'on'
+      alias: Si les ordures ménagères sont à sortir
+    - condition: state
+      entity_id: binary_sensor.take_out_recyclable_garbage
+      state: 'on'
+      alias: Si les poubelles recyclables sont à sortir
+    alias: Si l'une des deux poubelles est à sortir
+  - condition: state
+    entity_id: input_boolean.garbage_out
+    state: 'off'
+    alias: Si les poubelles ne sont pas sorties
+  actions:
+  - variables:
+      notification_message: "{% if is_state(\"binary_sensor.take_out_recyclable_garbage\",
+        \"on\") %} C'est l'heure de sortir le recyclable ! ♻️ {% elif is_state(\"binary_sensor.take_out_non_recyclable_garbage\",
+        \"on\") %} C'est l'heure de sortir les ordures ménagères ! \U0001F4A9 {% endif
+        %}\n"
+    alias: Définir du message à envoyer
+  - if:
+    - condition: state
+      entity_id: person.paul
+      state: home
+      alias: Si Paul est à la maison
+    then:
+    - data:
+        title: Poubelles
+        message: '{{ notification_message }}'
+        data:
+          actions:
+          - action: GARBAGE_OUT
+            title: C'est fait
+      alias: Envoyer une notification à Paul
+      action: notify.mobile_app_iphone_de_paul
+    alias: Envoyer un message à Paul s'il est à la maison
+  - if:
+    - condition: state
+      entity_id: person.marina
+      state: home
+      alias: Si Marina est à la maison
+    then:
+    - data:
+        title: Poubelles
+        message: '{{ notification_message }}'
+        data:
+          actions:
+          - action: GARBAGE_OUT
+            title: C'est fait
+      alias: Envoyer une notification à Marina
+      action: notify.mobile_app_iphone_de_marina
+    alias: Envoyer un message à Marina si elle est à la maison
+  mode: single
+- id: '1665214797596'
+  alias: Poubelles - Sortie
+  description: ''
+  triggers:
+  - event_type: mobile_app_notification_action
+    event_data:
+      action: GARBAGE_OUT
+    alias: Quand l'action de la notification est cliqué
+    trigger: event
+  conditions: []
+  actions:
+  - data: {}
+    alias: 'Lancer le script : Sortir les poubelles'
+    enabled: true
+    action: script.garbage_take_out
+  mode: single
+- id: '1665215615201'
+  alias: Pilule - Prise
+  description: Enregistre la date de la prise de la pilule
+  triggers:
+  - device_id: 2d2ec71c9d37745b99468aba1a0ae516
+    domain: zha
+    type: remote_button_short_press
+    subtype: button
+    trigger: device
+  - device_id: 2d2ec71c9d37745b99468aba1a0ae516
+    domain: zha
+    type: remote_button_double_press
+    subtype: button
+    trigger: device
+  - event_type: mobile_app_notification_action
+    event_data:
+      action: PILL_TAKEN
+    trigger: event
+  conditions: []
+  actions:
+  - data:
+      data:
+        tag: pill
+      message: clear_notification
+    alias: Supprimer la notification précédente
+    action: notify.mobile_app_iphone_de_marina
+  - data:
+      datetime: '{{ now().strftime(''%Y-%m-%d %H:%M:%S'') }}'
+    target:
+      entity_id: input_datetime.last_pill_taken
+    alias: Enregistrer la date de la prise de la pilule
+    action: input_datetime.set_datetime
+  mode: single
+- id: '1665215646308'
+  alias: Pilule - Rappel
+  description: Envoyer un rappel pour la pilule jusqu'à ce qu'elle soit prise.
+  triggers:
+  - alias: Toutes les 30 minutes
+    minutes: /10
+    trigger: time_pattern
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.pill_notification
+    state: 'on'
+    alias: Si la pilule n'a pas été prise
+  - condition: time
+    after: '21:00:00'
+    enabled: false
+  - condition: state
+    entity_id: person.marina
+    state: home
+    enabled: false
+  actions:
+  - data:
+      data:
+        tag: pill
+      message: clear_notification
+    alias: Supprimer la notification précédente
+    action: notify.mobile_app_iphone_de_marina
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 5
+      milliseconds: 0
+    alias: Attendre 5 secondes
+  - alias: Envoyer une notification à Marina
+    data:
+      title: Pilule
+      message: "C'est l'heure de prendre la pilule \U0001F48A"
+      data:
+        tag: pill
+        actions:
+        - action: PILL_TAKEN
+          title: Pilule prise
+    action: notify.mobile_app_iphone_de_marina
+  mode: single
+- id: '1665216853678'
+  alias: Armement de l'alarme
+  description: Met l'alarme en mode absent si plus personne n'est à la maison.
+  triggers:
+  - event: start
+    trigger: homeassistant
+  - entity_id:
+    - binary_sensor.home_presence
+    to: 'off'
+    alias: Quand la maison devient vide
+    trigger: state
+  conditions:
+  - condition: not
+    conditions:
+    - condition: state
+      entity_id: alarm_control_panel.home_alarm
+      state: armed_away
+      alias: L'alarme est en mode absent
+    alias: L'alarme n'est pas en mode absent
+  - condition: state
+    entity_id: binary_sensor.home_presence
+    state: 'off'
+    alias: Personne à la maison
+  actions:
+  - data: {}
+    target:
+      entity_id: alarm_control_panel.home_alarm
+    alias: Mettre l'alarme en mode absent
+    action: alarm_control_panel.alarm_arm_away
+  mode: single
+- id: '1665216870012'
+  alias: Désarmement de l'alarme
+  description: Met l'alarme en mode présent si quelqu'un rentre à la maison.
+  triggers:
+  - event: start
+    trigger: homeassistant
+  - entity_id:
+    - binary_sensor.home_presence
+    to: 'on'
+    alias: La maison devient occupée
+    trigger: state
+  conditions:
+  - condition: not
+    conditions:
+    - condition: state
+      entity_id: alarm_control_panel.home_alarm
+      state: armed_home
+      alias: L’alarme est en mode présent
+    alias: L’alarme n'est pas en mode présent
+  - alias: La maison n'est pas vide
+    condition: state
+    entity_id: binary_sensor.home_presence
+    state: 'on'
+  actions:
+  - data: {}
+    target:
+      entity_id: alarm_control_panel.home_alarm
+    alias: Mettre l'alarme en mode présent
+    action: alarm_control_panel.alarm_arm_home
+  mode: single
+- id: '1665588582897'
+  alias: Volet Buanderie - Télécommande
+  description: Contrôle du volet de la buanderie avec la télécommande.
+  triggers:
+  - device_id: 75b18d9e893fc853ade15e69377a6906
+    domain: zha
+    type: remote_button_long_press
+    subtype: dim_down
+    id: down
+    trigger: device
+  - device_id: 75b18d9e893fc853ade15e69377a6906
+    domain: zha
+    type: remote_button_long_press
+    subtype: dim_up
+    id: up
+    trigger: device
+  - device_id: 75b18d9e893fc853ade15e69377a6906
+    domain: zha
+    type: remote_button_short_press
+    subtype: turn_on
+    id: stop
+    trigger: device
+  - device_id: 75b18d9e893fc853ade15e69377a6906
+    domain: zha
+    type: remote_button_short_press
+    subtype: turn_off
+    id: stop
+    trigger: device
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: down
+      sequence:
+      - data: {}
+        target:
+          entity_id: cover.laundry_shutter
+        action: cover.close_cover
+    - conditions:
+      - condition: trigger
+        id: up
+      sequence:
+      - data: {}
+        target:
+          entity_id: cover.laundry_shutter
+        action: cover.open_cover
+    - conditions:
+      - condition: trigger
+        id: stop
+      sequence:
+      - data: {}
+        target:
+          entity_id: cover.laundry_shutter
+        action: cover.stop_cover
+    default: []
+  mode: restart
+- id: '1666680559161'
+  alias: Lumière extérieure - Rentre Maison
+  description: Allume la lumière extérieure quand quelqu'un rentre à la maison
+  triggers:
+  - entity_id: person.paul
+    zone: zone.home
+    event: enter
+    alias: Quand Paul rentre à la maison
+    trigger: zone
+  - entity_id: person.marina
+    zone: zone.home
+    event: enter
+    alias: Quand Marina rentre à la maison
+    trigger: zone
+  conditions:
+  - condition: or
+    conditions:
+    - condition: sun
+      before: sunrise
+      before_offset: 00:15:00
+      alias: Avant le lever du soleil
+    - condition: sun
+      after: sunset
+      after_offset: -00:15:00
+      alias: Après 15 minutes avant le coucher du soleil
+    alias: S'il fait noir
+  actions:
+  - data:
+      brightness_pct: 100
+    target:
+      entity_id: light.outdoor_light
+    alias: Allumer la lumière extérieure
+    action: light.turn_on
+  - delay:
+      hours: 0
+      minutes: 10
+      seconds: 0
+      milliseconds: 0
+  - data: {}
+    target:
+      entity_id: light.outdoor_light
+    alias: Éteindre la lumière extérieure
+    action: light.turn_off
+  mode: single
+- id: '1666725343502'
+  alias: TV - Lumière Cinéma
+  description: Ajuste les lumières du salon lors du visionnage d'un film ou d'une
+    série
+  triggers:
+  - entity_id:
+    - media_player.plex_apple_tv
+    - media_player.plex_shield_tv
+    to: playing
+    id: played
+    trigger: state
+  - entity_id:
+    - media_player.plex_apple_tv
+    - media_player.plex_shield_tv
+    from: playing
+    id: stopped
+    trigger: state
+  - entity_id: input_select.cinema_mode
+    id: change_mode
+    trigger: state
+  conditions:
+  - condition: or
+    conditions:
+    - condition: sun
+      before: sunrise
+    - condition: sun
+      after: sunset
+    enabled: true
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: change_mode
+      sequence:
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: media_player.plex_apple_tv
+          state: playing
+        - condition: state
+          entity_id: media_player.plex_shield_tv
+          state: playing
+      - data:
+          transition_duration: 1
+        action: script.play_cinema_mode_scene
+    - conditions:
+      - condition: trigger
+        id: played
+      sequence:
+      - data:
+          transition_duration: 1
+        action: script.play_cinema_mode_scene
+    - conditions:
+      - condition: trigger
+        id: stopped
+      sequence:
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: input_select.cinema_mode
+          state: Désactivé
+      - target:
+          entity_id: scene.living_room_cosy
+        data:
+          transition: 10
+        action: scene.turn_on
+    default: []
+  mode: single
+- id: '1667026554816'
+  alias: Lumière extérieure - Quitte maison
+  description: Éteins la lumière quand tout le monde part de la maison
+  triggers:
+  - entity_id: person.paul
+    zone: zone.home
+    event: leave
+    id: paul
+    alias: Quand Paul part de la maison
+    trigger: zone
+  - entity_id: person.marina
+    zone: zone.home
+    event: leave
+    id: marina
+    alias: Quand Marina part de la maison
+    trigger: zone
+  conditions:
+  - alias: Si la lumière extérieure est allumée
+    condition: state
+    entity_id: light.all
+    state: 'on'
+  actions:
+  - data: {}
+    target:
+      entity_id: light.outdoor_light
+    alias: Éteindre la lumière extérieure
+    action: light.turn_off
+  mode: single
+- id: '1671025138801'
+  alias: Notification thermostats trop chauds
+  description: ''
+  triggers:
+  - alias: Quand la température du thermostat du rez-de-chaussée dépasse 23°C
+    entity_id:
+    - climate.ground_floor_thermostat
+    attribute: temperature
+    above: 23
+    trigger: numeric_state
+  - alias: Quand la température du thermostat de l'étage dépasse 23°C
+    entity_id:
+    - climate.first_floor_thermostat
+    attribute: temperature
+    above: 23
+    trigger: numeric_state
+  conditions:
+  - condition: state
+    entity_id: climate.heat_pump
+    state: heat
+  actions:
+  - data:
+      message: "\U0001F640 {{ trigger.to_state.attributes.friendly_name }} est réglé
+        sur {{ trigger.to_state.attributes.temperature }}°C \U0001F525"
+    alias: Envoyer une notification à Paul
+    action: notify.mobile_app_iphone_de_paul
+  - data:
+      message: "\U0001F640 {{ trigger.to_state.attributes.friendly_name }} est réglé
+        sur {{ trigger.to_state.attributes.temperature }}°C \U0001F525"
+    alias: Envoyer une notification à Marina
+    action: notify.mobile_app_iphone_de_marina
+  mode: single
+- id: '1671531189627'
+  alias: Volet Chambre d'amis - Mode invité
+  description: ''
+  triggers:
+  - entity_id:
+    - cover.guest_room_shutter
+    trigger: state
+  - entity_id:
+    - input_boolean.guest_mode
+    trigger: state
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: input_boolean.guest_mode
+      state: 'on'
+    then:
+    - if:
+      - condition: state
+        entity_id: cover.guest_room_shutter
+        state: closed
+      then:
+      - data:
+          option: NoControl
+        target:
+          entity_id: select.guest_room_shutter_rf_protection_state
+        action: select.select_option
+      else:
+      - data:
+          option: Unprotected
+        target:
+          entity_id: select.guest_room_shutter_rf_protection_state
+        action: select.select_option
+    else:
+    - data:
+        option: Unprotected
+      target:
+        entity_id: select.guest_room_shutter_rf_protection_state
+      action: select.select_option
+  mode: single
+- id: '1683749684693'
+  alias: Filtration Automatique - Spa
+  description: Active et désactive automatiquement la filtration du spa à des heures
+    spécifiques, garantissant une eau toujours propre et fraîche. La filtration commence
+    à 21h02 et s'arrête à 5h02.
+  triggers:
+  - at: '21:02:00'
+    id: start
+    trigger: time
+  - at: 05:02:00
+    id: stop
+    trigger: time
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: start
+      sequence:
+      - data: {}
+        target:
+          entity_id: switch.spa_filter
+        action: switch.turn_on
+    - conditions:
+      - condition: trigger
+        id: stop
+      sequence:
+      - data: {}
+        target:
+          entity_id: switch.spa_filter
+        action: switch.turn_off
+    default: []
+  mode: restart
+- id: '1684017273421'
+  alias: Chauffage programmé du spa
+  description: ''
+  triggers:
+  - at: 05:00:00
+    trigger: time
+  conditions: []
+  actions:
+  - metadata: {}
+    data:
+      hvac_mode: heat
+    target:
+      entity_id: climate.spa_thermostat
+    action: climate.set_hvac_mode
+  mode: single
+- id: '1685859197705'
+  alias: Sauvegarde quotidienne
+  description: ''
+  triggers:
+  - at: 03:15:00
+    trigger: time
+  conditions: []
+  actions:
+  - data:
+      compressed: true
+      location: Ananas
+      name: '{{ now().strftime(''Backup %Y-%m-%d %H:%M'') }}'
+    enabled: true
+    action: hassio.backup_full
+  - metadata: {}
+    data:
+      compressed: true
+      homeassistant: true
+      addons:
+      - core_mosquitto
+      - core_matter_server
+      - core_openwakeword
+      - a0d7b954_zwavejs2mqtt
+      - 402f1039_eufy_security_ws
+      - 5c53de3b_esphome
+      folders:
+      - addons/local
+      - media
+      - share
+      - ssl
+      location: Ananas
+      name: '{{ now().strftime(''Backup %Y-%m-%d %H:%M'') }}'
+    enabled: false
+    action: hassio.backup_partial
+  mode: single
+- id: '1688142384244'
+  alias: Lumière automatique Garage
+  description: ''
+  triggers:
+  - entity_id:
+    - binary_sensor.garage_occupancy
+    to:
+    trigger: state
+  - entity_id:
+    - sensor.garage_presence_sensor_illuminance
+    below: 85
+    trigger: numeric_state
+  - trigger: homeassistant
+    event: start
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.home_presence
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.cat_garage_mode
+    state: 'off'
+  actions:
+  - if:
+    - condition: state
+      entity_id: binary_sensor.garage_occupancy
+      state: 'on'
+    then:
+    - condition: state
+      entity_id: light.garage_light
+      state: 'off'
+    - condition: or
+      conditions:
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: light.garage_light
+          state: 'off'
+          for:
+            hours: 0
+            minutes: 1
+            seconds: 0
+      - condition: numeric_state
+        entity_id: sensor.garage_presence_sensor_illuminance
+        below: 85
+    - data: {}
+      target:
+        entity_id: light.garage_light
+      action: light.turn_on
+    else:
+    - condition: state
+      entity_id: light.garage_light
+      state: 'on'
+    - data: {}
+      target:
+        entity_id: light.garage_light
+      action: light.turn_off
+  mode: single
+- id: '1689065135829'
+  alias: Protection du soleil - Volet Bureau
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.study_shutter
+      facade: binary_sensor.cemetary_facade_exposed
+      custom_conditions: []
+      opening_sensor: binary_sensor.study_window_sensor_opening
+- id: '1689070030509'
+  alias: Protection du soleil - Volet Chambre
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.bedroom_shutter
+      facade: binary_sensor.front_facade_exposed
+      opening_sensor: binary_sensor.bedroom_window_sensor_opening
+      custom_conditions: []
+- id: '1689071619165'
+  alias: Protection du soleil - Volet Buanderie
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.laundry_shutter
+      facade: binary_sensor.cemetary_facade_exposed
+      position_unexposed: 100
+- id: '1689075253364'
+  alias: Protection du soleil - Volet Cuisine
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.kitchen_shutter
+      position_exposed: 25
+      facade: binary_sensor.cemetary_facade_exposed
+- id: '1689079813108'
+  alias: Protection du soleil - Volet Salon Droit
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.living_room_front_right_shutter
+      facade: binary_sensor.front_facade_exposed
+- id: '1689079890600'
+  alias: Protection du soleil - Volet Salon Gauche
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.living_room_front_left_shutter
+      facade: binary_sensor.front_facade_exposed
+- id: '1689079946593'
+  alias: Protection du soleil - Volet Toilettes
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.toilets_shutter
+      facade: binary_sensor.front_facade_exposed
+- id: '1689085967545'
+  alias: Protection du soleil - Volet Salon Cimetière
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.living_room_cemetery_shutter
+      position_exposed: 30
+      facade: binary_sensor.cemetary_facade_exposed
+- id: '1689086116343'
+  alias: Protection du soleil - Volet Salle de bain
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.bathroom_shutter
+      facade: binary_sensor.front_facade_exposed
+      custom_conditions: []
+      opening_sensor: binary_sensor.bathroom_window_sensor_opening
+- id: '1689086189034'
+  alias: Protection du soleil - Volet Palier
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.landing_shutter
+      custom_conditions: []
+      facade: binary_sensor.front_facade_exposed
+      opening_sensor: binary_sensor.landing_window_sensor_opening
+- id: '1689086502720'
+  alias: Protection du soleil - Volet Chambre d'Ariane
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.ariane_bedroom_shutter
+      facade: binary_sensor.cemetary_facade_exposed
+      position_exposed: 20
+      opening_sensor: binary_sensor.ariane_bedroom_window_sensor_opening
+- id: '1689086745942'
+  alias: Protection du soleil - Volet Chambre d'amis
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.guest_room_shutter
+      facade: binary_sensor.front_facade_exposed
+      custom_conditions:
+      - condition: state
+        entity_id: input_boolean.guest_mode
+        state: 'off'
+      opening_sensor: binary_sensor.guest_room_window_sensor_opening
+- id: '1689087962070'
+  alias: Protection du soleil - Volet Salon Jardin
+  description: ''
+  use_blueprint:
+    path: piitaya/sun_protection_shutter.yaml
+    input:
+      shutter: cover.living_room_garden_shutter
+      position_exposed: 40
+      additionnal_protection: cover.pergola
+      facade: binary_sensor.garden_facade_exposed
+- id: '1689940894428'
+  alias: Simulation Présence
+  description: ''
+  triggers:
+  - at: 08:04:00
+    id: ouvrir volets
+    trigger: time
+  - at: '19:21:00'
+    id: fermer volets etage
+    trigger: time
+  - at: '20:10:00'
+    id: allumer lumiere cuisine
+    trigger: time
+  - at: '20:34:00'
+    id: allumer lumiere salon
+    trigger: time
+  - at: '21:34:00'
+    id: fermer volets
+    trigger: time
+  - at: '21:00:00'
+    id: eteindre lumiere cuisine
+    trigger: time
+  - at: '23:05:00'
+    id: eteindre lumiere salon
+    trigger: time
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - ouvrir volets
+      sequence:
+      - data: {}
+        target:
+          entity_id:
+          - cover.ground_floor_shutters
+          - cover.first_floor_shutters
+        action: cover.open_cover
+      - delay:
+          hours: 0
+          minutes: 1
+          seconds: 0
+          milliseconds: 0
+      - metadata: {}
+        data: {}
+        target:
+          entity_id: input_button.set_shutters_sun_position
+        action: input_button.press
+    - conditions:
+      - condition: trigger
+        id:
+        - fermer volets
+      sequence:
+      - data: {}
+        target:
+          entity_id:
+          - cover.first_floor_shutters
+          - cover.ground_floor_shutters
+        action: cover.close_cover
+    - conditions:
+      - condition: trigger
+        id:
+        - allumer lumiere cuisine
+      sequence:
+      - data: {}
+        target:
+          area_id: kitchen
+        action: light.turn_on
+    - conditions:
+      - condition: trigger
+        id:
+        - eteindre lumiere cuisine
+      sequence:
+      - data: {}
+        target:
+          area_id: kitchen
+        action: light.turn_off
+    - conditions:
+      - condition: trigger
+        id:
+        - allumer lumiere salon
+      sequence:
+      - data: {}
+        target:
+          entity_id: scene.living_room_cosy
+        action: scene.turn_on
+    - conditions:
+      - condition: trigger
+        id:
+        - eteindre lumiere salon
+      sequence:
+      - data: {}
+        target:
+          area_id:
+          - living_room
+          - dining_room
+          entity_id:
+          - light.kitchen_light_string
+          - light.guirlande_buffet
+        action: light.turn_off
+    - conditions:
+      - condition: trigger
+        id:
+        - fermer volets etage
+      sequence:
+      - data: {}
+        target:
+          entity_id:
+          - cover.first_floor_shutters
+        action: cover.close_cover
+  mode: single
+- id: '1689942382007'
+  alias: Simulation Présence - Rentre Maison
+  description: ''
+  triggers:
+  - entity_id: person.paul
+    zone: zone.home
+    event: enter
+    id: paul
+    alias: Quand Paul rentre à la maison
+    trigger: zone
+  - entity_id: person.marina
+    zone: zone.home
+    event: enter
+    id: marina
+    alias: Quand Marina rentre à la maison
+    trigger: zone
+  conditions:
+  - condition: state
+    entity_id: automation.presence_simulation
+    state: 'on'
+  actions:
+  - data:
+      stop_actions: true
+    target:
+      entity_id: automation.presence_simulation
+    action: automation.turn_off
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: paul
+        alias: Si Paul rentre
+      sequence:
+      - data:
+          title: Simulation désactivée
+          message: 'Arrivé à la maison : la simulation de présence a été désactivée.'
+        alias: Envoyer une notification à Paul
+        action: notify.mobile_app_iphone_de_paul
+    - conditions:
+      - condition: trigger
+        id: marina
+        alias: Si Marina rentre
+      sequence:
+      - data:
+          title: Simulation désactivée
+          message: 'Arrivée à la maison : la simulation de présence a été désactivée.'
+        alias: Envoyer une notification à Marina
+        action: notify.mobile_app_iphone_de_marina
+    default: []
+    alias: Envoyer une notification à la personne qui rentre
+    enabled: true
+  mode: single
+- id: '1691702230568'
+  alias: Impression 3D terminée
+  description: ''
+  triggers:
+  - alias: Lorsque l'impression est terminée
+    entity_id:
+    - sensor.panpan_etat_de_l_impression
+    to: finish
+    from: running
+    trigger: state
+  - alias: Lorsque l'impression a échouée
+    entity_id:
+    - sensor.panpan_etat_de_l_impression
+    to: failed
+    from: running
+    trigger: state
+  conditions: []
+  actions:
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 30
+      milliseconds: 0
+  - data: {}
+    target:
+      entity_id:
+      - light.panpan_lumiere_de_la_chambre
+    alias: Éteindre la lumière de l'imprimante
+    action: light.turn_off
+  mode: single
+- id: '1700251414197'
+  alias: Mode chat - Désactivation
+  description: ''
+  triggers:
+  - entity_id:
+    - light.garage_light
+    to: 'on'
+    alias: Quand la lumière du garage est allumé
+    trigger: state
+  conditions:
+  - condition: time
+    after: 05:00:00
+    before: '21:00:00'
+  - condition: state
+    entity_id: input_boolean.cat_garage_mode
+    state: 'on'
+    alias: Confirmer que le mode chat dans le garage est activé
+  actions:
+  - data: {}
+    target:
+      entity_id: input_boolean.cat_garage_mode
+    alias: Désactiver le mode chat dans le garage
+    action: input_boolean.turn_off
+  mode: single
+- id: '1705180879834'
+  alias: Volets entrouvert pour le chat
+  description: ''
+  triggers:
+  - entity_id:
+    - cover.ground_floor_shutters
+    from:
+    - open
+    - closing
+    to:
+    - closed
+    trigger: state
+  conditions:
+  - condition: time
+    after: '15:00:00'
+    before: '22:00:00'
+  - condition: state
+    entity_id: binary_sensor.home_presence
+    state: 'on'
+  actions:
+  - metadata: {}
+    data: {}
+    action: script.set_cover_for_cat
+  mode: single
+- id: '1706445548005'
+  alias: Projecteur extérieur - Lumière automatique
+  description: Allumer ou éteindre le projecteur extérieur en fonction des mouvements
+    et du moment de la journée.
+  triggers:
+  - entity_id:
+    - binary_sensor.outdoor_motion_sensor_motion
+    to: 'on'
+    alias: Un mouvement est détecté
+    trigger: state
+  - entity_id:
+    - binary_sensor.outdoor_motion_sensor_motion
+    to: 'off'
+    for:
+      hours: 0
+      minutes: 3
+      seconds: 0
+    alias: Plus aucun mouvement n'est détecté pendant 3 minutes
+    trigger: state
+  conditions: []
+  actions:
+  - alias: Allumer ou éteindre le projecteur
+    if:
+    - condition: state
+      entity_id: binary_sensor.outdoor_motion_sensor_motion
+      state: 'on'
+      alias: Si un mouvement est détecté
+    then:
+    - condition: state
+      entity_id: sun.sun
+      state: below_horizon
+      alias: Vérifier que le soleil est couché
+    - condition: state
+      entity_id: light.garage_wall_projector
+      state: 'off'
+      alias: Vérifier que le projecteur est éteint
+    - metadata: {}
+      data: {}
+      target:
+        entity_id: light.garage_wall_projector
+      alias: Allumer le projecteur
+      action: light.turn_on
+    else:
+    - condition: state
+      entity_id: light.garage_wall_projector
+      state: 'on'
+      alias: Vérifier que le projecteur est allumé
+    - target:
+        entity_id:
+        - light.garage_wall_projector
+      data: {}
+      alias: Éteindre le projecteur
+      action: light.turn_off
+  mode: single
+- id: '1713547918574'
+  alias: Zwave - Mise à jour de la position des volets
+  description: Mettre à jour position volets quand la consommation devient nulle.
+  triggers:
+  - alias: Si la consommation d'un des volets devient nulle
+    below: '0.1'
+    entity_id:
+    - sensor.ariane_bedroom_shutter_power
+    - sensor.bathroom_shutter_power
+    - sensor.bedroom_shutter_power
+    - sensor.guest_room_shutter_power
+    - sensor.kitchen_shutter_power
+    - sensor.living_room_cemetery_shutter_power
+    - sensor.living_room_front_left_shutter_power
+    - sensor.living_room_front_right_shutter_power
+    - sensor.living_room_garden_shutter_power
+    - sensor.laundry_shutter_power
+    - sensor.study_shutter_power
+    - sensor.toilets_shutter_power
+    - sensor.bathroom_shutter_power
+    trigger: numeric_state
+  conditions: []
+  actions:
+  - data:
+      entity_id: "{% set device = device_id(trigger.entity_id) %} \n{% set entities
+        = device_entities(device) %} \n{{ expand(entities) | selectattr(\"domain\",
+        \"eq\", \"cover\") |\nmap(attribute=\"entity_id\") | first }}\n"
+    alias: Mettre à jour la position du volet concerné
+    action: zwave_js.refresh_value
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 2
+      milliseconds: 0
+  - data:
+      entity_id: "{% set device = device_id(trigger.entity_id) %} \n{% set entities
+        = device_entities(device) %} \n{{ expand(entities) | selectattr(\"domain\",
+        \"eq\", \"cover\") |\nmap(attribute=\"entity_id\") | first }}\n"
+    alias: Mettre à jour la position du volet concerné
+    action: zwave_js.refresh_value
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 30
+      milliseconds: 0
+  - data:
+      entity_id: "{% set device = device_id(trigger.entity_id) %} \n{% set entities
+        = device_entities(device) %} \n{{ expand(entities) | selectattr(\"domain\",
+        \"eq\", \"cover\") |\nmap(attribute=\"entity_id\") | first }}\n"
+    alias: Mettre à jour la position du volet concerné
+    action: zwave_js.refresh_value
+  mode: parallel
+  max: 15
+- id: '1716148460626'
+  alias: Verrouillage porte arrière
+  description: Verrouiller automatiquement la porte arrière durant la nuit ou quand
+    personne n'est à la maison.
+  triggers:
+  - entity_id:
+    - binary_sensor.home_presence
+    to: 'off'
+    from:
+    alias: Lorsque personne n'est à la maison
+    trigger: state
+  - at: '23:00:00'
+    trigger: time
+  - alias: Lorsque la porte arrière est déverrouillée pendant 1h
+    entity_id:
+    - lock.porte_arriere
+    to: unlocked
+    for:
+      hours: 1
+      minutes: 0
+      seconds: 0
+    trigger: state
+  conditions:
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: binary_sensor.home_presence
+      state: 'off'
+    - condition: time
+      after: '23:00:00'
+      before: 06:00:00
+    alias: Si personne n'est à la maison ou que c'est la nuit
+  - alias: Si la porte arrière n'est pas verrouillée
+    condition: not
+    conditions:
+    - condition: state
+      entity_id: lock.porte_arriere
+      state: locked
+  actions:
+  - alias: Verrouiller la porte arrière
+    metadata: {}
+    data: {}
+    action: lock.lock
+    target:
+      entity_id: lock.porte_arriere
+  mode: single
+- id: '1716838642271'
+  alias: Notification frigo
+  description: ''
+  use_blueprint:
+    path: piitaya/opening_action.yaml
+    input:
+      opening_sensor: binary_sensor.kitchen_fridge_door
+      actions:
+      - action: script.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: script.notifier_porte_du_frigo_de_la_cuisine_ouverte
+      duration:
+        hours: 0
+        minutes: 10
+        seconds: 0
+      reminder:
+        hours: 0
+        minutes: 5
+        seconds: 0
+- id: '1716838725208'
+  alias: Notification frigo du garage
+  description: ''
+  use_blueprint:
+    path: piitaya/opening_action.yaml
+    input:
+      opening_sensor: binary_sensor.garage_fridge_door
+      actions:
+      - action: script.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: script.notifier_porte_du_frigo_du_garage_ouverte
+      duration:
+        hours: 0
+        minutes: 10
+        seconds: 0
+      reminder:
+        hours: 0
+        minutes: 5
+        seconds: 0
+- id: '1716838791160'
+  alias: Notification congélateur
+  description: ''
+  use_blueprint:
+    path: piitaya/opening_action.yaml
+    input:
+      opening_sensor: binary_sensor.freezer_door
+      actions:
+      - action: script.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: script.notifier_porte_du_congelateur_ouverte
+      duration:
+        hours: 0
+        minutes: 10
+        seconds: 0
+      reminder:
+        hours: 0
+        minutes: 5
+        seconds: 0
+- id: '1718390683621'
+  alias: Verrouillage porte d'entrée
+  description: Verrouiller automatiquement la porte d'entrée durant la nuit ou quand
+    personne n'est à la maison.
+  triggers:
+  - entity_id:
+    - binary_sensor.home_presence
+    to: 'off'
+    from:
+    alias: Lorsque personne n'est à la maison
+    trigger: state
+  - at: '23:00:00'
+    trigger: time
+  - alias: Lorsque la porte d'entrée est déverrouillée pendant 1h
+    entity_id:
+    - lock.porte_dentree
+    to: unlocked
+    for:
+      hours: 1
+      minutes: 0
+      seconds: 0
+    trigger: state
+  conditions:
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: binary_sensor.home_presence
+      state: 'off'
+    - condition: time
+      after: '23:00:00'
+      before: 05:00:00
+    alias: Si personne n'est à la maison ou que c'est la nuit
+  - alias: Si la porte d'entrée n'est pas verrouillée
+    condition: not
+    conditions:
+    - condition: state
+      entity_id: lock.porte_dentree
+      state: locked
+  actions:
+  - action: button.press
+    metadata: {}
+    data: {}
+    target:
+      entity_id: button.porte_dentree_verrouiller_silencieusement
+    alias: Verrouiller silencieusement
+  - delay:
+      hours: 0
+      minutes: 1
+      seconds: 0
+      milliseconds: 0
+  - alias: Si la porte d'entrée n'est pas verrouillée
+    condition: not
+    conditions:
+    - condition: state
+      entity_id: lock.porte_dentree
+      state: locked
+  - alias: Verrouiller la porte d'entrée
+    metadata: {}
+    data: {}
+    action: lock.lock
+    target:
+      entity_id: lock.porte_dentree
+  mode: restart
+- id: '1720796386287'
+  alias: Notification porte d'entrée déverrouillée
+  description: Envoie une notification si la porte d'entrée a été déverrouillée quand
+    personne n'est à la maison.
+  triggers:
+  - entity_id:
+    - lock.porte_dentree
+    to: unlocked
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.home_presence
+    state: 'off'
+  actions:
+  - metadata: {}
+    data:
+      message: La porte d'entrée a été ouverte !
+      title: "Alerte \U0001F6A8"
+    action: notify.mobile_app_iphone_de_paul
+  mode: single
+- id: '1729243257556'
+  alias: Notification fenêtres de l'étage ouvertes
+  description: ''
+  use_blueprint:
+    path: piitaya/opening_action.yaml
+    input:
+      opening_sensor: binary_sensor.first_floor_windows_opening
+      actions:
+      - action: script.turn_on
+        metadata: {}
+        data:
+          variables:
+            user_message: "{% from 'format.jinja' import join_fr %}\n{% set entity_id
+              = \"binary_sensor.first_floor_windows_opening\" %}\n{%\n  set areas
+              = expand(state_attr(entity_id, \"entity_id\"))\n  | selectattr('state',
+              'eq', 'on')\n  | map(attribute=\"entity_id\")\n  | map(\"area_name\")\n
+              \ | map(\"lower\")\n  | unique\n  | sort\n  | list\n%}\n{% set formatted_areas
+              = join_fr(areas) | replace(\"ariane\", \"Ariane\") %}\n{% if areas |
+              length > 1 %}\nFenêtres ouvertes : {{ formatted_areas }}.\n{% else %}\nFenêtre
+              ouverte : {{ formatted_areas }}.\n{% endif %}\n"
+        target:
+          entity_id: script.notifier_des_fenetres_ouvertes_a_l_etage
+      duration:
+        hours: 0
+        minutes: 5
+        seconds: 0
+      reminder:
+        hours: 0
+        minutes: 5
+        seconds: 0
+- id: '1729280811736'
+  alias: Notification onduleur
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.ups
+    to:
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: binary_sensor.ups
+      state: 'on'
+    then:
+    - action: notify.mobile_app_iphone_de_paul
+      metadata: {}
+      data:
+        message: L'onduleur est connecté au secteur
+    else:
+    - action: notify.mobile_app_iphone_de_paul
+      metadata: {}
+      data:
+        message: L'onduleur fonctionne sur batterie
+  mode: single
+- id: '1729756031647'
+  alias: Surveillance appareils Matter indisponibles
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - lock.porte_dentree
+    - lock.porte_arriere
+    from: unavailable
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+  - trigger: state
+    entity_id:
+    - lock.porte_dentree
+    - lock.porte_arriere
+    to: unavailable
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+  conditions: []
+  actions:
+  - action: notify.mobile_app_iphone_de_paul
+    metadata: {}
+    data:
+      message: '{% set entity_id = trigger.entity_id  %}
+
+        {{ device_name(entity_id) }} est devenu "
+
+        {%- if is_state(entity_id, "unavailable") -%}
+
+        indisponible
+
+        {%- else -%}
+
+        {{ state_translated(entity_id) | lower }}
+
+        {%- endif -%}
+
+        "
+
+        '
+  mode: parallel
+  max: 10
+- id: '1734096011930'
+  alias: Extinction des assistants vocaux
+  description: ''
+  triggers:
+  - entity_id:
+    - binary_sensor.home_presence
+    to: 'off'
+    from:
+    trigger: state
+  - trigger: homeassistant
+    event: start
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.home_presence
+    state: 'off'
+  actions:
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id:
+      - switch.voice_black_mute
+      - switch.voice_pokeball_mute
+      - switch.voice_minion_mute
+  mode: single
+- id: '1734096059159'
+  alias: Allumage des assistants vocaux
+  description: ''
+  triggers:
+  - entity_id:
+    - binary_sensor.home_presence
+    to: 'on'
+    from:
+    trigger: state
+  - trigger: homeassistant
+    event: start
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.home_presence
+    state: 'on'
+  actions:
+  - action: switch.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id:
+      - switch.voice_black_mute
+      - switch.voice_pokeball_mute
+      - switch.voice_minion_mute
+  mode: single
+- id: '1734895688539'
+  alias: Mode chat - indicateur lumineux
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_boolean.cat_garage_mode
+    to:
+  - trigger: homeassistant
+    event: start
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: input_boolean.cat_garage_mode
+      state: 'on'
+    then:
+    - action: light.turn_on
+      metadata: {}
+      data:
+        rgb_color:
+        - 255
+        - 0
+        - 0
+        brightness_pct: 30
+      target:
+        entity_id: light.voice_black_led_ring
+    else:
+    - action: light.turn_on
+      metadata: {}
+      data:
+        rgb_color:
+        - 0
+        - 255
+        - 0
+        brightness_pct: 30
+      target:
+        entity_id: light.voice_black_led_ring
+  mode: single
+- id: '1734896118812'
+  alias: Mode chat - bouton
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - event.voice_black_button_press
+  conditions:
+  - condition: state
+    entity_id: event.voice_black_button_press
+    attribute: event_type
+    state: double_press
+  actions:
+  - action: input_boolean.toggle
+    metadata: {}
+    data: {}
+    target:
+      entity_id: input_boolean.cat_garage_mode
+  mode: single
+- id: '1735296885870'
+  alias: Notification fenêtres du rez-de-chaussée ouvertes
+  description: ''
+  use_blueprint:
+    path: piitaya/opening_action.yaml
+    input:
+      opening_sensor: binary_sensor.ground_floor_windows_opening
+      actions:
+      - action: script.turn_on
+        metadata: {}
+        data:
+          variables:
+            user_message: "{% from 'format.jinja' import join_fr %}\n{% set entity_id
+              = \"binary_sensor.ground_floor_windows_opening\" %}\n{%\n  set areas
+              = expand(state_attr(entity_id, \"entity_id\"))\n  | selectattr('state',
+              'eq', 'on')\n  | map(attribute=\"entity_id\")\n  | map(\"area_name\")\n
+              \ | map(\"lower\")\n  | unique\n  | sort\n  | list\n%}\n{% set formatted_areas
+              = join_fr(areas) %}\n{% if areas | length > 1 %}\nFenêtres ouvertes
+              : {{ formatted_areas }}.\n{% else %}\nFenêtre ouverte : {{ formatted_areas
+              }}.\n{% endif %}\n"
+        target:
+          entity_id: script.notifier_fenetres_du_rez_de_chaussee_ouvertes
+      duration:
+        hours: 0
+        minutes: 5
+        seconds: 0
+      reminder:
+        hours: 0
+        minutes: 5
+        seconds: 0
+- id: '1735479436866'
+  alias: Délestage Tesla Model Y
+  description: Adapte la vitesse de charge de la Tesla en fonction de la puissance
+    disponible à la maison.
+  triggers:
+  - trigger: state
+    entity_id:
+    - device_tracker.tesla_model_y
+    to: home
+  - trigger: state
+    entity_id:
+    - binary_sensor.tesla_model_y_charge_cable
+    to: 'on'
+    enabled: false
+  - trigger: state
+    entity_id:
+    - sensor.tesla_model_y_charge
+    to: charging
+  - trigger: state
+    entity_id:
+    - sensor.tesla_model_y_charge_target_current
+    to:
+  - trigger: homeassistant
+    event: start
+  conditions:
+  - condition: state
+    entity_id: device_tracker.tesla_model_y
+    state: home
+  - condition: state
+    entity_id: binary_sensor.tesla_model_y_charge_cable
+    state: 'on'
+    enabled: false
+  - condition: state
+    entity_id: sensor.tesla_model_y_charge
+    state: charging
+  actions:
+  - action: number.set_value
+    metadata: {}
+    data:
+      value: '{{ states(''sensor.tesla_model_y_charge_target_current'') | int }}'
+    target:
+      entity_id: number.tesla_model_y_charge_current
+    alias: Régler le courant de charge
+  mode: single
+- id: '1739625788690'
+  alias: Internet
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.internet
+    from: 'on'
+    to: 'off'
+  - trigger: state
+    entity_id:
+    - binary_sensor.internet
+    from: 'off'
+    to: 'on'
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: binary_sensor.internet
+      state: 'on'
+    then:
+    - action: notify.mobile_app_iphone_de_paul
+      metadata: {}
+      data:
+        message: "Internet est revenu \U0001F642"
+        title: Internet
+    - delay:
+        hours: 0
+        minutes: 1
+        seconds: 0
+        milliseconds: 0
+    - action: button.press
+      metadata: {}
+      target:
+        entity_id: button.gluetun_restart_container
+      data: {}
+    - delay:
+        hours: 0
+        minutes: 1
+        seconds: 0
+        milliseconds: 0
+    - action: button.press
+      metadata: {}
+      target:
+        entity_id: button.qbittorrent_restart_container
+      data: {}
+    else:
+    - action: notify.mobile_app_iphone_de_paul
+      metadata: {}
+      data:
+        message: "Plus de connexion internet \U0001F622"
+        title: Internet
+  mode: restart
+- id: '1739638264619'
+  alias: Lumière automatique Buanderie
+  description: ''
+  triggers:
+  - entity_id:
+    - binary_sensor.capteur_de_presence_buanderie_occupancy
+    to:
+    trigger: state
+  - entity_id:
+    - sensor.capteur_de_presence_buanderie_illuminance
+    below: 30
+    trigger: numeric_state
+  - trigger: homeassistant
+    event: start
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.home_presence
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.cat_garage_mode
+    state: 'off'
+  actions:
+  - if:
+    - condition: state
+      entity_id: binary_sensor.capteur_de_presence_buanderie_occupancy
+      state: 'on'
+    then:
+    - condition: state
+      entity_id: light.laundry_ceiling_light
+      state: 'off'
+    - condition: or
+      conditions:
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: light.laundry_ceiling_light
+          state: 'off'
+          for:
+            hours: 0
+            minutes: 1
+            seconds: 0
+      - condition: numeric_state
+        entity_id: sensor.capteur_de_presence_buanderie_illuminance
+        below: 30
+      enabled: true
+    - data: {}
+      target:
+        entity_id: light.laundry_ceiling_light
+      action: light.turn_on
+    else:
+    - condition: state
+      entity_id: light.laundry_ceiling_light
+      state: 'on'
+    - data: {}
+      target:
+        entity_id: light.laundry_ceiling_light
+      action: light.turn_off
+  mode: single
+- id: '1741020692355'
+  alias: Notification début de réunion
+  description: ''
+  triggers:
+  - trigger: calendar
+    entity_id: calendar.meetings
+    event: start
+    offset: -0:1:0
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.study_presence_sensor_presence_paul_desk
+    state: 'on'
+  actions:
+  - action: light.turn_on
+    metadata: {}
+    data:
+      flash: short
+    target:
+      entity_id: light.study_hue_play
+  mode: single
+- id: '1741801882779'
+  alias: Tentative de connexion
+  description: ''
+  triggers:
+  - update_type:
+    - added
+    notification_id: http-login
+    trigger: persistent_notification
+  actions:
+  - action: notify.mobile_app_iphone_de_paul
+    metadata: {}
+    data:
+      title: '{{ trigger.notification.title }}'
+      message: '{{ trigger.notification.message }}'
+- id: '1741948054224'
+  alias: Dernière tonte automatique
+  description: Enregistrement la date de la dernière tonte automatique
+  triggers:
+  - trigger: state
+    entity_id:
+    - sensor.yuka_mini_progression
+    to: '0'
+    not_from: unavailable
+  conditions: []
+  actions:
+  - action: input_datetime.set_datetime
+    metadata: {}
+    data:
+      datetime: '{{ now().isoformat() }}'
+    target:
+      entity_id: input_datetime.last_automatic_lawn_mowing
+  mode: single
+- id: '1742118801945'
+  alias: Nettoyage au départ
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.home_presence
+    to: 'off'
+  conditions:
+  - condition: state
+    entity_id: input_boolean.nettoyage_au_depart_programme
+    state: 'on'
+  actions:
+  - action: vacuum.start
+    metadata: {}
+    data: {}
+    target:
+      entity_id: vacuum.alfred
+  - action: input_boolean.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: input_boolean.nettoyage_au_depart_programme
+  mode: single
+- id: '1743151479537'
+  alias: Extinction de toutes les lumières lors d'un départ
+  description: Éteint toutes les lumières si plus personne n'est à la maison.
+  triggers:
+  - event: start
+    trigger: homeassistant
+  - entity_id:
+    - binary_sensor.home_presence
+    to: 'off'
+    alias: Quand la maison devient vide
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.home_presence
+    state: 'off'
+    alias: Personne à la maison
+  - condition: state
+    entity_id: light.all
+    state: 'on'
+  actions:
+  - action: light.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: light.all
+  mode: single
+- id: '1743589923713'
+  alias: Télécommande Veilleuse
+  description: Cette automatisation permet d'allumer ou d'éteindre la veilleuse avec
+    un bouton de la télécommande à l'aide d'une pression courte.
+  triggers:
+  - device_id: 75b18d9e893fc853ade15e69377a6906
+    domain: zha
+    type: remote_button_short_press
+    subtype: turn_on
+    trigger: device
+  - device_id: 75b18d9e893fc853ade15e69377a6906
+    domain: zha
+    type: remote_button_short_press
+    subtype: turn_off
+    trigger: device
+  - device_id: 75b18d9e893fc853ade15e69377a6906
+    domain: zha
+    type: remote_button_short_press
+    subtype: left
+    trigger: device
+  - device_id: 75b18d9e893fc853ade15e69377a6906
+    domain: zha
+    type: remote_button_short_press
+    subtype: right
+    trigger: device
+  conditions: []
+  actions:
+  - action: light.toggle
+    metadata: {}
+    data: {}
+    target:
+      entity_id: light.veilleuse
+  mode: single
+- id: '1744041128353'
+  alias: Notification fuite machine à café
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.coffee_machine_leak_sensor
+    to: 'on'
+  conditions: []
+  actions:
+  - action: script.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: script.notifier_fuite_machine_a_cafe
+  mode: single
+- id: '1745069598915'
+  alias: Réglages des caméras avec l'alarme
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - alarm_control_panel.home_alarm
+    to:
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: alarm_control_panel.home_alarm
+      state: armed_away
+    then:
+    - action: switch.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id: switch.hall_camera_pir
+    else:
+    - action: switch.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id: switch.hall_camera_pir
+  mode: single
+- id: '1745594581850'
+  alias: Notification Machine à laver terminée
+  description: Cette automatisation envoie une notification lorsque la machine à laver
+    a terminé son cycle. Si le sèche-linge est en marche, elle attend qu'il termine
+    avant d'envoyer la notification.
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.washing_machine
+    from: 'on'
+    to: 'off'
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: binary_sensor.dryer
+      state: 'on'
+    then:
+    - wait_for_trigger:
+      - trigger: state
+        entity_id:
+        - binary_sensor.dryer
+        to: 'off'
+  - action: script.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: script.notifier_machine_a_laver_terminee
+  mode: single
+- id: '1745678146201'
+  alias: Désarmer l'alarme quand la porte s'ouvre
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - lock.porte_dentree
+    to: unlocked
+  conditions: []
+  actions:
+  - action: alarm_control_panel.alarm_arm_home
+    metadata: {}
+    data: {}
+    target:
+      entity_id: alarm_control_panel.home_alarm
+  mode: single
+- id: '1745846954773'
+  alias: Notification Remplissage du spa
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.detecteur_de_fuite
+    from: 'off'
+    to: 'on'
+  conditions: []
+  actions:
+  - action: notify.mobile_app_iphone_de_paul
+    metadata: {}
+    data:
+      message: "Le remplissage du spa est terminée \U0001F4A7"
+  mode: single
+- id: '1746713957987'
+  alias: Reprise de la tonte automatique
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - sensor.yuka_mini_batterie
+    above: sensor.yuka_mini_batterie_pour_finir
+  - trigger: homeassistant
+    event: start
+  conditions:
+  - condition: state
+    entity_id: lawn_mower.yuka_mini
+    state: paused
+  - condition: numeric_state
+    entity_id: sensor.yuka_mini_progression
+    above: 80
+    below: 100
+  - condition: numeric_state
+    entity_id: sensor.yuka_mini_batterie
+    above: sensor.yuka_mini_batterie_pour_finir
+  - condition: state
+    entity_id: binary_sensor.yuka_mini_en_charge
+    state: 'on'
+  actions:
+  - action: lawn_mower.start_mowing
+    metadata: {}
+    data: {}
+    target:
+      entity_id: lawn_mower.yuka_mini
+  mode: single
+- id: '1747414008439'
+  alias: Déverrouillage porte d'entrée
+  description: Déverrouiller automatiquement la porte d'entrée quand quelqu'un rentre
+    à la maison.
+  triggers:
+  - trigger: zone
+    entity_id: person.paul
+    zone: zone.home
+    event: enter
+  - trigger: zone
+    entity_id: person.marina
+    zone: zone.home
+    event: enter
+  conditions: []
+  actions:
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 2
+      milliseconds: 0
+  - if:
+    - condition: state
+      entity_id: lock.porte_dentree
+      state: locked
+    - condition: state
+      entity_id: binary_sensor.home_presence
+      state: 'on'
+    then:
+    - alias: Déverrouiller la porte d'entrée
+      metadata: {}
+      data: {}
+      action: lock.unlock
+      target:
+        entity_id: lock.porte_dentree
+  mode: single
+- id: '1749815072987'
+  alias: Notification barrière escalier ouverte
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.barriere_escalier
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+    to: 'on'
+  - trigger: homeassistant
+    event: start
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.barriere_escalier
+    state: 'on'
+  actions:
+  - action: script.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: script.notifier_barriere_escalier_ouverte
+  mode: single
+- id: '1750155851123'
+  alias: Zwave - Mise à jour de la position des volets automatique
+  description: ''
+  triggers:
+  - trigger: time_pattern
+    minutes: /5
+  conditions: []
+  actions:
+  - action: zwave_js.refresh_value
+    data:
+      refresh_all_values: false
+      entity_id:
+      - cover.laundry_shutter
+      - cover.study_shutter
+      - cover.bedroom_shutter
+      - cover.guest_room_shutter
+      - cover.ariane_bedroom_shutter
+      - cover.kitchen_shutter
+      - cover.landing_shutter
+      - cover.bathroom_shutter
+      - cover.living_room_cemetery_shutter
+      - cover.living_room_front_right_shutter
+      - cover.living_room_front_left_shutter
+      - cover.living_room_garden_shutter
+      - cover.toilets_shutter
+  mode: single
+- id: '1751052542657'
+  alias: Tag test
+  description: ''
+  triggers:
+  - trigger: tag
+    tag_id: 9fb4c794-72e5-47b7-af11-292d3cf2fa46
+  conditions: []
+  actions:
+  - action: notify.mobile_app_iphone_de_paul
+    metadata: {}
+    data:
+      message: Tag
+  mode: single
+- id: '1751117568981'
+  alias: TagTuner music player for NFC tags automation
+  description: ''
+  use_blueprint:
+    path: luka6000/TagTuner4HAss.yaml
+    input:
+      massplayer: media_player.sonos_move_music_assistant
+      tuner_id: e9aa8ac4367cee2d39fb2e666df08e70
+      stop_on_tagremoved: true
+      next_on_rescan: true
+      default_volume_set: false
+      httpplayer: media_player.sonos_move_music_assistant
+- id: '1751410702179'
+  alias: Désactivation prise anti moustique
+  description: Désactive automatiquement la prise anti moustique chaque jour à 4h
+    du matin.
+  triggers:
+  - trigger: time
+    at: 04:00:00
+  conditions: []
+  actions:
+  - type: turn_off
+    device_id: 8d68265785bdfc999228b5d74312c7e2
+    entity_id: 1048d8833e961cd678a93f16bc5130fc
+    domain: switch
+  mode: single
+- id: '1754896387902'
+  alias: Sonnette - Notifications
+  description: Cette automatisation envoie une notification avec une vidéo lorsque
+    quelqu'un sonne à la porte, permettant d'identifier la personne à l'entrée.
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.sonnette
+    from: 'off'
+    to: 'on'
+  actions:
+  - action: ai_task.generate_data
+    data:
+      attachments:
+        media_content_id: media-source://camera/camera.sonnette
+        media_content_type: application/vnd.apple.mpegurl
+        metadata:
+          title: Sonnette
+          thumbnail: /api/camera_proxy/camera.sonnette
+          media_class: video
+          children_media_class:
+          navigateIds:
+          - {}
+          - media_content_type: app
+            media_content_id: media-source://camera
+      task_name: Personne qui a sonné
+      instructions: 'Qui est à la porte? Y''-il a '
+      structure:
+        title:
+          selector:
+            text:
+        description:
+          selector:
+            text:
+        someone:
+          selector:
+            boolean:
+    response_variable: result
+- id: '1754928418182'
+  alias: Lave-vaisselle - Recharger Home Connect
+  description: Recharger Home Connect quand le lave-vaisselle a terminé son cycle
+    car certains entités ne sont pas disponibles.
+  triggers:
+  - trigger: state
+    entity_id:
+    - sensor.lave_vaisselle_etat
+    from: finished
+    to: ready
+  - trigger: state
+    entity_id:
+    - sensor.lave_vaisselle_etat
+    from: ready
+    to: run
+  - trigger: state
+    entity_id:
+    - switch.lave_vaisselle_etat
+    from: 'off'
+    to: 'on'
+  conditions: []
+  actions:
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 1
+      milliseconds: 0
+  - action: homeassistant.reload_config_entry
+    metadata: {}
+    data:
+      entry_id: 01K0VYM7TNMAKF79B58PXMR2DE
+    target:
+      device_id: f2c4e25244bbf79b4d726a5e2d181146
+  mode: single
+- id: '1755283739368'
+  alias: Nettoyage nocturne
+  description: Cette automatisation active le nettoyage nocturne d'Alfred à 3h00 lorsque
+    l'option est activée. Elle éteint ensuite l'option de nettoyage nocturne.
+  triggers:
+  - trigger: time
+    at: 03:00:00
+  conditions:
+  - condition: state
+    entity_id: input_boolean.nettoyage_nocturne_programme
+    state: 'on'
+  actions:
+  - action: button.press
+    metadata: {}
+    data: {}
+    target:
+      entity_id: button.lancer_nettoyage_nocture
+  - action: input_boolean.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id:
+      - input_boolean.nettoyage_nocturne_programme
+  mode: single
+- id: '1755353358256'
+  alias: Détection de fuite machine à laver - Notification
+  description: Cette automatisation détecte les fuites de la machine à laver et envoie
+    une notification immédiatement.
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.detecteur_de_fuite_machine_a_laver
+    to: 'on'
+  conditions: []
+  actions:
+  - action: script.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id:
+      - script.notifier_fuite_machine_a_laver
+  mode: single
+- id: '1755873518733'
+  alias: Lave-vaisselle - Démarrage automatique
+  description: Cette automatisation démarre le programme sélectionné sur le lave-vaisselle
+    une fois la porte fermée et que l'appareil est prêt.
+  triggers:
+  - trigger: state
+    entity_id:
+    - sensor.lave_vaisselle_porte
+    from: open
+    to: closed
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 30
+  conditions:
+  - condition: state
+    entity_id: sensor.lave_vaisselle_etat
+    state: ready
+  - condition: state
+    entity_id: select.lave_vaisselle_programme_actif
+    state: unknown
+  - condition: state
+    entity_id: switch.lave_vaisselle_etat
+    state: 'on'
+  actions:
+  - action: select.select_option
+    metadata: {}
+    data:
+      option: '{{ states("select.lave_vaisselle_programme_selectionne") }}'
+    target:
+      entity_id: select.lave_vaisselle_programme_actif
+  mode: single
+- id: '1757927665330'
+  alias: Lumière Mini - Télécommande
+  description: Contrôle la lumière Key Light Mini avec une télécommande ZHA.
+  triggers:
+  - device_id: 7f87241d94d2ec45cb03d8868b4d9678
+    domain: zha
+    type: remote_button_short_press
+    subtype: turn_on
+    trigger: device
+  - device_id: 7f87241d94d2ec45cb03d8868b4d9678
+    domain: zha
+    type: remote_button_short_press
+    subtype: turn_off
+    trigger: device
+  conditions: []
+  actions:
+  - action: light.toggle
+    metadata: {}
+    data: {}
+    target:
+      entity_id: light.key_light_mini
+  mode: single
+- id: '1758368214609'
+  alias: Pergola - Interrupteur
+  description: Ouvre ou ferme les lames de la pergola à l'aide de l'interrupteur
+  triggers:
+  - device_id: a5d695c94e00c20f075a4cb8106f687c
+    domain: hue
+    type: initial_press
+    subtype: 1
+    unique_id: 980de681-e053-4c70-aed9-3651def4b0c5
+    metadata: {}
+    trigger: device
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: cover.pergola
+      state: closed
+    then:
+    - action: script.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id: script.open_pergola_blades
+    else:
+    - action: script.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id:
+        - script.close_pergola_blades
+  mode: single
+- id: '1758865695145'
+  alias: Renault Zoé - Chauffage Automatique
+  description: Cette automatisation active le chauffage de la Renault Zoé le matin,
+    en fonction de la présence à la maison et des jours sélectionnés.
+  triggers:
+  - trigger: time
+    at: input_datetime.heure_de_chauffage_automatique_zoe
+    id: premier
+  - trigger: time
+    at:
+      entity_id: input_datetime.heure_de_chauffage_automatique_zoe
+      offset: 00:12:00
+    id: deuxieme
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.home_presence
+    state: 'on'
+  - condition: state
+    entity_id: device_tracker.renault_zoe
+    state:
+    - home
+    enabled: false
+  - condition: state
+    entity_id: input_select.chauffage_automatique_zoe
+    state:
+    - Oui
+  - condition: time
+    weekday:
+    - mon
+    - tue
+    - thu
+    - fri
+  actions:
+  - action: button.press
+    metadata: {}
+    data: {}
+    target:
+      entity_id: button.renault_zoe_demarrer_la_climatisation
+  mode: single
+- id: '1760997768490'
+  alias: Mode chat Garage - Activation
+  description: Active le mode chat du garage tous les jours à minuit.
+  triggers:
+  - trigger: time
+    at: 00:00:00
+  conditions: []
+  actions:
+  - action: input_boolean.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: input_boolean.cat_garage_mode
+  - action: light.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id:
+      - light.garage_light
+      - light.laundry_ceiling_light
+  mode: single
+- id: '1761597056940'
+  alias: Bambi - Recharger Bambu Lab
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - image.bambi_image_des_pieces_selectionnees
+    to: unavailable
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+  conditions: []
+  actions:
+  - action: homeassistant.reload_config_entry
+    metadata: {}
+    data: {}
+    target:
+      device_id: 0c724272c08dd4a5cc783bfa796874c1
+  mode: single
+- id: '1762815063795'
+  alias: Volet Chambre d'Ariane - Extinction Veilleuse
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - cover.ariane_bedroom_shutter
+    from:
+    - opening
+    - closed
+    to:
+    - open
+  conditions: []
+  actions:
+  - action: light.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: light.veilleuse
+  mode: single
+- id: '1763456422814'
+  alias: Lumière automatique Bureau Paul
+  description: Contrôle la lumière du bureau de Paul selon sa présence. La lumière
+    s'allume pendant la semaine, de 8h30 à 18h, lorsque Paul est présent, et s'éteint
+    10 minutes après son départ.
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.study_presence_sensor_presence_paul_desk
+    from:
+    - 'on'
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+  - trigger: state
+    entity_id:
+    - binary_sensor.study_presence_sensor_presence_paul_desk
+    from:
+    - 'off'
+    to:
+    - 'on'
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: binary_sensor.study_presence_sensor_presence_paul_desk
+      state:
+      - 'on'
+    then:
+    - condition: time
+      weekday:
+      - mon
+      - tue
+      - wed
+      - thu
+      - fri
+      before: '18:00:00'
+      after: 08:30:00
+    - action: light.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id: light.study_hue_play
+    else:
+    - action: light.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id: light.study_hue_play
+  mode: single
+- id: '1764320303143'
+  alias: Lumière automatique Cuisine
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.capteur_de_presence_cuisine_occupation
+    from:
+    - 'off'
+    to:
+    - 'on'
+  - trigger: state
+    entity_id:
+    - binary_sensor.capteur_de_presence_cuisine_occupation
+    from:
+    - 'on'
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 3
+      seconds: 0
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: binary_sensor.capteur_de_presence_cuisine_occupation
+      state:
+      - 'on'
+    then:
+    - condition: numeric_state
+      entity_id: sensor.capteur_de_presence_cuisine_eclairement
+      below: 100
+    - action: light.turn_on
+      metadata: {}
+      target:
+        entity_id:
+        - light.kitchen_worktop_ceiling_light
+        - light.kitchen_ceiling_light
+      data: {}
+    else:
+    - action: light.turn_off
+      metadata: {}
+      target:
+        entity_id:
+        - light.kitchen_worktop_ceiling_light
+        - light.kitchen_ceiling_light
+      data: {}
+  mode: single
+- id: '1764360990078'
+  alias: Lumière Chambre d'Ariane - Allumage
+  description: ''
+  triggers:
+  - trigger: light.turned_on
+    target:
+      entity_id: light.ariane_bedroom_ceiling_light
+    options:
+      behavior: any
+  conditions: []
+  actions:
+  - action: notify.mobile_app_iphone_de_paul
+    metadata: {}
+    data:
+      message: Ariane a allumé la lumière !
+  mode: single
+- id: '1764782414201'
+  alias: Veilleuse Palier - Lumière automatique
+  description: Allume ou éteint la veilleuse en fonction de l'occupation et de la
+    luminosité.
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.prise_veilleuse_occupation
+    - binary_sensor.capteur_de_presence_palier_occupation
+    to:
+    - 'on'
+  - trigger: state
+    entity_id:
+    - binary_sensor.prise_veilleuse_occupation
+    - binary_sensor.capteur_de_presence_palier_occupation
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+  conditions: []
+  actions:
+  - if:
+    - condition: or
+      conditions:
+      - condition: state
+        entity_id: binary_sensor.prise_veilleuse_occupation
+        state:
+        - 'on'
+      - condition: state
+        entity_id: binary_sensor.capteur_de_presence_palier_occupation
+        state:
+        - 'on'
+    then:
+    - condition: numeric_state
+      entity_id: sensor.prise_veilleuse_eclairement
+      below: 5
+    - action: light.turn_on
+      metadata: {}
+      target:
+        entity_id: light.prise_veilleuse
+      data: {}
+    else:
+    - action: light.turn_off
+      metadata: {}
+      target:
+        entity_id: light.prise_veilleuse
+      data: {}
+  mode: single
+- id: '1765986483970'
+  alias: Météo - Bulletin Quotidien
+  description: Crée automatiquement un bulletin météo toutes les trois heures pour
+    informer des conditions météorologiques actuelles.
+  triggers:
+  - trigger: time_pattern
+    hours: /3
+  conditions: []
+  actions:
+  - action: script.bulletin_meteo_quotidien
+    metadata: {}
+    data: {}
+  mode: single
+- id: '1766341772596'
+  alias: Veilleuse - Activation
+  description: Cette automatisation allume la veilleuse avec différentes intensités
+    selon la luminosité actuelle. Si la veilleuse est éteinte, elle s'allume. Si elle
+    est déjà allumée avec une luminosité supérieure à 20, elle s'allume avec une faible
+    intensité. Sinon, elle s'allume avec une intensité modérée de 9%.
+  triggers:
+  - device_id: 2d2ec71c9d37745b99468aba1a0ae516
+    domain: zha
+    type: remote_button_short_press
+    subtype: button
+    trigger: device
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: light.veilleuse
+        state:
+        - 'off'
+      sequence:
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id: light.veilleuse
+        data: {}
+    - conditions:
+      - condition: numeric_state
+        entity_id: light.veilleuse
+        attribute: brightness
+        above: 20
+      sequence:
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id: light.veilleuse
+        data:
+          brightness_pct: 1
+    default:
+    - action: light.turn_on
+      metadata: {}
+      target:
+        entity_id: light.veilleuse
+      data:
+        brightness_pct: 9
+  mode: single
+- id: '1766510552333'
+  alias: Renault Zoé - Chauffage ponctuel
+  description: ''
+  triggers:
+  - trigger: time
+    at: input_datetime.heure_de_chauffage_ponctuel_zoe
+    id: premier
+  - trigger: time
+    at:
+      entity_id: input_datetime.heure_de_chauffage_ponctuel_zoe
+      offset: 00:12:00
+    id: deuxieme
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.home_presence
+    state: 'on'
+  - condition: state
+    entity_id: device_tracker.renault_zoe
+    state:
+    - home
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: input_select.chauffage_ponctuel_zoe
+      state: Demain
+    - condition: template
+      value_template: '{% set jours = [''Lundi'', ''Mardi'', ''Mercredi'', ''Jeudi'',
+        ''Vendredi'', ''Samedi'', ''Dimanche''] %}
+
+        {{ states(''input_select.chauffage_ponctuel_zoe'') == jours[now().weekday()]
+        }}'
+      alias: Si c'est le bon jour
+  actions:
+  - action: button.press
+    metadata: {}
+    data: {}
+    target:
+      entity_id: button.renault_zoe_demarrer_la_climatisation
+  - if:
+    - condition: trigger
+      id:
+      - deuxieme
+    then:
+    - action: input_select.select_option
+      metadata: {}
+      target:
+        entity_id: input_select.chauffage_ponctuel_zoe
+      data:
+        option: Non
+  mode: single
+- id: '1768489625689'
+  alias: Lave-vaisselle - Indicateur de statut
+  description: 'Cette automatisation permet d''allumer une lumière à différents niveaux
+    de couleur en fonction de l''état du lave-vaisselle : bleu pendant l''exécution,
+    vert pour un départ différé, rouge en cas d''erreur et éteint par défaut.'
+  triggers:
+  - trigger: state
+    entity_id:
+    - sensor.lave_vaisselle_etat
+    to:
+  - trigger: homeassistant
+    event: start
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: sensor.lave_vaisselle_etat
+        state:
+        - run
+      sequence:
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id: light.lumiere_lave_vaisselle
+        data:
+          rgb_color:
+          - 0
+          - 170
+          - 255
+    - conditions:
+      - condition: state
+        entity_id: sensor.lave_vaisselle_etat
+        state:
+        - delayedstart
+      sequence:
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id: light.lumiere_lave_vaisselle
+        data:
+          rgb_color:
+          - 35
+          - 244
+          - 31
+    - conditions:
+      - condition: state
+        entity_id: sensor.lave_vaisselle_etat
+        state:
+        - error
+      sequence:
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id: light.lumiere_lave_vaisselle
+        data:
+          rgb_color:
+          - 244
+          - 31
+          - 31
+    default:
+    - action: light.turn_off
+      metadata: {}
+      target:
+        entity_id: light.lumiere_lave_vaisselle
+      data: {}
+  mode: single
+- id: '1768841982660'
+  alias: Stranger Things Flicker - Salon, Salle à manger & Cuisine
+  description: Each light flickers independently for maximum creepiness
+  triggers:
+  - entity_id: input_boolean.mode_stranger_things
+    to: 'on'
+    id: start
+    trigger: state
+  - entity_id: input_boolean.mode_stranger_things
+    to: 'off'
+    id: stop
+    trigger: state
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: stop
+      sequence:
+      - target:
+          entity_id: scene.stranger_things_restore
+        action: scene.turn_on
+    - conditions:
+      - condition: trigger
+        id: start
+      sequence:
+      - data:
+          scene_id: stranger_things_restore
+          snapshot_entities:
+          - light.living_room_ceiling_light
+          - light.dining_room_bar_lamp
+          - light.living_room_floor_lamp
+          - light.dining_room_ceiling_light
+          - light.living_room_sideboard_lamp
+          - light.guirlande_buffet
+          - light.television_backlight
+          - light.kitchen_ceiling_light
+          - light.kitchen_light_string
+          - light.kitchen_worktop_ceiling_light
+        action: scene.create
+      - parallel:
+        - repeat:
+            while:
+            - condition: state
+              entity_id: input_boolean.mode_stranger_things
+              state: 'on'
+            sequence:
+            - target:
+                entity_id: light.living_room_ceiling_light
+              data:
+                brightness_pct: '{{ range(20, 100) | random }}'
+                transition: 0
+              action: light.turn_on
+            - delay:
+                milliseconds: '{{ range(400, 800) | random }}'
+            - target:
+                entity_id: light.living_room_ceiling_light
+              data:
+                transition: 0
+              action: light.turn_off
+            - delay:
+                milliseconds: '{{ range(300, 700) | random }}'
+        - repeat:
+            while:
+            - condition: state
+              entity_id: input_boolean.mode_stranger_things
+              state: 'on'
+            sequence:
+            - target:
+                entity_id: light.dining_room_ceiling_light
+              data:
+                brightness_pct: '{{ range(15, 90) | random }}'
+                transition: 0
+              action: light.turn_on
+            - delay:
+                milliseconds: '{{ range(450, 850) | random }}'
+            - target:
+                entity_id: light.dining_room_ceiling_light
+              data:
+                transition: 0
+              action: light.turn_off
+            - delay:
+                milliseconds: '{{ range(350, 750) | random }}'
+        - repeat:
+            while:
+            - condition: state
+              entity_id: input_boolean.mode_stranger_things
+              state: 'on'
+            sequence:
+            - target:
+                entity_id: light.kitchen_ceiling_light
+              data:
+                brightness_pct: '{{ range(15, 95) | random }}'
+                transition: 0
+              action: light.turn_on
+            - delay:
+                milliseconds: '{{ range(400, 800) | random }}'
+            - target:
+                entity_id: light.kitchen_ceiling_light
+              data:
+                transition: 0
+              action: light.turn_off
+            - delay:
+                milliseconds: '{{ range(300, 700) | random }}'
+        - repeat:
+            while:
+            - condition: state
+              entity_id: input_boolean.mode_stranger_things
+              state: 'on'
+            sequence:
+            - target:
+                entity_id: light.kitchen_worktop_ceiling_light
+              data:
+                brightness_pct: '{{ range(20, 90) | random }}'
+                transition: 0
+              action: light.turn_on
+            - delay:
+                milliseconds: '{{ range(450, 850) | random }}'
+            - target:
+                entity_id: light.kitchen_worktop_ceiling_light
+              data:
+                transition: 0
+              action: light.turn_off
+            - delay:
+                milliseconds: '{{ range(350, 750) | random }}'
+        - repeat:
+            while:
+            - condition: state
+              entity_id: input_boolean.mode_stranger_things
+              state: 'on'
+            sequence:
+            - target:
+                entity_id: light.living_room_floor_lamp
+              data:
+                brightness_pct: '{{ range(5, 100) | random }}'
+                transition: 0
+              action: light.turn_on
+            - delay:
+                milliseconds: '{{ range(50, 250) | random }}'
+            - target:
+                entity_id: light.living_room_floor_lamp
+              data:
+                transition: 0
+              action: light.turn_off
+            - delay:
+                milliseconds: '{{ range(30, 180) | random }}'
+        - repeat:
+            while:
+            - condition: state
+              entity_id: input_boolean.mode_stranger_things
+              state: 'on'
+            sequence:
+            - target:
+                entity_id: light.living_room_sideboard_lamp
+              data:
+                brightness_pct: '{{ range(10, 90) | random }}'
+                transition: 0
+              action: light.turn_on
+            - delay:
+                milliseconds: '{{ range(60, 280) | random }}'
+            - target:
+                entity_id: light.living_room_sideboard_lamp
+              data:
+                transition: 0
+              action: light.turn_off
+            - delay:
+                milliseconds: '{{ range(40, 200) | random }}'
+        - repeat:
+            while:
+            - condition: state
+              entity_id: input_boolean.mode_stranger_things
+              state: 'on'
+            sequence:
+            - target:
+                entity_id: light.dining_room_bar_lamp
+              data:
+                brightness_pct: '{{ range(5, 85) | random }}'
+                transition: 0
+              action: light.turn_on
+            - delay:
+                milliseconds: '{{ range(70, 300) | random }}'
+            - target:
+                entity_id: light.dining_room_bar_lamp
+              data:
+                transition: 0
+              action: light.turn_off
+            - delay:
+                milliseconds: '{{ range(50, 220) | random }}'
+        - repeat:
+            while:
+            - condition: state
+              entity_id: input_boolean.mode_stranger_things
+              state: 'on'
+            sequence:
+            - target:
+                entity_id: light.guirlande_buffet
+              data:
+                brightness_pct: '{{ range(10, 100) | random }}'
+                transition: 0
+              action: light.turn_on
+            - delay:
+                milliseconds: '{{ range(40, 220) | random }}'
+            - target:
+                entity_id: light.guirlande_buffet
+              data:
+                transition: 0
+              action: light.turn_off
+            - delay:
+                milliseconds: '{{ range(30, 150) | random }}'
+        - repeat:
+            while:
+            - condition: state
+              entity_id: input_boolean.mode_stranger_things
+              state: 'on'
+            sequence:
+            - target:
+                entity_id: light.television_backlight
+              data:
+                brightness_pct: '{{ range(5, 100) | random }}'
+                transition: 0
+              action: light.turn_on
+            - delay:
+                milliseconds: '{{ range(50, 250) | random }}'
+            - target:
+                entity_id: light.television_backlight
+              data:
+                transition: 0
+              action: light.turn_off
+            - delay:
+                milliseconds: '{{ range(40, 180) | random }}'
+        - repeat:
+            while:
+            - condition: state
+              entity_id: input_boolean.mode_stranger_things
+              state: 'on'
+            sequence:
+            - target:
+                entity_id: light.kitchen_light_string
+              data:
+                brightness_pct: '{{ range(10, 100) | random }}'
+                transition: 0
+              action: light.turn_on
+            - delay:
+                milliseconds: '{{ range(40, 230) | random }}'
+            - target:
+                entity_id: light.kitchen_light_string
+              data:
+                transition: 0
+              action: light.turn_off
+            - delay:
+                milliseconds: '{{ range(30, 160) | random }}'
+  mode: restart
+- id: '1770058253221'
+  alias: Veilleuse - Maintien faible luminosité
+  description: S'assure que la veilleuse reste à une luminosité minimale lorsque le
+    mode nuit est activé.
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - light.veilleuse
+    attribute: brightness
+    above: 120
+  conditions:
+  - condition: state
+    entity_id: input_boolean.mode_nuit
+    state:
+    - 'on'
+    enabled: true
+  actions:
+  - action: light.turn_on
+    metadata: {}
+    target:
+      entity_id: light.veilleuse
+    data:
+      brightness: '{% set val = trigger.from_state.attributes.brightness | int(15)
+        %} {{ 15 if val > 120 else val }}
+
+        '
+    enabled: true
+  mode: single
+- id: '1770227763602'
+  alias: Actions - Mode Nuit
+  description: Éteint les lumières, ferme certains volets et verrouiller la maison
+    lorsque le mode nuit est activé.
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_boolean.mode_nuit
+    from:
+    - 'off'
+    to:
+    - 'on'
+  conditions:
+  - condition: state
+    entity_id: input_boolean.guest_mode
+    state:
+    - 'off'
+  actions:
+  - action: light.turn_off
+    metadata: {}
+    target:
+      entity_id:
+      - light.lumieres_rez_de_chaussee
+      - light.lumieres_exterieur
+    data: {}
+  - action: input_boolean.turn_on
+    metadata: {}
+    target:
+      entity_id: input_boolean.cat_garage_mode
+    data: {}
+  - action: cover.close_cover
+    metadata: {}
+    data: {}
+    target:
+      entity_id:
+      - cover.living_room_cemetery_shutter
+      - cover.living_room_garden_shutter
+  - if:
+    - condition: lock.is_unlocked
+      target:
+        entity_id: lock.porte_dentree
+      options:
+        behavior: any
+    then:
+    - action: button.press
+      metadata: {}
+      target:
+        entity_id: button.porte_dentree_verrouiller_silencieusement
+      data: {}
+  - if:
+    - condition: lock.is_unlocked
+      target:
+        entity_id: lock.porte_arriere
+      options:
+        behavior: any
+    then:
+    - action: lock.lock
+      metadata: {}
+      target:
+        entity_id: lock.porte_arriere
+      data: {}
+  mode: single
+- id: '1770227763603'
+  alias: Activation Mode Nuit - Présence au lit
+  description: Active le mode nuit quand Paul et Marina sont au lit après 21h, en
+    ignorant les personnes absentes
+  triggers:
+  - alias: Quand quelqu'un se met au lit pendant 1 minute
+    trigger: state
+    entity_id:
+    - binary_sensor.lit_paul_presence
+    - binary_sensor.lit_marina_presence
+    to:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+    from:
+    - 'off'
+  conditions:
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: person.paul
+      state: home
+    - condition: state
+      entity_id: person.marina
+      state: home
+    alias: Au moins une personne à la maison
+  - condition: or
+    conditions:
+    - condition: not
+      conditions:
+      - condition: state
+        entity_id: person.paul
+        state: home
+    - condition: state
+      entity_id: binary_sensor.lit_paul_presence
+      state: 'on'
+    alias: Paul absent ou Paul au lit
+  - condition: or
+    conditions:
+    - condition: not
+      conditions:
+      - condition: state
+        entity_id: person.marina
+        state: home
+    - condition: state
+      entity_id: binary_sensor.lit_marina_presence
+      state: 'on'
+    alias: Marina absente ou Marina au lit
+  - condition: time
+    after: '21:00:00'
+    before: 05:00:00
+    alias: Entre 21h00 et 05h00
+  - condition: state
+    entity_id: input_boolean.mode_nuit
+    state: 'off'
+    alias: Mode nuit est désactivé
+  actions:
+  - action: input_boolean.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: input_boolean.mode_nuit
+    alias: Activer le mode nuit
+  mode: single
+- id: '1772211801175'
+  alias: Salle de bain du bas - Éclairage intelligent
+  description: Automatisation pour contrôler l'éclairage dans la salle de bain en
+    fonction des capteurs de présence et de l'état de certains appareils.
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.capteur_de_presence_salle_de_bain_du_bas_occupation
+    from:
+    - 'off'
+    to:
+    - 'on'
+  - trigger: state
+    entity_id:
+    - binary_sensor.capteur_de_presence_salle_de_bain_du_bas_occupation
+    from:
+    - 'on'
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 3
+      seconds: 0
+  - trigger: state
+    entity_id:
+    - binary_sensor.seche_serviettes_rez_de_chaussee_boost
+    from:
+    - 'on'
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 3
+      seconds: 0
+  conditions:
+  - condition: state
+    entity_id: input_boolean.guest_mode
+    state:
+    - 'off'
+  actions:
+  - if:
+    - condition: or
+      conditions:
+      - condition: state
+        entity_id: binary_sensor.capteur_de_presence_salle_de_bain_du_bas_occupation
+        state:
+        - 'on'
+      - condition: state
+        entity_id: binary_sensor.seche_serviettes_rez_de_chaussee_boost
+        state:
+        - 'on'
+    then:
+    - condition: state
+      state:
+      - 'off'
+      entity_id: input_boolean.mode_nuit
+    - action: light.turn_on
+      metadata: {}
+      data:
+        brightness_pct: 100
+      target:
+        entity_id:
+        - light.spot_lavabo_rez_de_chaussee
+        - light.spots_salle_de_bain_rez_de_chaussee
+    else:
+    - action: light.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id:
+        - light.spot_lavabo_rez_de_chaussee
+        - light.spots_salle_de_bain_rez_de_chaussee
+  mode: single
+- id: '1773851670902'
+  alias: Chambre d'amis - Allumage automatique
+  description: Cette automatisation allume la lampe de chevet de la chambre d'amis
+    lorsque la porte est ouverte.
+  triggers:
+  - type: opened
+    device_id: fc66e38b6a83ba4ab01841dd1ee6da17
+    entity_id: 72ca61f93c985994c408dfe583a1ec57
+    domain: binary_sensor
+    metadata:
+      secondary: false
+    trigger: device
+  - type: not_opened
+    device_id: fc66e38b6a83ba4ab01841dd1ee6da17
+    entity_id: 72ca61f93c985994c408dfe583a1ec57
+    domain: binary_sensor
+    trigger: device
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: binary_sensor.multi_state_sensor_p100_porte
+      state:
+      - 'on'
+    then:
+    - action: light.turn_on
+      metadata: {}
+      target:
+        entity_id: light.guest_room_bedside_lamp
+      data: {}
+    else:
+    - action: light.turn_off
+      metadata: {}
+      target:
+        entity_id: light.guest_room_bedside_lamp
+      data: {}
+  mode: single
+- id: '1774114936057'
+  alias: Capteur qualité de l'air - Synchronisation à la détection
+  description: Synchronise l'heure de qualité de l'air lorsque la présence dans le
+    bureau est détectée.
+  triggers:
+  - trigger: binary_sensor.occupancy_detected
+    target:
+      entity_id: binary_sensor.study_presence_sensor_presence
+    options:
+      behavior: any
+  conditions: []
+  actions:
+  - action: button.press
+    metadata: {}
+    target:
+      entity_id: button.capteur_qualite_de_l_air_synchroniser_l_heure
+    data: {}
+  mode: single

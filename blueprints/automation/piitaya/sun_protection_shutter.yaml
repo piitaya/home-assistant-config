@@ -1,0 +1,214 @@
+blueprint:
+  name: Protection du soleil
+  author: Piitaya
+  description: Règle le volet en fonction de la position du soleil.
+  source_url: https://gist.github.com/piitaya/3ef9de56183dcdcfd4fb38c51c8a4f04
+  domain: automation
+  input:
+    shutter:
+      name: Volet
+      description: Volet à contrôler
+      selector:
+        entity:
+          filter:
+            - domain:
+                - cover
+          multiple: false
+    facade:
+      name: Façade
+      description: Façade du volet
+      selector:
+        entity:
+          include_entities:
+            - binary_sensor.front_facade_exposed
+            - binary_sensor.garden_facade_exposed
+            - binary_sensor.cemetary_facade_exposed
+          multiple: false
+    opening_sensor:
+      name: Capteur d'ouverture
+      description: Le volet utilisera la position non-exposée si la fenêtre est ouverte.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain:
+                - binary_sensor
+              device_class:
+                - opening
+                - window
+                - door
+                - garage_door
+          multiple: false
+    additional_protection:
+      name: Protection additionnelle
+      description:
+        Protection additionnelle pour le volet. Il peut s'agir d'une pergola
+        devant le volet par exemple. Si cette protection est fermée, le volet sera
+        considéré comme non-exposé.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain:
+                - cover
+          multiple: false
+    position_exposed:
+      name: Ouverture du volet au soleil
+      description:
+        L'ouverture du volet sera réglée à cette valeur si le volet est
+        exposé au soleil.
+      default: 15
+      selector:
+        number:
+          min: 5.0
+          max: 100.0
+          mode: slider
+          step: 5.0
+          unit_of_measurement: "%"
+    position_unexposed:
+      name: Ouverture du volet à l'ombre
+      description:
+        L'ouverture du volet sera réglée à cette valeur si le volet n'est
+        pas exposé au soleil.
+      default: 100
+      selector:
+        number:
+          min: 5.0
+          max: 100.0
+          mode: slider
+          step: 5.0
+          unit_of_measurement: "%"
+    custom_conditions:
+      name: Conditions personnalisées
+      description:
+        L'ouverture ou la fermeture des volets ne sera éxecutée que si
+        les conditions sont verifiées.
+      default: []
+      selector:
+        condition: {}
+mode: parallel
+max: 100
+trigger_variables:
+  opening_sensor_entity: !input opening_sensor
+  additional_protection_entity: !input additional_protection
+variables:
+  position_tolerance: 5
+  position_exposed: !input position_exposed
+  position_unexposed: !input position_unexposed
+  shutter_entity: !input shutter
+  opening_sensor_entity: !input opening_sensor
+triggers:
+  # - trigger: state
+  #   alias: Quand le volet était fermé et devient totalement ouvert
+  #   entity_id: !input shutter
+  #   attribute: current_position
+  #   from: 0
+  #   to: 100
+  - trigger: state
+    alias: Quand la position du soleil change
+    entity_id: !input facade
+    from: "off"
+    to: "on"
+  - trigger: state
+    alias: Quand la position du soleil change
+    entity_id: !input facade
+    from: "on"
+    to: "off"
+  - trigger: template
+    alias: Quand le capteur d'ouverture passe à l'état ouvert
+    value_template: "{{ is_state(opening_sensor_entity, 'on') }}"
+  - trigger: template
+    alias: Quand le capteur d'ouverture passe à l'état fermé
+    value_template: "{{ is_state(opening_sensor_entity, 'off') }}"
+  - trigger: template
+    alias: Quand la protection additionnelle passe à l'état ouvert
+    value_template: "{{ is_state(additional_protection_entity, 'open') }}"
+  - trigger: template
+    alias: Quand la protection additionnelle passe à l'état fermé
+    value_template: "{{ is_state(additional_protection_entity, 'closed') }}"
+  - trigger: state
+    entity_id: input_button.set_shutters_sun_position
+    to:
+  - trigger: event
+    event_type: call_service
+    event_data:
+      domain: cover
+      service: set_cover_position
+      service_data:
+        position: 100
+    id: open_cover
+  - trigger: event
+    event_type: call_service
+    event_data:
+      domain: cover
+      service: open_cover
+    id: open_cover
+conditions:
+  - condition: or
+    conditions:
+      - condition: and
+        conditions:
+          - condition: state
+            alias: Si le volet est ouvert
+            entity_id: !input shutter
+            state: "open"
+          - condition: template
+            value_template: >
+              {{ trigger.id != "open_cover" }}
+          - condition: and
+            conditions: !input custom_conditions
+      - condition: and
+        conditions:
+          - condition: state
+            alias: Si le volet est fermé
+            entity_id: !input shutter
+            state: "closed"
+          - condition: template
+            value_template: >
+              {% set eid = trigger.event.data.service_data.entity_id %}
+              {% set position = trigger.event.data.service_data.position | default(None) %}
+              {{
+                trigger.event.context.id != this.context.id
+                and trigger.id == "open_cover"
+                and (eid == shutter_entity or (eid is iterable and shutter_entity in eid))
+              }}
+
+actions:
+  - if:
+      - condition: not
+        alias: Si la fenêtre n'est pas ouverte
+        conditions:
+          - condition: template
+            value_template: "{{ is_state(opening_sensor_entity, 'on') }}"
+      - condition: not
+        alias: Si la protection additionnelle n'est pas fermé
+        conditions:
+          - condition: template
+            value_template: "{{ is_state(additional_protection_entity, 'closed') }}"
+      - condition: state
+        alias: Si la façace est exposée au soleil
+        entity_id: !input facade
+        state: "on"
+    then:
+      - condition: template
+        value_template:
+          "{% set shutter_position = state_attr(shutter_entity, 'current_position')
+          | int %} {{ (shutter_position - position_exposed) | abs > position_tolerance
+          }}"
+      - service: cover.set_cover_position
+        data:
+          position: "{{ position_exposed }}"
+        target:
+          entity_id: !input shutter
+    else:
+      - condition: template
+        value_template:
+          "{% set shutter_position = state_attr(shutter_entity, 'current_position')
+          | int %} {{ (shutter_position - position_unexposed) | abs > position_tolerance
+          }}"
+      - service: cover.set_cover_position
+        data:
+          position: "{{ position_unexposed }}"
+        target:
+          entity_id: !input shutter
+    enabled: true

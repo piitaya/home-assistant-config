@@ -1,0 +1,666 @@
+- id: '1666724777011'
+  name: Cinema - Lecture (noir complet)
+  entities:
+    light.living_room_floor_lamp:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      effect_list:
+      - 'off'
+      - candle
+      - fire
+      - prism
+      - sparkle
+      - opal
+      - glisten
+      - underwater
+      - cosmos
+      - sunbeam
+      - enchant
+      - sunrise
+      - sunset
+      supported_color_modes:
+      - color_temp
+      - xy
+      effect:
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
+      mode: normal
+      dynamics: none
+      icon: mdi:floor-lamp
+      friendly_name: Lampe sur pied
+      supported_features: 44
+      state: 'off'
+    light.living_room_ceiling_light:
+      supported_color_modes:
+      - brightness
+      color_mode:
+      brightness:
+      icon: hue:bulb-group-ceiling-round
+      friendly_name: 'Spots Salon '
+      supported_features: 32
+      state: 'off'
+    light.living_room_sideboard_lamp:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      effect_list:
+      - 'off'
+      - candle
+      - fire
+      - prism
+      - sparkle
+      - opal
+      - glisten
+      - underwater
+      - cosmos
+      - sunbeam
+      - enchant
+      - sunrise
+      - sunset
+      supported_color_modes:
+      - color_temp
+      - xy
+      effect:
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
+      mode: normal
+      dynamics: none
+      icon: phu:symfonisk-lampe
+      friendly_name: Lampe du buffet
+      supported_features: 44
+      state: 'off'
+    light.dining_room_bar_lamp:
+      min_color_temp_kelvin: 2202
+      max_color_temp_kelvin: 4504
+      min_mireds: 222
+      max_mireds: 454
+      effect_list:
+      - 'off'
+      - candle
+      - sparkle
+      - glisten
+      - sunrise
+      - sunset
+      supported_color_modes:
+      - color_temp
+      effect:
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
+      mode: normal
+      dynamics: none
+      icon: hue:bulb-filament
+      friendly_name: Lampe du bar
+      supported_features: 44
+      state: 'off'
+    light.guirlande_buffet:
+      effect_list:
+      - 0 Peachy
+      supported_color_modes:
+      - rgb
+      effect:
+      color_mode:
+      brightness:
+      hs_color:
+      rgb_color:
+      xy_color:
+      friendly_name: Guirlande Buffet
+      supported_features: 4
+      state: 'off'
+    light.kitchen_light_string:
+      effect_list: []
+      supported_color_modes:
+      - rgb
+      effect:
+      color_mode:
+      brightness:
+      hs_color:
+      rgb_color:
+      xy_color:
+      friendly_name: Guirlande Cuisine
+      supported_features: 4
+      state: 'off'
+  icon: mdi:theater
+  metadata:
+    light.guirlande_buffet:
+      entity_only: true
+    light.kitchen_light_string:
+      entity_only: true
+- id: '1666725067764'
+  name: Cinema - Lecture (tamisé)
+  entities:
+    light.living_room_floor_lamp:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      effect_list:
+      - 'off'
+      - candle
+      - fire
+      - prism
+      - sparkle
+      - opal
+      - glisten
+      - underwater
+      - cosmos
+      - sunbeam
+      - enchant
+      - sunrise
+      - sunset
+      supported_color_modes:
+      - color_temp
+      - xy
+      effect: 'off'
+      color_mode: color_temp
+      brightness: 48
+      color_temp_kelvin: 2624
+      color_temp: 381
+      hs_color:
+      - 28.567
+      - 68.208
+      rgb_color:
+      - 255
+      - 164
+      - 81
+      xy_color:
+      - 0.533
+      - 0.389
+      mode: normal
+      dynamics: none
+      icon: mdi:floor-lamp
+      friendly_name: Lampe sur pied
+      supported_features: 44
+      state: 'on'
+    light.living_room_ceiling_light:
+      supported_color_modes:
+      - brightness
+      color_mode:
+      brightness:
+      icon: hue:bulb-group-ceiling-round
+      friendly_name: 'Spots Salon '
+      supported_features: 32
+      state: 'off'
+    light.living_room_sideboard_lamp:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      effect_list:
+      - 'off'
+      - candle
+      - fire
+      - prism
+      - sparkle
+      - opal
+      - glisten
+      - underwater
+      - cosmos
+      - sunbeam
+      - enchant
+      - sunrise
+      - sunset
+      supported_color_modes:
+      - color_temp
+      - xy
+      effect: 'off'
+      color_mode: color_temp
+      brightness: 41
+      color_temp_kelvin: 2000
+      color_temp: 500
+      hs_color:
+      - 30.601
+      - 94.547
+      rgb_color:
+      - 255
+      - 137
+      - 14
+      xy_color:
+      - 0.598
+      - 0.383
+      mode: normal
+      dynamics: none
+      icon: phu:symfonisk-lampe
+      friendly_name: Lampe du buffet
+      supported_features: 44
+      state: 'on'
+    light.dining_room_bar_lamp:
+      min_color_temp_kelvin: 2202
+      max_color_temp_kelvin: 4504
+      min_mireds: 222
+      max_mireds: 454
+      effect_list:
+      - 'off'
+      - candle
+      - sparkle
+      - glisten
+      - sunrise
+      - sunset
+      supported_color_modes:
+      - color_temp
+      effect: 'off'
+      color_mode: color_temp
+      brightness: 54
+      color_temp_kelvin: 2202
+      color_temp: 454
+      hs_color:
+      - 29.79
+      - 84.553
+      rgb_color:
+      - 255
+      - 146
+      - 39
+      xy_color:
+      - 0.579
+      - 0.388
+      mode: normal
+      dynamics: none
+      icon: hue:bulb-filament
+      friendly_name: Lampe du bar
+      supported_features: 44
+      state: 'on'
+    light.kitchen_light_string:
+      effect_list: []
+      supported_color_modes:
+      - rgb
+      effect:
+      color_mode: rgb
+      brightness: 59
+      hs_color:
+      - 30.496
+      - 94.902
+      rgb_color:
+      - 255
+      - 136
+      - 13
+      xy_color:
+      - 0.599
+      - 0.382
+      friendly_name: Guirlande Cuisine
+      supported_features: 4
+      state: 'on'
+    light.guirlande_buffet:
+      effect_list:
+      - 0 Peachy
+      supported_color_modes:
+      - rgb
+      effect:
+      color_mode: rgb
+      brightness: 26
+      hs_color:
+      - 21.074
+      - 94.902
+      rgb_color:
+      - 255
+      - 98
+      - 13
+      xy_color:
+      - 0.644
+      - 0.344
+      friendly_name: Guirlande Buffet
+      supported_features: 4
+      state: 'on'
+  icon: mdi:theater
+  metadata:
+    light.kitchen_light_string:
+      entity_only: true
+    light.guirlande_buffet:
+      entity_only: true
+- id: '1683753483390'
+  name: Mode cosy
+  entities:
+    light.living_room_sideboard_lamp:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      effect_list:
+      - 'off'
+      - candle
+      - fire
+      - prism
+      - sparkle
+      - opal
+      - glisten
+      - underwater
+      - cosmos
+      - sunbeam
+      - enchant
+      - sunrise
+      - sunset
+      supported_color_modes:
+      - color_temp
+      - xy
+      effect: 'off'
+      color_mode: color_temp
+      brightness: 99
+      color_temp_kelvin: 2557
+      color_temp: 391
+      hs_color:
+      - 28.728
+      - 70.496
+      rgb_color:
+      - 255
+      - 161
+      - 75
+      xy_color:
+      - 0.541
+      - 0.389
+      mode: normal
+      dynamics: none
+      icon: phu:symfonisk-lampe
+      friendly_name: Lampe du buffet
+      supported_features: 44
+      state: 'on'
+    light.dining_room_bar_lamp:
+      min_color_temp_kelvin: 2202
+      max_color_temp_kelvin: 4504
+      min_mireds: 222
+      max_mireds: 454
+      effect_list:
+      - 'off'
+      - candle
+      - sparkle
+      - glisten
+      - sunrise
+      - sunset
+      supported_color_modes:
+      - color_temp
+      effect: 'off'
+      color_mode: color_temp
+      brightness: 173
+      color_temp_kelvin: 2202
+      color_temp: 454
+      hs_color:
+      - 29.79
+      - 84.553
+      rgb_color:
+      - 255
+      - 146
+      - 39
+      xy_color:
+      - 0.579
+      - 0.388
+      mode: normal
+      dynamics: none
+      icon: hue:bulb-filament
+      friendly_name: Lampe du bar
+      supported_features: 44
+      state: 'on'
+    light.living_room_floor_lamp:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      effect_list:
+      - 'off'
+      - candle
+      - fire
+      - prism
+      - sparkle
+      - opal
+      - glisten
+      - underwater
+      - cosmos
+      - sunbeam
+      - enchant
+      - sunrise
+      - sunset
+      supported_color_modes:
+      - color_temp
+      - xy
+      effect: 'off'
+      color_mode: color_temp
+      brightness: 178
+      color_temp_kelvin: 2583
+      color_temp: 387
+      hs_color:
+      - 28.664
+      - 69.597
+      rgb_color:
+      - 255
+      - 162
+      - 78
+      xy_color:
+      - 0.538
+      - 0.388
+      mode: normal
+      dynamics: none
+      icon: mdi:floor-lamp
+      friendly_name: Lampe sur pied
+      supported_features: 44
+      state: 'on'
+    light.living_room_ceiling_light:
+      supported_color_modes:
+      - brightness
+      color_mode: brightness
+      brightness: 126
+      icon: hue:bulb-group-ceiling-round
+      friendly_name: 'Spots Salon '
+      supported_features: 32
+      state: 'on'
+    light.television_backlight:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      effect_list:
+      - 'off'
+      - candle
+      - fire
+      - prism
+      - sparkle
+      - opal
+      - glisten
+      - underwater
+      - cosmos
+      - sunbeam
+      - enchant
+      - sunrise
+      - sunset
+      supported_color_modes:
+      - color_temp
+      - xy
+      effect: 'off'
+      color_mode: color_temp
+      brightness: 128
+      color_temp_kelvin: 2427
+      color_temp: 412
+      hs_color:
+      - 29.074
+      - 75.232
+      rgb_color:
+      - 255
+      - 156
+      - 63
+      xy_color:
+      - 0.554
+      - 0.389
+      mode: normal
+      dynamics: none
+      icon: mdi:television-ambient-light
+      friendly_name: Télévision
+      supported_features: 44
+      state: 'on'
+    light.kitchen_light_string:
+      effect_list: []
+      supported_color_modes:
+      - rgb
+      effect:
+      color_mode: rgb
+      brightness: 255
+      hs_color:
+      - 21.074
+      - 94.902
+      rgb_color:
+      - 255
+      - 98
+      - 13
+      xy_color:
+      - 0.644
+      - 0.344
+      friendly_name: Guirlande Cuisine
+      supported_features: 4
+      state: 'on'
+    light.guirlande_buffet:
+      effect_list:
+      - 0 Peachy
+      supported_color_modes:
+      - rgb
+      effect: 0 Peachy
+      color_mode: rgb
+      brightness: 125
+      hs_color:
+      - 21.074
+      - 94.902
+      rgb_color:
+      - 255
+      - 98
+      - 13
+      xy_color:
+      - 0.644
+      - 0.344
+      friendly_name: Guirlande Buffet
+      supported_features: 4
+      state: 'on'
+  icon: mdi:lightbulb-night
+  metadata:
+    light.television_backlight:
+      entity_only: true
+    light.kitchen_light_string:
+      entity_only: true
+    light.guirlande_buffet:
+      entity_only: true
+- id: '1718472232836'
+  name: Coucher Ariane
+  entities:
+    light.ariane_bedroom_bedside_lamp:
+      min_color_temp_kelvin: 1700
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 588
+      effect_list:
+      - Strobe color
+      - Police
+      - Christmas
+      - RGB
+      - Random Loop
+      - Fast Random Loop
+      - LSD
+      - Slowdown
+      - Night Mode
+      - Date Night
+      - Movie
+      - Sunrise
+      - Sunset
+      - Romance
+      - Happy Birthday
+      - Disco
+      - Strobe epilepsy!
+      - Alarm
+      - Police2
+      - WhatsApp
+      - Facebook
+      - Twitter
+      - Home
+      - Candle Flicker
+      - Tea Time
+      - Slow Temp
+      - Stop
+      supported_color_modes:
+      - color_temp
+      - hs
+      - rgb
+      effect:
+      color_mode: color_temp
+      brightness: 255
+      color_temp_kelvin: 2610
+      color_temp: 383
+      hs_color:
+      - 28.6
+      - 68.678
+      rgb_color:
+      - 255
+      - 163
+      - 79
+      xy_color:
+      - 0.536
+      - 0.389
+      flowing: false
+      music_mode: false
+      night_light: false
+      icon: mdi:lamp
+      friendly_name: Lampe de chevet Ariane
+      supported_features: 44
+      state: 'on'
+    light.study_ceiling_light:
+      supported_color_modes:
+      - brightness
+      color_mode: brightness
+      brightness: 255
+      icon: hue:bulb-group-ceiling-round
+      friendly_name: 'Spots Bureau '
+      supported_features: 32
+      state: 'on'
+    cover.ariane_bedroom_shutter:
+      current_position: 0
+      device_class: shutter
+      friendly_name: 'Volet Chambre Ariane '
+      supported_features: 15
+      state: closed
+    cover.study_shutter:
+      current_position: 0
+      device_class: shutter
+      friendly_name: 'Volet Bureau '
+      supported_features: 15
+      state: closed
+    cover.bedroom_shutter:
+      current_position: 0
+      device_class: shutter
+      friendly_name: 'Volet Chambre '
+      supported_features: 15
+      state: closed
+    cover.bathroom_shutter:
+      current_position: 0
+      device_class: shutter
+      friendly_name: 'Volet Salle de bain '
+      supported_features: 15
+      state: closed
+    cover.landing_shutter:
+      current_position: 0
+      device_class: shutter
+      friendly_name: 'Volet Palier '
+      supported_features: 15
+      state: closed
+  metadata:
+    light.ariane_bedroom_bedside_lamp:
+      entity_only: true
+    light.study_ceiling_light:
+      entity_only: true
+    cover.ariane_bedroom_shutter:
+      entity_only: true
+    cover.study_shutter:
+      entity_only: true
+    cover.bedroom_shutter:
+      entity_only: true
+    cover.bathroom_shutter:
+      entity_only: true
+    cover.landing_shutter:
+      entity_only: true

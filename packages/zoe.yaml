@@ -1,0 +1,4 @@
+homeassistant:
+  customize:
+    device_tracker.renault_zoe:
+      entity_picture: /local/images/renault_zoe.png

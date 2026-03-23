@@ -1,0 +1,32 @@
+Mushroom Custom:
+  primary-color: "#2f8dff"
+  ha-color-primary-05: "#05121f"
+  ha-color-primary-10: "#072340"
+  ha-color-primary-20: "#0d4273"
+  ha-color-primary-30: "#1760a6"
+  ha-color-primary-40: "#227ed9"
+  ha-color-primary-50: "#2f8dff"
+  ha-color-primary-60: "#59a4ff"
+  ha-color-primary-70: "#82bbff"
+  ha-color-primary-80: "#add2ff"
+  ha-color-primary-90: "#d6e8ff"
+  ha-color-primary-95: "#eaf4ff"
+  energy-grid-consumption-color-0: var(--green-color)
+  energy-grid-consumption-color-1: var(--deep-orange-color)
+  state-binary_sensor-window-on-color: var(--red-color)
+  state-binary_sensor-door-on-color: var(--red-color)
+  state-cover-garage-open-color: var(--red-color)
+  state-lock-locked-color: var(--grey-color)
+  state-alarm_control_panel-armed_night-color: var(--purple-color)
+  state-alarm_control_panel-armed_home-color: var(--blue-color)
+  state-device_tracker-not_home-color: var(--red-color)
+  state-person-not_home-color: var(--red-color)
+  state-switch-on-color: var(--green-color)
+  state-input_boolean-on-color: var(--green-color)
+  state-automation-on-color: var(--green-color)
+  mush-title-padding: 2px 4px
+  modes:
+    light:
+      ha-card-border-color: rgba(0, 0, 0, .08)
+    dark:
+      ha-card-border-color: rgba(255, 255, 255, .08)

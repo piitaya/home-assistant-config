@@ -1,0 +1,118 @@
+blueprint:
+  name: Reduce volume of a media player when a voice assistant is listening
+  description: 'Temporarily reduce the volume of every `media_player` in the same
+    area as the voice assistant when a command is in progress. The automation will
+    automatically skips `media_player` that are `off` or in `standby`.
+
+    '
+  domain: automation
+  author: JLo
+  input:
+    assist_satellite_entity:
+      name: Assist Sattelite
+      description: Assist Sattelite entity representing your voice assistant
+      selector:
+        entity:
+          filter:
+          - domain:
+            - assist_satellite
+          multiple: false
+    advanced:
+      name: Advanced Settings
+      icon: mdi:cog
+      description: Advanced settings of the blueprint
+      collapsed: true
+      input:
+        custom_target:
+          name: Custom target
+          description: By default, this blueprint targets every `media_player in the
+            same area as the voice assistant. Use this target to override this behavior.
+            The automation will automatically skips `media_player` that are `off`
+            or in `standby`.
+          default: {}
+          selector:
+            target:
+              entity:
+              - domain:
+                - media_player
+        custom_ducking_volume:
+          name: Custom ducking volume
+          description: By default, the blueprint ducks all `media_player` of the target
+            by 50%. If this is too loud, you can use this field to set an absolute
+            volume level. All `media_player` will be ducked to this volume.
+          default: ''
+          selector:
+            number:
+              min: 0.0
+              max: 1.0
+              step: 0.05
+              mode: slider
+  source_url: https://github.com/jlpouffier/home-assistant-config/blob/master/blueprints/automation/perso/reduce_volume_of_media_player_when_voice_assistant_listening_v2.yaml
+triggers:
+- trigger: state
+  entity_id: !input assist_satellite_entity
+  to: listening
+actions:
+- variables:
+    assist_satellite_entity: !input assist_satellite_entity
+    custom_target: !input custom_target
+    custom_ducking_volume: !input custom_ducking_volume
+    voice_assistant_players: "{{ expand(device_entities(device_id(assist_satellite_entity)))
+      |\n    selectattr('domain', 'eq', 'media_player') | \n    map(attribute='entity_id')
+      | \n    unique | \n    list\n}}\n"
+    default_target_media_players: "{% set players = expand(\n  area_entities(area_id(assist_satellite_entity))
+      ) | \n  selectattr('domain', 'eq', 'media_player') | \n  rejectattr('state',
+      'eq', 'off') | \n  rejectattr('state', 'eq', 'standby')  | \n  rejectattr('entity_id',
+      'in', voice_assistant_players)  | \n  map(attribute='entity_id') | \n  unique
+      | \n  list\n%}\n\n{{ players }}\n"
+    custom_target_media_players: "{% set area_ids = [custom_target.area_id] if custom_target.area_id
+      is string else custom_target.area_id | default([]) %}\n{% set device_ids = [custom_target.device_id]
+      if custom_target.device_id is string else custom_target.device_id | default([])
+      %}\n{% set entity_ids = [custom_target.entity_id] if custom_target.entity_id
+      is string else custom_target.entity_id | default([]) %}\n\n{% set area_entities
+      = expand(\n  area_ids | \n  map('area_entities') | \n  list) \n%}\n{% set device_entities
+      = expand(\n  device_ids | \n  map('device_entities') | \n  list) \n%}\n{% set
+      entity_entities = expand(entity_ids) %}\n\n{% set all_entities = area_entities
+      + device_entities + entity_entities %}\n\n{% set players = \n  all_entities
+      | \n  selectattr('domain', 'eq', 'media_player') | \n  rejectattr('state', 'eq',
+      'off')  | \n  rejectattr('state', 'eq', 'standby') | \n  rejectattr('entity_id',
+      'in', voice_assistant_players)  | \n  map(attribute='entity_id') | \n  unique
+      | \n  list \n%}\n\n{{ players }}\n"
+    final_target: '{{ custom_target_media_players if custom_target_media_players |
+      length > 0 else default_target_media_players }}
+
+      '
+    volumes: "[\n  {% for player in final_target %}\n    {\n      \"entity_id\": \"{{player}}\",\n
+      \     \"original_volume_level\": \"{{ state_attr(player,'volume_level') | float
+      }}\",\n      \"ducked_volume_level\": \"{{ min(custom_ducking_volume,state_attr(player,'volume_level')
+      | float ) if custom_ducking_volume is number else (state_attr(player,'volume_level')
+      | float (0) * 0.5) | round (2)}}\"\n    },\n  {% endfor %}\n]\n"
+- repeat:
+    for_each: '{{volumes}}'
+    sequence:
+      action: media_player.volume_set
+      data:
+        volume_level: '{{repeat.item.ducked_volume_level}}'
+        entity_id: '{{repeat.item.entity_id}}'
+- wait_for_trigger:
+  - trigger: state
+    entity_id: !input assist_satellite_entity
+    to: idle
+  timeout:
+    hours: 0
+    minutes: 1
+    seconds: 0
+    milliseconds: 0
+- repeat:
+    for_each: '{{volumes}}'
+    sequence:
+    - if:
+      - condition: template
+        value_template: '{{state_attr(repeat.item.entity_id, ''volume_level'') | float
+          == repeat.item.ducked_volume_level | float }}'
+      then:
+        action: media_player.volume_set
+        data:
+          volume_level: '{{repeat.item.original_volume_level}}'
+          entity_id: '{{repeat.item.entity_id}}'
+mode: single

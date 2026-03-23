@@ -1,0 +1,30 @@
+mqtt:
+  sensor:
+    - unique_id: 66648fdd-71a8-414d-9414-332abe0da818
+      name: Température
+      device_class: temperature
+      unit_of_measurement: °C
+      state_class: measurement
+      suggested_display_precision: 1
+      state_topic: bsb-lan/0/35/8830
+      device:
+        identifiers: "atlantic_heat_pump_water_heater"
+        name: Ballon d'eau chaude
+        configuration_url: "http://bsb-lan.local/"
+        manufacturer: "Atlantic"
+        model: Alfea Extensa Duo AI
+  binary_sensor:
+    - unique_id: 6fe0ba46-3433-44bd-9ebf-622f3ed3798d
+      name: État pompe à chaleur
+      entity_category: diagnostic
+      state_topic: bsb-lan/0/35/8820
+      value_template: "{{ 'ON' if value.split(' - ')[0] == '1' else 'OFF' }}"
+      device:
+        identifiers: "atlantic_heat_pump_water_heater"
+    - unique_id: 7fbd40e5-43ad-4af6-ba1c-3f2a13a9d267
+      name: État résistance électrique
+      entity_category: diagnostic
+      state_topic: bsb-lan/0/35/8821
+      value_template: "{{ 'ON' if value.split(' - ')[0] == '1' else 'OFF' }}"
+      device:
+        identifiers: "atlantic_heat_pump_water_heater"

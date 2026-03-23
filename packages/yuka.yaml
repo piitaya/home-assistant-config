@@ -1,0 +1,4 @@
+homeassistant:
+  customize:
+    device_tracker.yuka_mini:
+      entity_picture: /local/images/yuka_mini.png

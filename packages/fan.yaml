@@ -1,0 +1,29 @@
+template:
+  - button:
+      - unique_id: set_fan_angle_small
+        name: Ventilateur Régler un petit angle
+        icon: mdi:angle-acute
+        press:
+          - service: number.set_value
+            target:
+              entity_id: number.pedestal_fan_oscillation_angle
+            data:
+              value: 40
+      - unique_id: set_fan_angle_medium
+        name: Ventilateur Régler un angle moyen
+        icon: mdi:angle-right
+        press:
+          - service: number.set_value
+            target:
+              entity_id: number.pedestal_fan_oscillation_angle
+            data:
+              value: 80
+      - unique_id: set_fan_angle_large
+        name: Ventilateur Régler un grand angle
+        icon: mdi:angle-obtuse
+        press:
+          - service: number.set_value
+            target:
+              entity_id: number.pedestal_fan_oscillation_angle
+            data:
+              value: 120

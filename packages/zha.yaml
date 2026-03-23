@@ -1,0 +1,7 @@
+zha:
+  enable_quirks: true
+  custom_quirks_path: /config/custom_zha_quirks/
+  zigpy_config:
+    source_routing: true
+
+

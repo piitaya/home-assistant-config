@@ -1,0 +1,10 @@
+homeassistant:
+  customize:
+    sensor.linky_octopus_cout_hc:
+      state_class: total_increasing
+    sensor.linky_octopus_cout_hp:
+      state_class: total_increasing
+    sensor.linky_octopus_consommation_hc:
+      state_class: total_increasing
+    sensor.linky_octopus_consommation_hp:
+      state_class: total_increasing

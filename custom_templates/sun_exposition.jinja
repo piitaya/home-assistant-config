@@ -1,0 +1,12 @@
+{% macro is_exposed(orientation) %}
+{% set is_sunrise = as_timestamp(now()) < as_timestamp(today_at("12:00")) %}
+{% set azimuth = states('sensor.sun_solar_azimuth') | float(0) %}
+{% set elevation = states('sensor.sun_solar_elevation') | float(0) %}
+{% set max_sun_angle =  states('input_number.shutter_max_sun_angle') | float(0) %}
+{% if is_sunrise %}
+{% set min_sun_elevation = states('input_number.shutter_min_sun_elevation_sunrise') | float(0) %}
+{% else %}
+{% set min_sun_elevation = states('input_number.shutter_min_sun_elevation_sunset') | float(0) %}
+{% endif %}
+{{ (orientation - azimuth) | abs <= max_sun_angle and elevation >= min_sun_elevation }}
+{% endmacro %}

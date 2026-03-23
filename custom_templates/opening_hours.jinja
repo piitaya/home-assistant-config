@@ -1,0 +1,35 @@
+{%- macro opening_hours(entity, name, plural) -%}
+
+{%- set opening = state_attr(entity, 'start_time') | as_datetime -%}
+{%- set closing = state_attr(entity, 'end_time') | as_datetime -%}
+
+{%- set opening_hour = opening | as_timestamp | timestamp_custom('%H:%M', true) -%}
+{%- set closing_hour = closing | as_timestamp | timestamp_custom('%H:%M', true) -%}
+
+{%- set next_day = opening | as_timestamp | timestamp_custom('%j') | int -%}
+{%- set today = now() | as_timestamp | timestamp_custom('%j') | int -%}
+{%- if is_state(entity, "off")-%}
+{%- if plural -%}
+{{ name }} sont fermés et ouvriront
+{%- else -%}
+{{ name }} est fermé et ouvrira
+{%- endif -%}
+{%- if next_day == today -%}
+{{ " aujourd'hui " }}
+{%- elif next_day == today + 1 -%}
+{{ " demain " }}
+{%- else -%}
+{%- from 'easy_time.jinja' import weekday -%}
+{{ " " ~ weekday(opening.isoweekday(), "fr") ~ " " }}
+{%- endif -%}
+({{opening_hour}}-{{closing_hour}}).
+{%- endif -%}
+{%- if is_state(entity, "on")-%}
+{%- if plural -%}
+{{ name }} sont ouverts et fermeront à {{closing_hour}}.
+{%- else -%}
+{{ name }} est ouvert et fermera à {{closing_hour}}.
+{%- endif -%}
+{%- endif -%}
+
+{%- endmacro -%}

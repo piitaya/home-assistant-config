@@ -1,0 +1,4 @@
+homeassistant:
+  customize:
+    sensor.weather_station_event_rain_rate_piezo:
+      state_class: total_increasing

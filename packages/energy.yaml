@@ -1,0 +1,78 @@
+template:
+  - trigger:
+      - platform: state
+        entity_id: sensor.linky_peak_consumption_cost
+        not_to:
+          - "unknown"
+          - "unavailable"
+      - platform: time
+        at: "00:00:00"
+      - platform: homeassistant
+        event: start
+    action:
+      - action: recorder.get_statistics
+        data:
+          start_time: "{{ (today_at() - timedelta(hours=1)).isoformat() }}"
+          statistic_ids:
+            - sensor.linky_peak_consumption_cost
+          period: hour
+          types:
+            - sum
+        response_variable: cost_stats
+    sensor:
+      - name: "Cout Heures Pleines du Jour"
+        unique_id: daily_cout_hp_stats
+        unit_of_measurement: "EUR"
+        device_class: monetary
+        state_class: total
+        state: >
+          {% set entity_id = 'sensor.linky_peak_consumption_cost' %}
+          {% set stats_data = cost_stats.get('statistics', {}).get(entity_id, []) %}
+          {% if stats_data | length >= 2 %}
+            {% set first_sum = stats_data[0].sum %}
+            {% set last_sum = stats_data[-1].sum %}
+            {{ (last_sum - first_sum) | round(2) }}
+          {% else %}
+            0.0
+          {% endif %}
+        attributes:
+          last_reset: "{{ today_at() }}"
+
+  - trigger:
+      - platform: state
+        entity_id: sensor.linky_off_peak_consumption_cost
+        not_to:
+          - "unknown"
+          - "unavailable"
+      - platform: time
+        at: "00:00:00"
+      - platform: homeassistant
+        event: start
+    action:
+      - action: recorder.get_statistics
+        data:
+          start_time: "{{ (today_at() - timedelta(hours=1)).isoformat() }}"
+          statistic_ids:
+            - sensor.linky_off_peak_consumption_cost
+          period: hour
+          types:
+            - sum
+        response_variable: cost_stats
+    sensor:
+      - name: "Cout Heures Creuses du Jour"
+        unique_id: daily_cout_hc_stats
+        unit_of_measurement: "EUR"
+        device_class: monetary
+        state_class: total
+        state: >
+          {% set entity_id = 'sensor.linky_off_peak_consumption_cost' %}
+          {% set stats_data = cost_stats.get('statistics', {}).get(entity_id, []) %}
+          {% if stats_data | length >= 2 %}
+            {% set first_sum = stats_data[0].sum %}
+            {% set last_sum = stats_data[-1].sum %}
+            {{ (last_sum - first_sum) | round(2) }}
+          {% else %}
+            0.0
+          {% endif %}
+        attributes:
+          last_reset: "{{ today_at() }}"

@@ -1,0 +1,49 @@
+default_config:
+
+homeassistant:
+  packages: !include_dir_named packages/
+
+frontend:
+  themes: !include_dir_merge_named themes
+  extra_module_url:
+    - /hacsfiles/hass-hue-icons/hass-hue-icons.js
+    - /hacsfiles/custom-icons/custom-icons.js
+    - /hacsfiles/custom-brand-icons/custom-brand-icons.js
+    - /local/custom/mushroom-icons.js
+    - /local/custom/tesla-icons.js
+    - /local/community/ha-ui-zoom/ha-ui-zoom.js
+
+http:
+  ip_ban_enabled: true
+  login_attempts_threshold: 10
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - !secret http_trusted_proxy
+  cors_allowed_origins:
+    - http://localhost:8124
+    - !secret http_cors_origin_1
+    - !secret http_cors_origin_2
+    - https://cast.home-assistant.io
+    - !secret http_cors_origin_3
+
+logbook:
+  exclude:
+    entities:
+      - sensor.tesla_model_y_time_to_full_charge
+
+recorder:
+  exclude:
+    entities:
+      - sensor.tesla_model_y_time_to_full_charge
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+# assist_pipeline:
+#   debug_recording_dir: /share/assist_pipeline
+
+logger:
+  default: warning
+  filters:
+    aioecowitt.server:
+      - "Unhandled sensor type srain_piezo value .*"

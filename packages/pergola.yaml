@@ -1,0 +1,49 @@
+template:
+  - sensor:
+      - unique_id: pergola_sun_slat_angle
+        name: "Angle des lames de la pergola"
+        unit_of_measurement: "°"
+        icon: mdi:angle-acute
+        state: >
+          {% set sun_elevation = states('sensor.sun_solar_elevation') | float %}
+          {% set sun_azimuth = states('sensor.sun_solar_azimuth') | float %}
+          {% set slat_azimuth = 135 %}
+          {% set min_slat_angle = 0 %}
+          {% set max_slat_angle = 152 %}
+          {% set deg2rad = pi/180 %}
+          {% set sun_zenith = iif((sun_elevation | float) < 0, 90, 90 - (sun_elevation | float)) %}
+          {% set ground_angle = (atan(tan(sun_zenith*deg2rad)*sin((sun_azimuth - slat_azimuth) * deg2rad))/deg2rad) | abs%}
+          {% set over_axis = iif(sun_azimuth > slat_azimuth,-1,1) %}
+          {% set slat_angle = (ground_angle*over_axis + 90) | round(0) %}
+          {{ slat_angle }}
+
+      - unique_id: pergola_sun_slat_tilt
+        name: "Inclinaison des lames de la pergola"
+        unit_of_measurement: "%"
+        icon: mdi:percent
+        state: >
+          {% set min_angle = 0 %} 
+          {% set max_angle = 152 %}
+          {% set slat_angle = states('sensor.pergola_sun_slat_angle') | float %}
+          {% set slat_angle = iif(slat_angle < min_angle,min_angle,slat_angle) %}
+          {% set slat_angle = iif(slat_angle > max_angle,max_angle,slat_angle) %}
+          {% set slat_percent = ((slat_angle - min_angle) / (max_angle - min_angle) * 100) | round(0)  %} 
+          {{ slat_percent }}
+
+  - cover:
+      - unique_id: pergola_voice_assistant
+        open_cover:
+          - data:
+              entity_id: script.open_pergola_blades
+            action: script.turn_on
+        close_cover:
+          - data:
+              entity_id: script.close_pergola_blades
+            action: script.turn_on
+        stop_cover:
+          - data:
+              entity_id: cover.pergola
+            action: cover.stop_cover_tilt
+        default_entity_id: cover.pergola
+        name: Pergola
+        state: "{{ states('cover.pergola') }}"

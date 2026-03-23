@@ -1,0 +1,78 @@
+blueprint:
+  name: Porte/fenêtre ouverte
+  author: Piitaya
+  description: Exécute une action quand une porte ou une fenêtre est ouverte depuis un certain temps.
+  domain: automation
+  input:
+    opening_sensor:
+      name: Porte ou fenêtre
+      description: La porte ou fenêtre à surveiller
+      default: ""
+      selector:
+        entity:
+          filter:
+            domain: binary_sensor
+            device_class:
+              - opening
+              - window
+              - door
+              - garage_door
+    actions:
+      name: Actions
+      description: Action(s) à exécuter
+      selector:
+        action:
+      default: ""
+    duration:
+      name: Durée avant l'exécution de l'action
+      description: L'action sera exécutée si la durée d'ouverture est supérieure à cette durée
+      selector:
+        duration: {}
+      default:
+        hours: 0
+        minutes: 5
+        seconds: 0
+    reminder:
+      name: Rappel
+      description: L'action sera exécutée sera exécutée toutes les X minutes.
+      selector:
+        duration: {}
+      default:
+        hours: 0
+        minutes: 5
+        seconds: 0
+triggers:
+  - alias: Quand la fenêtre ou la porte est ouverte pendant X minutes
+    trigger: state
+    entity_id: !input opening_sensor
+    for: !input duration
+    to: "on"
+    from: "off"
+  - alias: Quand Home Assistant a démarré
+    trigger: homeassistant
+    event: start
+conditions:
+  - alias: Si la fenêtre ou la porte est ouverte pendant X minutes
+    condition: state
+    entity_id: !input opening_sensor
+    state: "on"
+    for: !input duration
+actions:
+  - alias: Envoyer les notifications
+    repeat:
+      until:
+        - condition: state
+          entity_id: !input opening_sensor
+          state: "off"
+          alias: Jusqu'à ce que la porte ou la fenêtre soit fermée
+      sequence:
+        - alias: Actions à exécuter
+          sequence: !input actions
+        - alias: Attendre que la porte ou la fenêtre soit fermée ou X minutes
+          wait_for_trigger:
+            - trigger: state
+              entity_id: !input opening_sensor
+              to: "off"
+              alias: Porte ou fenêtre fermée
+          timeout: !input reminder
+mode: restart

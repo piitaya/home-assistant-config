@@ -1,0 +1,21 @@
+input_datetime:
+  last_pill_taken:
+    has_date: true
+    has_time: true
+    name: Dernière prise de pilule
+    icon: mdi:pill
+
+template:
+  - trigger:
+      - platform: time_pattern
+        minutes: 0
+      - platform: state
+        entity_id: input_datetime.last_pill_taken
+    binary_sensor:
+      - unique_id: "pill_notification"
+        name: "Pilule à prendre"
+        icon: mdi:pill
+        state: |
+          {% set is_after_1845 = as_timestamp(today_at("18:45")) < as_timestamp(now()) %}
+          {% set is_pill_taken = as_timestamp(states("input_datetime.last_pill_taken")) < as_timestamp(today_at("18:00")) %}
+          {{ iif(is_after_1845 and is_pill_taken, "on", "off") }}

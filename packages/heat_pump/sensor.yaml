@@ -1,0 +1,31 @@
+mqtt:
+  sensor:
+    - unique_id: 68f52d6c-f837-46b5-a2ce-32fc9e4a770e
+      name: Etat du circuit de chauffage 1
+      state_topic: bsb-lan/0/32/8000
+      device:
+        identifiers: "atlantic_heat_pump"
+        name: Pompe à chaleur
+        configuration_url: "http://bsb-lan.local/"
+        manufacturer: "Atlantic"
+        model: Alfea Extensa Duo AI
+    - unique_id: ce64f55a-03c7-4d8c-9291-13aaefbdcb5e
+      name: Etat du circuit de chauffage 2
+      state_topic: bsb-lan/0/32/8001
+      device:
+        identifiers: "atlantic_heat_pump"
+    - unique_id: cd903ca5-74f1-4577-b9c1-47ba65c4129b
+      name: Etat du circuit de rafraîchissement 2
+      state_topic: bsb-lan/0/32/8025
+      device:
+        identifiers: "atlantic_heat_pump"
+    - unique_id: d9a8c0f8-f461-4c56-b90a-398cd9e19baf
+      name: Etat de l'ECS
+      state_topic: bsb-lan/0/32/8003
+      device:
+        identifiers: "atlantic_heat_pump"
+    - unique_id: 4894f805-6b38-4369-a988-a976f9109e9c
+      name: Etat pompe à chaleur
+      state_topic: bsb-lan/0/32/8006
+      device:
+        identifiers: "atlantic_heat_pump"

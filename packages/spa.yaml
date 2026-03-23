@@ -1,0 +1,39 @@
+template:
+  - trigger:
+      - platform: time_pattern
+        minutes: "/5"
+      - platform: state
+        entity_id:
+          - switch.spa_bubble
+          - switch.spa_filter
+      - platform: state
+        entity_id:
+          - climate.spa_thermostat
+        attribute: hvac_action
+      - platform: homeassistant
+        event: start
+    sensor:
+      - unique_id: spa_power
+        name: "Spa Puissance"
+        unit_of_measurement: "W"
+        state_class: measurement
+        device_class: power
+        attributes:
+          template_last_updated: "{{ as_datetime(now()) }}"
+        state: >
+          {% set is_heating = is_state_attr("climate.spa_thermostat", "hvac_action", "heating") %}
+          {% set bubble_on = is_state("switch.spa_bubble", "on") %}
+          {% set filter_on = is_state("switch.spa_filter", "on") %}
+          {%- if is_heating and bubble_on -%}
+          1900
+          {%- elif is_heating -%}
+          2100
+          {%- elif bubble_on and filter_on -%}
+          850
+          {%- elif bubble_on -%}
+          800
+          {%- elif filter_on -%}
+          40
+          {%- else -%}
+          0
+          {%- endif -%}

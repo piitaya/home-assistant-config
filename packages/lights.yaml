@@ -1,0 +1,11 @@
+template:
+  - sensor:
+      - unique_id: "lights_on_count"
+        name: "Nombre de lumières allumées"
+        icon: mdi:lamps
+        state_class: measurement
+        state: |
+          {{ state_attr('light.all', 'entity_id') 
+            | select('is_state', 'on') 
+            | list 
+            | count }}

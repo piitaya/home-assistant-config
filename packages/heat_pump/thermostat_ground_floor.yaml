@@ -1,0 +1,86 @@
+mqtt:
+  sensor:
+    - unique_id: dc6bcac2-f469-4f00-8279-60d9353d90d4
+      name: Température
+      device_class: temperature
+      unit_of_measurement: °C
+      state_class: measurement
+      suggested_display_precision: 1
+      state_topic: bsb-lan/0/35/8770
+      device:
+        identifiers: "atlantic_heat_pump_thermostat_ground_floor"
+        name: Thermostat Rez-de-chaussée
+        configuration_url: "http://bsb-lan.local/"
+        manufacturer: "Atlantic"
+        model: Alfea Extensa Duo AI
+  climate:
+    - unique_id: 216e1b68-528c-42f5-925b-74959203e614
+      name: Thermostat
+      modes:
+        - auto
+        - heat
+        - "off"
+      min_temp: 10
+      max_temp: 35
+      temp_step: 0.5
+      temperature_unit: C
+      mode_state_topic: bsb-lan/0/13/1000
+      mode_state_template: >-
+        {% set v = value.split(' - ')[0] %}
+        {% set modes = { '0':'off', '1':'auto', '2':'heat', '3':'heat'} %}
+        {{ modes[v] if v in modes.keys() else 'off' }}
+      current_temperature_topic: bsb-lan/0/35/8770
+      temperature_state_topic: bsb-lan/0/35/8771
+      action_topic: bsb-lan/0/32/8001
+      action_template: >-
+        {% set v = value.split(' - ')[0] %}
+        {% set defrosting = ['23'] %}
+        {% set preheating= ['112'] %}
+        {% set heating = ['114', '116'] %}
+        {% if v in defrosting %}
+        defrosting
+        {% elif v in preheating %}
+        preheating
+        {% elif v in heating %}
+        heating
+        {% else %}
+        idle
+        {% endif %}
+      device:
+        identifiers: "atlantic_heat_pump_thermostat_ground_floor"
+    - unique_id: 41a10823-99ce-48b6-b716-208bb7bbf253
+      name: Plancher rafraîchissant
+      modes:
+        - auto
+        - cool
+        - "off"
+      min_temp: 10
+      max_temp: 35
+      temp_step: 0.1
+      temperature_unit: C
+      mode_state_topic: bsb-lan/0/14/1201
+      mode_state_template: >-
+        {% set v = value.split(' - ')[0] %}
+        {% set modes = { '0':'cool', '1':'auto', '2':'cool', '3':'cool'} %}
+        {{ modes[v] if v in modes.keys() else 'off' }}
+      current_temperature_topic: bsb-lan/0/35/8770
+      temperature_state_topic: bsb-lan/0/35/8771
+      action_topic: bsb-lan/0/32/8025
+      action_template: >-
+        {% set v = value.split(' - ')[0] %}
+        {% set cooling = ['23'] %}
+        {% if v in cooling %}
+        cooling
+        {% else %}
+        idle
+        {% endif %}
+      device:
+        identifiers: "atlantic_heat_pump_thermostat_ground_floor"
+  binary_sensor:
+    - unique_id: f1da0ad5-e603-4137-8671-0b872031a57e
+      name: État pompe à chaleur
+      entity_category: diagnostic
+      state_topic: bsb-lan/0/35/8760
+      value_template: "{{ 'ON' if value.split(' - ')[0] == '1' else 'OFF' }}"
+      device:
+        identifiers: "atlantic_heat_pump_thermostat_ground_floor"

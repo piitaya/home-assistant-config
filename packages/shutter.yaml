@@ -1,0 +1,28 @@
+input_number:
+  shutter_max_sun_angle:
+    name: Angle d'incidence maximal du soleil sur les volets
+    icon: mdi:sun-angle
+    min: 0
+    max: 180
+    step: 5
+    initial: 90
+    mode: slider
+    unit_of_measurement: "°"
+  shutter_min_sun_elevation_sunrise:
+    name: Élevation minimale du soleil sur les volets (levé)
+    icon: mdi:sun-angle
+    min: 0
+    max: 90
+    step: 5
+    initial: 15
+    mode: slider
+    unit_of_measurement: "°"
+  shutter_min_sun_elevation_sunset:
+    name: Élevation minimale du soleil sur les volets (couché)
+    icon: mdi:sun-angle
+    min: 0
+    max: 90
+    step: 5
+    initial: 15
+    mode: slider
+    unit_of_measurement: "°"

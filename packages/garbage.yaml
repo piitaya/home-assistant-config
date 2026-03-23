@@ -1,0 +1,31 @@
+input_boolean:
+  garbage_out:
+    name: "Poubelles sorties"
+    icon: mdi:delete-empty
+
+template:
+  - binary_sensor:
+      - name: "Ordures ménagères à sortir"
+        icon: phu:garbage-residual
+        unique_id: "take_out_non_recyclable_garbage"
+        state: |
+          {% set d = now() %}
+          {% set day = 5 %}
+          {% set after_hour = 18 %}
+          {% set before_hour = 9 %}
+          {{ (d.isoweekday() == day and d.hour < before_hour) 
+          or (d.isoweekday() == day - 1 and d.hour > after_hour) }}
+      - name: "Poubelles recyclables à sortir"
+        icon: mdi:recycle
+        unique_id: "take_out_recyclable_garbage"
+        state: |
+          {% set d = now() %}
+          {% set day = 2 %}
+          {% set after_hour = 18 %}
+          {% set before_hour = 12 %}
+          {% if d.isocalendar().week % 2 == 1 %}
+          {{ (d.isoweekday() == day and d.hour < before_hour) 
+          or (d.isoweekday() == day - 1 and d.hour > after_hour) }}
+          {% else %}
+          {{ false }}
+          {% endif %}

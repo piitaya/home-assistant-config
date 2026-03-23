@@ -1,0 +1,138 @@
+input_boolean:
+  vacuum_zone_living_room:
+    icon: hue:room-living
+    name: Aspirateur Zone Salon
+  vacuum_zone_dining_room:
+    icon: hue:room-dining
+    name: Aspirateur Zone Salle à manger
+  vacuum_zone_kitchen:
+    icon: hue:room-kitchen
+    name: Aspirateur Zone Cuisine
+  vacuum_zone_hall:
+    icon: hue:room-hallway
+    name: Aspirateur Zone Entrée
+  vacuum_zone_toilets:
+    icon: mdi:paper-roll
+    name: Aspirateur Zone Toilettes
+  vacuum_zone_guest_room:
+    icon: hue:room-guestroom
+    name: Aspirateur Zone Chambre d'amis
+  vacuum_zone_laundry:
+    icon: hue:room-laundry
+    name: Aspirateur Zone Buanderie
+  vacuum_zone_guest_room_bathroom:
+    icon: mdi:shower-head
+    name: Aspirateur Zone Salle de bain du bas
+  vacuum_zone_stair:
+    icon: hue:room-stairs
+    name: Aspirateur Zone Palier
+  vacuum_zone_bathroom:
+    icon: hue:room-bathroom
+    name: Aspirateur Zone Salle de bain du haut
+  vacuum_zone_ariane_bedroom:
+    icon: hue:room-kids
+    name: Aspirateur Zone Chambre d'Ariane
+  vacuum_zone_study:
+    icon: hue:room-office
+    name: Aspirateur Zone Bureau
+  vacuum_zone_bedroom:
+    icon: hue:room-bedroom
+    name: Aspirateur Zone Chambre
+
+homeassistant:
+  customize:
+    input_boolean.vacuum_zone_guest_room_bathroom:
+      vacuum_name: "alfred"
+    input_boolean.vacuum_zone_dining_room:
+      vacuum_name: "alfred"
+    input_boolean.vacuum_zone_laundry:
+      vacuum_name: "alfred"
+    input_boolean.vacuum_zone_toilets:
+      vacuum_name: "alfred"
+    input_boolean.vacuum_zone_living_room:
+      vacuum_name: "alfred"
+    input_boolean.vacuum_zone_hall:
+      vacuum_name: "alfred"
+    input_boolean.vacuum_zone_guest_room:
+      vacuum_name: "alfred"
+    input_boolean.vacuum_zone_kitchen:
+      vacuum_name: "alfred"
+    input_boolean.vacuum_zone_ariane_bedroom:
+      vacuum_name: "edgar"
+    input_boolean.vacuum_zone_study:
+      vacuum_name: "edgar"
+    input_boolean.vacuum_zone_stair:
+      vacuum_name: "edgar"
+    input_boolean.vacuum_zone_bedroom:
+      vacuum_name: "edgar"
+    input_boolean.vacuum_zone_bathroom:
+      vacuum_name: "edgar"
+
+template:
+  - sensor:
+      - unique_id: b7e4f1a2-3c9d-4e8f-a5b6-c7d8e9f0a1b2
+        name: "Pièces sélectionnées (Alfred)"
+        icon: mdi:home-floor-0
+        unit_of_measurement: "Pièces"
+        state: |
+          {{
+            expand(states.input_boolean)
+              | selectattr('attributes.vacuum_name', 'defined')
+              | selectattr('attributes.vacuum_name', 'eq', 'alfred')
+              | selectattr('state', 'eq', 'on')
+              | list
+              | map(attribute='entity_id')
+              | list
+              | map('area_id')
+              | select('ne', None)
+              | list
+              | count
+          }}
+        attributes:
+          area_ids: |
+            {{
+              expand(states.input_boolean)
+                | selectattr('attributes.vacuum_name', 'defined')
+                | selectattr('attributes.vacuum_name', 'eq', 'alfred')
+                | selectattr('state', 'eq', 'on')
+                | list
+                | map(attribute='entity_id')
+                | list
+                | map('area_id')
+                | select('ne', None)
+                | list
+                | sort
+            }}
+      - unique_id: c8f5a2b3-4d0e-5f9a-b6c7-d8e9f0a1b2c3
+        name: "Pièces sélectionnées (Edgar)"
+        icon: mdi:home-floor-1
+        unit_of_measurement: "Pièces"
+        state: |
+          {{
+            expand(states.input_boolean)
+              | selectattr('attributes.vacuum_name', 'defined')
+              | selectattr('attributes.vacuum_name', 'eq', 'edgar')
+              | selectattr('state', 'eq', 'on')
+              | list
+              | map(attribute='entity_id')
+              | list
+              | map('area_id')
+              | select('ne', None)
+              | list
+              | count
+          }}
+        attributes:
+          area_ids: |
+            {{
+              expand(states.input_boolean)
+                | selectattr('attributes.vacuum_name', 'defined')
+                | selectattr('attributes.vacuum_name', 'eq', 'edgar')
+                | selectattr('state', 'eq', 'on')
+                | list
+                | map(attribute='entity_id')
+                | list
+                | map('area_id')
+                | select('ne', None)
+                | list
+                | sort
+            }}

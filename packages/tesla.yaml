@@ -1,0 +1,18 @@
+homeassistant:
+  customize:
+    device_tracker.tesla_model_y:
+      entity_picture: /local/images/tesla_model_y.png
+    device_tracker.tesla_model_y_precise:
+      entity_picture: /local/images/tesla_model_y.png
+mqtt:
+  device_tracker:
+    name: Position
+    unique_id: d7711deb-ab43-4502-a47f-902c70bcde91
+    device:
+      identifiers: [teslamate_car_1]
+      configuration_url: !secret teslamate_url
+      manufacturer: Tesla
+      model: Model Y
+      name: Tesla Model Y
+    json_attributes_topic: "teslamate/cars/1/location"
+    icon: mdi:crosshairs-gps

@@ -1,0 +1,15 @@
+template:
+  - binary_sensor:
+      - unique_id: "washing_machine"
+        name: "Machine à laver"
+        icon: mdi:washing-machine
+        state: "{{ states('sensor.washing_machine_outlet_power') | float(0) > 1 }}"
+        device_class: "running"
+        delay_on: "00:03:00"
+        delay_off: "00:03:00"
+      - unique_id: "dryer"
+        name: "Sèche-linge"
+        icon: mdi:tumble-dryer
+        state: "{{ states('sensor.dryer_outlet_power') | float(0) > 8 }}"
+        device_class: "running"
+        delay_off: "00:03:00"

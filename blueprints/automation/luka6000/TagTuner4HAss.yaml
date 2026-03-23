@@ -1,0 +1,459 @@
+blueprint:
+  name: TagTuner music player for NFC tags automation
+  description: https://github.com/luka6000/TagTuner#using-tagtuner
+  author: LukaGra v250503
+  domain: automation
+  input:
+    tuner_id:
+      name: TagTuner for ESPHome
+      description: This is your NFC tuner device
+      selector:
+        device:
+          filter:
+          - integration: esphome
+          multiple: false
+    massplayer:
+      name: Music Assistant media player
+      description: This is your MAss media player for this tuner
+      default: media_player.NO_MAss
+      selector:
+        entity:
+          filter:
+          - integration: music_assistant
+          multiple: false
+    httpplayer:
+      name: Home Assistant media player
+      description: Controls play/stop/volume and maybe plays http playlists. Choose
+        same MAss media player as above in case you don't know better
+      selector:
+        entity:
+          filter:
+          - domain:
+            - media_player
+          multiple: false
+    options:
+      name: Additional settings
+      collapsed: true
+      input:
+        stop_on_tagremoved:
+          name: Stop music
+          description: on tag removed
+          selector:
+            boolean: {}
+          default: true
+        next_on_rescan:
+          name: Skip track
+          description: on tag rescan
+          selector:
+            boolean: {}
+          default: true
+        shuffle_playlist:
+          name: Shuffle
+          description: every playlist
+          selector:
+            boolean: {}
+          default: false
+        default_volume_set:
+          name: Default volume
+          description: set on tag scanned
+          selector:
+            boolean: {}
+          default: false
+        default_volume:
+          name: Default volume
+          description: start playing with
+          default: 0.3
+          selector:
+            number:
+              min: 0.0
+              max: 1.0
+              step: 0.01
+              mode: slider
+        max_volume:
+          name: Volume limiter
+          description: maximum allowed volume
+          default: 1
+          selector:
+            number:
+              min: 0.0
+              max: 1.0
+              step: 0.01
+              mode: slider
+        announce_playlist:
+          name: Announce
+          description: every playlist
+          selector:
+            boolean: {}
+          default: false
+        speaktts:
+          name: Choose TTS engine
+          description: for announcements
+          selector:
+            entity:
+              filter:
+              - domain:
+                - tts
+              multiple: false
+          default: tts.home_assistant_cloud
+        version:
+          name: Blueprint version
+          description: just for you to know
+          default: 250308
+        notify_version:
+          name: Notify about version
+          description: mismatch of automation vs yaml firmware
+          selector:
+            boolean: {}
+          default: true
+  source_url: https://raw.githubusercontent.com/luka6000/TagTuner/refs/heads/main/blueprints/TagTuner4HAss.yaml
+variables:
+  device_id: !input tuner_id
+  massplayer: !input massplayer
+  httpplayer: !input httpplayer
+  stop_on_tagremoved: !input stop_on_tagremoved
+  next_on_rescan: !input next_on_rescan
+  action: "{%if trigger.event.event_type == 'tag_scanned' %}\n  tagScanned\n{%elif
+    trigger.event.data.action == 'tag_scanned' %}\n  tagScanned\n{%elif trigger.event.data.action
+    == 'tag_removed' %}\n  tagRemoved\n{%elif trigger.event.data.action == 'volume_up'
+    %}\n  volumeUp\n{%elif trigger.event.data.action == 'volume_down' %}\n  volumeDown\n{%else%}\n
+    \ {{ trigger.event.data.action }}\n{%endif%}"
+  uri: "{%if trigger.event.event_type == 'tag_scanned' %}\n  {{ trigger.event.data.name
+    }}\n{%else%}\n  {{ trigger.event.data.uri }}\n{%endif%}"
+  source: "{%if uri[0:5]=='https' %}\n  http\n{%elif uri[0:10]=='sonos-2://' %}\n
+    \ sonos\n{%elif uri[0:14]=='apple_music://'\n  or uri[0:9]=='deezer://'\n  or
+    uri[0:18]=='filesystem_local--'\n  or uri[0:16]=='filesystem_smb--'\n  or uri[0:7]=='plex://'\n
+    \ or uri[0:8]=='qobuz://'\n  or uri[0:15]=='radiobrowser://'\n  or uri[0:13]=='soundcloud://'\n
+    \ or uri[0:10]=='spotify://'\n  or uri[0:8]=='tidal://'\n  or uri[0:9]=='tunein://'\n
+    \ or uri[0:10]=='ytmusic://'\n  or uri[0:10]=='library://'\n  %}mass\n{%endif%}"
+  text_playlist_uri: "{% for entity in device_entities(device_id) %}\n  {% if entity|contains(\"playlist_uri\")
+    %}\n    {{ entity }}\n  {% endif%}\n{% endfor%}"
+  text_playlist_artist: "{% for entity in device_entities(device_id) %}\n  {% if entity|contains(\"playlist_artist\")
+    %}\n    {{ entity }}\n  {% endif%}\n{% endfor%}"
+  text_playlist_name: "{% for entity in device_entities(device_id) %}\n  {% if entity|contains(\"playlist_name_or_album_title\")
+    %}\n    {{ entity }}\n  {% endif%}\n{% endfor%}"
+  announce_playlist: !input announce_playlist
+  shuffle_config: !input shuffle_playlist
+  shuffle_playlist: '{%if shuffle_config == true or uri[-8:]==''/shuffle'' %}{{true}}{%else%}{{false}}{%endif%}'
+  max_volume: !input max_volume
+  notify_version: !input notify_version
+  blprnt_version: !input version
+  default_volume_set: !input default_volume_set
+triggers:
+- trigger: event
+  event_type: esphome.tagtuner
+- trigger: event
+  event_type: tag_scanned
+conditions:
+- condition: template
+  value_template: '{{ trigger.event.data.device_id == device_id }}'
+actions:
+- choose:
+  - conditions:
+    - condition: template
+      value_template: '{{ action == "tagRemoved" }}'
+    sequence:
+    - condition: template
+      value_template: '{{ stop_on_tagremoved == true }}'
+    - action: media_player.media_pause
+      target:
+        entity_id: !input httpplayer
+    - action: media_player.shuffle_set
+      data:
+        shuffle: false
+      target:
+        entity_id:
+        - !input httpplayer
+        - !input massplayer
+    alias: tag_removed
+  - conditions:
+    - condition: template
+      value_template: '{{ action == "tagScanned" and source != "" }}'
+    - condition: template
+      value_template: '{{ is_state(text_playlist_uri, uri) }}'
+    - condition: template
+      value_template: '{{ next_on_rescan == true }}'
+    - condition: not
+      conditions:
+      - condition: state
+        entity_id: !input massplayer
+        state: paused
+        for:
+          hours: 0
+          minutes: 0
+          seconds: 3
+    sequence:
+    - alias: play next
+      choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ action == "tagScanned" and source == "sonos" and trigger.event.data.playlist
+            != "" }}'
+        sequence:
+        - action: media_player.media_next_track
+          target:
+            entity_id: !input httpplayer
+        - action: media_player.media_play
+          target:
+            entity_id: !input httpplayer
+        alias: sonos
+      - conditions:
+        - condition: template
+          value_template: '{{ action == "tagScanned" and source == "mass" }}'
+        sequence:
+        - action: media_player.media_next_track
+          target:
+            entity_id: !input massplayer
+        - action: media_player.media_play
+          target:
+            entity_id: !input massplayer
+        alias: mass
+      - conditions:
+        - condition: template
+          value_template: '{{ action == "tagScanned" and source not in ("sonos", "mass",
+            "") }}'
+        sequence:
+        - action: media_player.media_next_track
+          target:
+            entity_id: !input httpplayer
+        - action: media_player.media_play
+          target:
+            entity_id: !input httpplayer
+        alias: http
+    alias: tag_scanned same rescan
+  - conditions:
+    - condition: template
+      value_template: '{{ action == "tagScanned" and source != "" }}'
+    sequence:
+    - parallel:
+      - sequence:
+        - condition: template
+          value_template: '{{ announce_playlist == true }}'
+        - delay:
+            hours: 0
+            minutes: 0
+            seconds: 0
+            milliseconds: 100
+        - choose:
+          - conditions:
+            - condition: template
+              value_template: '{{ trigger.event.event_type == ''tag_scanned'' }}'
+            sequence:
+            - action: tts.speak
+              target:
+                entity_id: !input speaktts
+              data:
+                media_player_entity_id: !input httpplayer
+                message: tag scanned
+                language: en-US
+            alias: plain
+          - conditions:
+            - condition: template
+              value_template: '{{ trigger.event.event_type != ''tag_scanned'' }}'
+            sequence:
+            - action: tts.speak
+              target:
+                entity_id: !input speaktts
+              data:
+                media_player_entity_id: !input httpplayer
+                message: '{{ states(text_playlist_artist) }} {{ states(text_playlist_name)
+                  }}'
+                language: en-US
+            alias: from tag
+        alias: announcement
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ action == "tagScanned" and source == "sonos" and trigger.event.data.playlist
+              != "" }}'
+          sequence:
+          - action: media_player.media_stop
+            target:
+              entity_id: !input httpplayer
+          - action: media_player.select_source
+            data:
+              source: '{{ trigger.event.data.playlist }}'
+            target:
+              entity_id: !input httpplayer
+          alias: sonos
+        - conditions:
+          - condition: template
+            value_template: '{{ action == "tagScanned" and source == "mass" }}'
+          sequence:
+          - action: media_player.play_media
+            data:
+              media_content_type: music
+              media_content_id: '{%if uri[-8:] == ''/shuffle''%}{{ uri[0:-8] }}{%else%}{{
+                uri }}{%endif%}'
+            target:
+              entity_id: !input massplayer
+          alias: mass
+        - conditions:
+          - condition: template
+            value_template: '{{ action == "tagScanned" and source not in ("sonos",
+              "mass", "") }}'
+          sequence:
+          - action: media_player.play_media
+            data:
+              media_content_type: music
+              media_content_id: '{%if uri[-8:] == ''/shuffle''%}{{ uri[0:-8] }}{%else%}{{
+                uri }}{%endif%}'
+            target:
+              entity_id: !input httpplayer
+          alias: http
+        alias: play
+    - if:
+      - condition: template
+        value_template: '{{ default_volume_set == true }}'
+      then:
+      - action: media_player.volume_set
+        data:
+          volume_level: !input default_volume
+        target:
+          entity_id: !input httpplayer
+    - condition: template
+      value_template: '{{ shuffle_playlist == true }}'
+    - wait_for_trigger:
+      - trigger: state
+        entity_id: !input httpplayer
+        to: playing
+    - action: media_player.shuffle_set
+      data:
+        shuffle: true
+      target:
+        entity_id: !input httpplayer
+    alias: tag_scanned new source
+  - conditions:
+    - condition: template
+      value_template: '{{ action == "clickTriple" }}'
+    sequence:
+    - action: media_player.media_previous_track
+      target:
+        entity_id: !input httpplayer
+    alias: clickTriple
+  - conditions:
+    - condition: template
+      value_template: '{{ action == "clickDouble" }}'
+    sequence:
+    - action: media_player.media_play_pause
+      target:
+        entity_id: !input httpplayer
+    alias: clickDouble
+  - conditions:
+    - condition: template
+      value_template: '{{ action == "clickSingle" }}'
+    sequence:
+    - action: media_player.media_next_track
+      target:
+        entity_id: !input httpplayer
+    alias: clickSingle
+  - conditions:
+    - condition: template
+      value_template: '{{ action == "clickLong" }}'
+    sequence:
+    - if:
+      - condition: state
+        entity_id: !input httpplayer
+        attribute: is_volume_muted
+        state: 1
+      then:
+      - action: media_player.volume_mute
+        target:
+          entity_id: !input httpplayer
+        data:
+          is_volume_muted: false
+      else:
+      - action: media_player.volume_mute
+        target:
+          entity_id: !input httpplayer
+        data:
+          is_volume_muted: true
+    alias: clickLong
+  - conditions:
+    - condition: state
+      entity_id: !input httpplayer
+      state: playing
+    sequence:
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ action == "volumeUp" }}'
+        - condition: numeric_state
+          entity_id: !input httpplayer
+          attribute: volume_level
+          below: !input max_volume
+        sequence:
+        - action: media_player.volume_up
+          target:
+            entity_id: !input httpplayer
+      - conditions:
+        - condition: template
+          value_template: '{{ action == "volumeDown" }}'
+        sequence:
+        - action: media_player.volume_down
+          target:
+            entity_id: !input httpplayer
+    alias: volume
+- if:
+  - condition: template
+    value_template: '{{ trigger.event.event_type == ''tag_scanned'' }}'
+  then:
+  - action: text.set_value
+    data:
+      value: '{{ uri }}'
+    target:
+      entity_id: '{{ text_playlist_uri }}'
+  - action: text.set_value
+    data:
+      value: '{{ [state_attr(massplayer, ''media_artist''), state_attr(httpplayer,
+        ''media_artist'') ]|select|first }}'
+    target:
+      entity_id: '{{ text_playlist_artist }}'
+  - action: text.set_value
+    data:
+      value: '{{ [state_attr(massplayer, ''media_album_name''), state_attr(httpplayer,
+        ''media_album_name'') ]|select|first }}'
+    target:
+      entity_id: '{{ text_playlist_name }}'
+  alias: update helpers with first song for read-only tags
+- if:
+  - condition: template
+    value_template: '{{ notify_version == true and trigger.event.data.magic|int(2024)
+      < 250100 }}'
+  then:
+  - action: persistent_notification.create
+    data:
+      notification_id: tagtuner_yaml_firmware_{{ device_attr(device_id, "name") }}
+      title: Friendly notice
+      message: '{{ device_attr(device_id, "name") }} yaml firmware is outdated at
+        v{{ trigger.event.data.magic|int(2024) }}
+
+        Please consider upgrading for the best experience.
+
+        https://github.com/luka6000/TagTuner
+
+        You can disable this notification in TagTuner automation settings.'
+  alias: version mismatch notify 1
+- if:
+  - condition: template
+    value_template: '{{ notify_version == true and trigger.event.data.magic|int(2024)
+      >   blprnt_version|int }}'
+  then:
+  - action: persistent_notification.create
+    data:
+      notification_id: tagtuner_blprnt_version_{{ device_attr(device_id, "name") }}
+      title: Friendly notice
+      message: '{{this.attributes.friendly_name}} blueprint automation is outdated
+        at v{{blprnt_version}} while {{ device_attr(device_id, "name") }} is at v{{
+        trigger.event.data.magic|int(2024) }}
+
+        Please consider upgrading for the best experience.
+
+        https://github.com/luka6000/TagTuner#using-tagtuner
+
+        You can disable this notification in {{this.attributes.friendly_name}} automation
+        settings.'
+  alias: version mismatch notify 2
+mode: queued
+max: 10
+trace:
+  stored_traces: 30

@@ -1,0 +1,26 @@
+blueprint:
+  name: Assist Calendar
+  author: Piitaya
+  description: Use Assist and a calendar to schedule actions in natural language.
+  domain: automation
+  input:
+    calendar:
+      name: Calendar
+      description: All events in this calendar will be processed by Assist
+      selector:
+        entity:
+          multiple: false
+          filter:
+          - domain:
+            - calendar
+  source_url: https://gist.github.com/piitaya/5859cedeeafe2b097053c41496825a05
+mode: parallel
+max: 100
+triggers:
+- trigger: calendar
+  event: start
+  entity_id: !input calendar
+actions:
+- service: conversation.process
+  data:
+    text: '{{ trigger.calendar_event.summary }}'
