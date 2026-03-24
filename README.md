@@ -2,7 +2,7 @@
 
 My personal [Home Assistant](https://www.home-assistant.io/) configuration.
 
-![HA Version](https://img.shields.io/badge/Home%20Assistant-2026.3.3-blue)
+![HA Version](https://img.shields.io/badge/Home%20Assistant-2026.3.4-blue)
 
 ## Setup
 

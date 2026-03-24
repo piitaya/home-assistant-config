@@ -38,7 +38,7 @@ clean_ground_floor_selected_rooms:
       action: vacuum.clean_area
       target:
         entity_id:
-        - vacuum.edgar
+        - vacuum.alfred
       data:
         cleaning_area_id: '{{ state_attr(''sensor.pieces_selectionnees_alfred'', ''area_ids'')
           }}'
