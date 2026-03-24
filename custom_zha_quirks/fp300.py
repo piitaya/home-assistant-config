@@ -1,18 +1,43 @@
-from __future__ import annotations
+# Docs / install guide (custom ZHA quirks + FP300 example):
+# https://meshstack.de/post/home-assistant/zha-custom-quirks/
+#
+# Upstream PR: https://github.com/zigpy/zha-device-handlers/pull/4504
+# Tracking issue: https://github.com/zigpy/zha-device-handlers/issues/4487
 
-from dataclasses import dataclass
+"""Quirk for Aqara lumi.sensor_occupy.agl8."""
+
+import asyncio
 from typing import Any, Final
 
 from zigpy import types as t
 from zigpy.quirks.v2 import QuirkBuilder, ReportingConfig
-from zigpy.quirks.v2.homeassistant import EntityType, UnitOfTime, UnitOfLength
+from zigpy.quirks.v2.homeassistant import (
+    PERCENTAGE,
+    EntityType,
+    UnitOfElectricPotential,
+    UnitOfLength,
+    UnitOfTemperature,
+    UnitOfTime,
+)
 from zigpy.quirks.v2.homeassistant.binary_sensor import BinarySensorDeviceClass
 from zigpy.quirks.v2.homeassistant.number import NumberDeviceClass
 from zigpy.quirks.v2.homeassistant.sensor import SensorDeviceClass, SensorStateClass
+from zigpy.typing import UNDEFINED, UndefinedType
+from zigpy.zcl import foundation
 from zigpy.zcl.foundation import BaseAttributeDefs, DataTypeId, ZCLAttributeDef
 
 from zhaquirks import LocalDataCluster
-from zhaquirks.xiaomi import XiaomiAqaraE1Cluster, XiaomiPowerConfigurationPercent, BATTERY_PERCENTAGE_REMAINING_ATTRIBUTE, BATTERY_VOLTAGE_MV
+from zhaquirks.xiaomi import (
+    BATTERY_PERCENTAGE_REMAINING_ATTRIBUTE,
+    BATTERY_VOLTAGE_MV,
+    XiaomiAqaraE1Cluster,
+    XiaomiPowerConfiguration,
+)
+
+# Manufacturer-specific attribute keys present in the non-standard AQARA payloads
+AQARA_MANUFACTURER_CODE: Final = 0x115F
+MANU_ATTR_BATTERY_VOLTAGE: Final = "0xff01-23"
+MANU_ATTR_BATTERY_PERCENT: Final = "0xff01-24"  # unused, keep for future
 
 
 #
@@ -21,54 +46,62 @@ from zhaquirks.xiaomi import XiaomiAqaraE1Cluster, XiaomiPowerConfigurationPerce
 class MotionSensitivity(t.enum8):
     """Presence / motion sensitivity."""
 
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
+    Low = 1
+    Medium = 2
+    High = 3
 
 
 class PresenceDetectionMode(t.enum8):
     """Which sensors are used for presence."""
 
-    BOTH = 0        # mmWave + PIR
-    MMWAVE_ONLY = 1
-    PIR_ONLY = 2
+    Both = 0
+    Only_mmWave = 1
+    Only_PIR = 2
 
 
-class TempHumiditySampling(t.enum8):
-    """Sampling frequency for temperature & humidity."""
+class SamplingFrequency(t.enum8):
+    """Sampling frequency values for temperature/humidity and illuminance."""
 
-    OFF = 0
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
-    CUSTOM = 4
+    Off = 0
+    Low = 1
+    Medium = 2
+    High = 3
+    Custom = 4
 
 
 class ReportMode(t.enum8):
     """Reporting mode for temp/humidity/illuminance in custom mode."""
 
-    THRESHOLD = 1
-    INTERVAL = 2
-    THRESHOLD_AND_INTERVAL = 3
+    Threshold = 1
+    Interval = 2
+    Threshold_and_interval = 3
 
 
-class LightSampling(t.enum8):
-    """Sampling frequency for illuminance."""
+class FP300PowerConfigurationVoltage(XiaomiPowerConfiguration):
+    """Battery level based on voltage."""
 
-    OFF = 0
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
-    CUSTOM = 4
+    MIN_VOLTS_MV = 2800
+    MAX_VOLTS_MV = 3000
+
+    def battery_reported(self, voltage_mv: int) -> None:
+        """Update voltage and derived battery percentage from a mV report."""
+        self._update_attribute(self.BATTERY_VOLTAGE_ATTR, round(voltage_mv / 1000, 3))
+        self._update_battery_percentage(voltage_mv)
+
+    def battery_percent_reported(self, battery_percent: int) -> None:
+        """Ignore buggy percentage reports from device."""
+        pass
 
 
-#
-# Manufacturer specific cluster (0xFCC0)
-#
 class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
-    """Aqara FP300 manufacturer specific cluster (0xFCC0)."""
+    """Aqara FP300 manufacturer cluster."""
+
+    cluster_id = 0xFCC0
+    ep_attribute = "aqara_fp300_manu"
 
     class AttributeDefs(BaseAttributeDefs):
+        """Attribute definitions for Aqara FP300 manu cluster."""
+
         #
         # Presence / motion
         #
@@ -77,7 +110,7 @@ class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
             type=t.Bool,
             zcl_type=DataTypeId.uint8,
             access="rp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         pir_detection: Final = ZCLAttributeDef(
@@ -85,7 +118,7 @@ class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
             type=t.Bool,
             zcl_type=DataTypeId.uint8,
             access="rp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         motion_sensitivity: Final = ZCLAttributeDef(
@@ -93,23 +126,21 @@ class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
             type=MotionSensitivity,
             zcl_type=DataTypeId.uint8,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         absence_delay_timer: Final = ZCLAttributeDef(
             id=0x0197,
             type=t.uint32_t,
-            zcl_type=DataTypeId.uint32,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         pir_detection_interval: Final = ZCLAttributeDef(
             id=0x014F,
             type=t.uint16_t,
-            zcl_type=DataTypeId.uint16,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         presence_detection_options: Final = ZCLAttributeDef(
@@ -117,15 +148,14 @@ class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
             type=PresenceDetectionMode,
             zcl_type=DataTypeId.uint8,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         detection_range_raw: Final = ZCLAttributeDef(
             id=0x019A,
             type=t.LVBytes,
-            zcl_type=DataTypeId.octstr,
-            access="rpw",
-            is_manufacturer_specific=True,
+            access="rwp",
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         #
@@ -134,17 +164,15 @@ class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
         ai_interference_source_selfidentification: Final = ZCLAttributeDef(
             id=0x015E,
             type=t.uint8_t,
-            zcl_type=DataTypeId.uint8,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         ai_sensitivity_adaptive: Final = ZCLAttributeDef(
             id=0x015D,
             type=t.uint8_t,
-            zcl_type=DataTypeId.uint8,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         #
@@ -153,17 +181,15 @@ class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
         target_distance: Final = ZCLAttributeDef(
             id=0x015F,
             type=t.uint32_t,
-            zcl_type=DataTypeId.uint32,
             access="rp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         track_target_distance: Final = ZCLAttributeDef(
             id=0x0198,
             type=t.uint8_t,
-            zcl_type=DataTypeId.uint8,
             access="w",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         #
@@ -171,34 +197,31 @@ class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
         #
         temp_humidity_sampling: Final = ZCLAttributeDef(
             id=0x0170,
-            type=TempHumiditySampling,
+            type=SamplingFrequency,
             zcl_type=DataTypeId.uint8,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         temp_humidity_sampling_period: Final = ZCLAttributeDef(
             id=0x0162,
             type=t.uint32_t,
-            zcl_type=DataTypeId.uint32,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         temp_reporting_interval: Final = ZCLAttributeDef(
             id=0x0163,
             type=t.uint32_t,
-            zcl_type=DataTypeId.uint32,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         temp_reporting_threshold: Final = ZCLAttributeDef(
             id=0x0164,
             type=t.uint16_t,
-            zcl_type=DataTypeId.uint16,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         temp_reporting_mode: Final = ZCLAttributeDef(
@@ -206,23 +229,21 @@ class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
             type=ReportMode,
             zcl_type=DataTypeId.uint8,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         humidity_reporting_interval: Final = ZCLAttributeDef(
             id=0x016A,
             type=t.uint32_t,
-            zcl_type=DataTypeId.uint32,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         humidity_reporting_threshold: Final = ZCLAttributeDef(
             id=0x016B,
             type=t.uint16_t,
-            zcl_type=DataTypeId.uint16,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         humidity_reporting_mode: Final = ZCLAttributeDef(
@@ -230,7 +251,7 @@ class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
             type=ReportMode,
             zcl_type=DataTypeId.uint8,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         #
@@ -238,34 +259,31 @@ class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
         #
         light_sampling: Final = ZCLAttributeDef(
             id=0x0192,
-            type=LightSampling,
+            type=SamplingFrequency,
             zcl_type=DataTypeId.uint8,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         light_sampling_period: Final = ZCLAttributeDef(
             id=0x0193,
             type=t.uint32_t,
-            zcl_type=DataTypeId.uint32,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         light_reporting_interval: Final = ZCLAttributeDef(
             id=0x0194,
             type=t.uint32_t,
-            zcl_type=DataTypeId.uint32,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         light_reporting_threshold: Final = ZCLAttributeDef(
             id=0x0195,
             type=t.uint16_t,
-            zcl_type=DataTypeId.uint16,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         light_reporting_mode: Final = ZCLAttributeDef(
@@ -273,7 +291,23 @@ class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
             type=ReportMode,
             zcl_type=DataTypeId.uint8,
             access="rwp",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
+        )
+
+        #
+        # LED behavior
+        #
+        led_disabled_night: Final = ZCLAttributeDef(
+            id=0x0203,
+            type=t.Bool,
+            access="rwp",
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
+        )
+        led_schedule_time_raw: Final = ZCLAttributeDef(
+            id=0x023E,
+            type=t.uint32_t,
+            access="rwp",
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         #
@@ -282,180 +316,244 @@ class AqaraFP300ManuCluster(XiaomiAqaraE1Cluster):
         spatial_learning: Final = ZCLAttributeDef(
             id=0x0157,
             type=t.uint8_t,
-            zcl_type=DataTypeId.uint8,
             access="w",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
         restart_device: Final = ZCLAttributeDef(
             id=0x00E8,
             type=t.Bool,
-            zcl_type=DataTypeId.bool_,
             access="w",
-            is_manufacturer_specific=True,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
-    
-    def _parse_aqara_attributes(self, value: Any) -> None:
-        """Parse non-standard and fp300 specific attributes."""
-        attributes = super()._parse_aqara_attributes(value)        
+    def _parse_aqara_attributes(self, value: Any) -> dict[str, Any]:
+        """Parse Aqara TLV data and remap FP300 battery keys."""
+        attributes = super()._parse_aqara_attributes(value)
 
-        if "0xff01-23" in attributes:
-            attributes[BATTERY_VOLTAGE_MV] = attributes.pop("0xff01-23")
+        if MANU_ATTR_BATTERY_VOLTAGE in attributes:
+            attributes[BATTERY_VOLTAGE_MV] = attributes.pop(MANU_ATTR_BATTERY_VOLTAGE)
 
-        if "0xff01-24" in attributes:
-            attributes[BATTERY_PERCENTAGE_REMAINING_ATTRIBUTE] = attributes.pop("0xff01-24")
+        if MANU_ATTR_BATTERY_PERCENT in attributes:
+            attributes[BATTERY_PERCENTAGE_REMAINING_ATTRIBUTE] = attributes.pop(
+                MANU_ATTR_BATTERY_PERCENT
+            )
 
         return attributes
-    
 
     def _update_attribute(self, attrid: int, value: Any) -> None:
-        """Only delegate 0x019A to the FP300DetectionRangeCluster."""
-
+        """Forward raw mirror attributes to local helper clusters and update cache."""
         if attrid == self.AttributeDefs.detection_range_raw.id:
-            dr_cluster = self.endpoint.in_clusters.get(FP300DetectionRangeCluster.cluster_id)            
-            if dr_cluster is not None:
-                dr_cluster._update_from_raw(value)
+            self.endpoint.fp300_detection_range.apply_raw(value)
+        elif attrid == self.AttributeDefs.led_schedule_time_raw.id:
+            self.endpoint.fp300_led_schedule.apply_raw(value)
 
         return super()._update_attribute(attrid, value)
 
+    async def bind(self):
+        """Bind this cluster and request initial raw attributes from the device."""
+        result = await super().bind()
+
+        # Initial sync for attrs not sent on join
+        for attr_id in (
+            self.AttributeDefs.detection_range_raw.id,
+            self.AttributeDefs.led_schedule_time_raw.id,
+        ):
+            try:
+                await self.read_attributes(
+                    [attr_id],
+                    allow_cache=False,
+                    manufacturer=AQARA_MANUFACTURER_CODE,
+                )
+            except Exception as exc:
+                self.debug("Failed to read attr 0x%04X: %r", attr_id, exc)
+
+        return result
 
 
 class FP300DetectionRangeCluster(LocalDataCluster):
-    """Local cluster for detection range handling."""
+    """Virtual cluster for detection range."""
 
-    cluster_id = 0xFC30
+    cluster_id = 0xFCF0
+    ep_attribute = "fp300_detection_range"
+
+    _PREFIX_VALUE: Final = 0x0300
+    _PREFIX_BYTES: Final = _PREFIX_VALUE.to_bytes(2, "little")
+    _FULL_MASK: Final = (1 << 24) - 1
+    _SEGMENT_MASK: Final = (1 << 4) - 1
+    _MASK_OFFSET: Final = 2
+    _RAW_ATTR_ID: Final = AqaraFP300ManuCluster.AttributeDefs.detection_range_raw.id
 
     class AttributeDefs(BaseAttributeDefs):
-        prefix: Final = ZCLAttributeDef(
-            id=0x0000,
-            type=t.uint16_t,
-            zcl_type=DataTypeId.uint16,
-            access="rpw",
-        )
-
         range_0_1m: Final = ZCLAttributeDef(
-            id=0x0001,
+            id=0x0000,
             type=t.Bool,
-            zcl_type=DataTypeId.bool_,
-            access="rwp",
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
         range_1_2m: Final = ZCLAttributeDef(
-            id=0x0002,
+            id=0x0001,
             type=t.Bool,
-            zcl_type=DataTypeId.bool_,
-            access="rwp",
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
         range_2_3m: Final = ZCLAttributeDef(
-            id=0x0003,
+            id=0x0002,
             type=t.Bool,
-            zcl_type=DataTypeId.bool_,
-            access="rwp",
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
         range_3_4m: Final = ZCLAttributeDef(
-            id=0x0004,
+            id=0x0003,
             type=t.Bool,
-            zcl_type=DataTypeId.bool_,
-            access="rwp",
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
         range_4_5m: Final = ZCLAttributeDef(
-            id=0x0005,
+            id=0x0004,
             type=t.Bool,
-            zcl_type=DataTypeId.bool_,
-            access="rwp",
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
         range_5_6m: Final = ZCLAttributeDef(
-            id=0x0006,
+            id=0x0005,
             type=t.Bool,
-            zcl_type=DataTypeId.bool_,
-            access="rwp",
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
         )
 
+    _SEGMENTS: Final = (
+        (AttributeDefs.range_0_1m.id, 0),
+        (AttributeDefs.range_1_2m.id, 4),
+        (AttributeDefs.range_2_3m.id, 8),
+        (AttributeDefs.range_3_4m.id, 12),
+        (AttributeDefs.range_4_5m.id, 16),
+        (AttributeDefs.range_5_6m.id, 20),
+    )
 
-    def _update_from_raw(self, raw: t.LVBytes | bytes | bytearray | None) -> None:
-        """updates from raw buffer of 0x019A attribute from manu cluster."""
+    _SHIFT_BY_ID: Final = dict(_SEGMENTS)
 
-        if isinstance(raw, t.LVBytes):
-            data = bytes(raw)
-        elif isinstance(raw, (bytes, bytearray)):
-            data = bytes(raw)
-        else:
-            data = b""
+    def __init__(self, *args, **kwargs):
+        """Initialize the cluster and create a write lock."""
+        super().__init__(*args, **kwargs)
+        # Prevent overlapping writes
+        self._write_mutex = asyncio.Lock()
 
-        if len(data) >= 5:
-            prefix = int.from_bytes(data[0:2], "little")
-            mask = int.from_bytes(data[2:5], "little") & ((1 << 24) - 1)
-        else:
-            prefix = 0x0300
-            mask = (1 << 24) - 1  # 0xFFFFFF
+    def apply_raw(self, raw: bytes) -> None:
+        """Decode the raw payload and update local range switch attributes."""
+        raw = bytes(raw)
+        if len(raw) != 5:
+            self.debug("Invalid detection_range_raw length: %d", len(raw))
+            return
 
-        super()._update_attribute(self.AttributeDefs.prefix.id, prefix)
+        mask = self._unpack_mask(raw)
+        for attr_id, shift in self._SEGMENTS:
+            self._update_attribute(attr_id, bool(mask & (self._SEGMENT_MASK << shift)))
 
-        seg_defs = [
-            (self.AttributeDefs.range_0_1m.id, 0),
-            (self.AttributeDefs.range_1_2m.id, 4),
-            (self.AttributeDefs.range_2_3m.id, 8),
-            (self.AttributeDefs.range_3_4m.id, 12),
-            (self.AttributeDefs.range_4_5m.id, 16),
-            (self.AttributeDefs.range_5_6m.id, 20),
-        ]
-
-        for attr_id, start_bit in seg_defs:
-            seg_mask = ((1 << 4) - 1) << start_bit
-            enabled = (mask & seg_mask) != 0
-            super()._update_attribute(attr_id, bool(enabled))
-
-
-    def _build_raw(self) -> t.LVBytes:
-        """builds raw buffer for 0x019A attribute for manu cluster from local range switches."""
-
-        prefix = self._attr_cache.get(self.AttributeDefs.prefix.id, 0x0300)
-        try:
-            prefix_int = int(prefix) & 0xFFFF
-        except (TypeError, ValueError):
-            prefix_int = 0x0300
-
-        seg_defs = [
-            (self.AttributeDefs.range_0_1m.id, 0),
-            (self.AttributeDefs.range_1_2m.id, 4),
-            (self.AttributeDefs.range_2_3m.id, 8),
-            (self.AttributeDefs.range_3_4m.id, 12),
-            (self.AttributeDefs.range_4_5m.id, 16),
-            (self.AttributeDefs.range_5_6m.id, 20),
-        ]
-
-        mask = 0
-        for attr_id, start_bit in seg_defs:
-            enabled = bool(self._attr_cache.get(attr_id, True))
-            if enabled:
-                mask |= ((1 << 4) - 1) << start_bit
-
-        buf = prefix_int.to_bytes(2, "little") + mask.to_bytes(3, "little")
-        return t.LVBytes(buf)
+    def _unpack_mask(self, raw: bytes) -> int:
+        """Return the 24-bit detection mask extracted from the raw payload."""
+        return int.from_bytes(raw[self._MASK_OFFSET : self._MASK_OFFSET + 3], "little")
 
     async def write_attributes(
         self,
-        attributes: dict[int, Any],
-        manufacturer: int | None = None,
-        **kwargs: Any,
-    ) -> Any:
-        """
-        HA writes to local range switches → we build 0x019A
-        and pass it to the manufacturer cluster.
-        """
+        attributes: dict[str | int | foundation.ZCLAttributeDef, Any],
+        manufacturer: int | UndefinedType | None = UNDEFINED,
+        **kwargs,
+    ) -> list[list[foundation.WriteAttributesStatusRecord]]:
+        """Merge incoming range changes into the mask and write the raw attribute."""
+        async with self._write_mutex:
+            resolved = {
+                self.find_attribute(attr).id: value
+                for attr, value in attributes.items()
+            }
 
-        res = await super().write_attributes(attributes, manufacturer=manufacturer, **kwargs)
+            raw = self.endpoint.aqara_fp300_manu.get(self._RAW_ATTR_ID)
 
-        raw = self._build_raw()
+            mask = self._FULL_MASK
+            if raw is not None:
+                raw = bytes(raw)
+                if len(raw) == 5:
+                    mask = self._unpack_mask(raw)
 
-        manu = self.endpoint.in_clusters.get(AqaraFP300ManuCluster.cluster_id)
-        if manu is not None:
-            await manu.write_attributes(
-                {AqaraFP300ManuCluster.AttributeDefs.detection_range_raw.id: raw},
-                manufacturer=manufacturer,
+            for attr_id, value in resolved.items():
+                shift = self._SHIFT_BY_ID[attr_id]
+
+                mask &= ~(self._SEGMENT_MASK << shift)
+                if value:
+                    mask |= self._SEGMENT_MASK << shift
+
+            new_raw = t.LVBytes(self._PREFIX_BYTES + mask.to_bytes(3, "little"))
+
+            return await self.endpoint.aqara_fp300_manu.write_attributes(
+                {self._RAW_ATTR_ID: new_raw},
+                manufacturer=AQARA_MANUFACTURER_CODE,
+                **kwargs,
             )
 
-        return res
+
+class FP300LedScheduleCluster(LocalDataCluster):
+    """Virtual cluster for LED schedule."""
+
+    cluster_id = 0xFCF1
+    ep_attribute = "fp300_led_schedule"
+
+    #  Fallback when cache is empty before first successful read (21:00 to 09:00)
+    _DEFAULT_SCHEDULE: Final = 0x00090015
+    # Raw attr on ManuCluster
+    _RAW_ATTR: Final = AqaraFP300ManuCluster.AttributeDefs.led_schedule_time_raw.id
+
+    class AttributeDefs(BaseAttributeDefs):
+        """Attribute definitions for LED schedule helper values."""
+
+        led_off_schedule_start_hour: Final = ZCLAttributeDef(
+            id=0x0000,
+            type=t.uint8_t,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
+        )
+        led_off_schedule_end_hour: Final = ZCLAttributeDef(
+            id=0x0001,
+            type=t.uint8_t,
+            manufacturer_code=AQARA_MANUFACTURER_CODE,
+        )
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the cluster and create a write lock."""
+        super().__init__(*args, **kwargs)
+        # Prevent overlapping writes
+        self._write_mutex = asyncio.Lock()
+
+    def apply_raw(self, raw: int) -> None:
+        """Split packed schedule data and update start/end hour attributes."""
+        start = raw & 0xFF
+        end = (raw >> 16) & 0xFF
+
+        self._update_attribute(self.AttributeDefs.led_off_schedule_start_hour.id, start)
+        self._update_attribute(self.AttributeDefs.led_off_schedule_end_hour.id, end)
+
+    async def write_attributes(
+        self,
+        attributes: dict[str | int | foundation.ZCLAttributeDef, Any],
+        manufacturer: int | UndefinedType | None = UNDEFINED,
+        **kwargs,
+    ) -> list[list[foundation.WriteAttributesStatusRecord]]:
+        """Apply updated start/end values and write packed schedule back to device."""
+        async with self._write_mutex:
+            manu = self.endpoint.aqara_fp300_manu
+
+            current = manu.get(self._RAW_ATTR)
+            if current is None:
+                current = self._DEFAULT_SCHEDULE
+            start = current & 0xFF
+            end = (current >> 16) & 0xFF
+
+            for attr, value in attributes.items():
+                attr_id = self.find_attribute(attr).id
+                if attr_id == self.AttributeDefs.led_off_schedule_start_hour.id:
+                    start = int(value)
+                elif attr_id == self.AttributeDefs.led_off_schedule_end_hour.id:
+                    end = int(value)
+
+            new_raw = start | (end << 16)
+
+            return await manu.write_attributes(
+                {self._RAW_ATTR: new_raw},
+                manufacturer=AQARA_MANUFACTURER_CODE,
+                **kwargs,
+            )
 
 
 #
@@ -465,68 +563,75 @@ FP300_QUIRK = (
     QuirkBuilder("Aqara", "lumi.sensor_occupy.agl8")
     .friendly_name(manufacturer="Aqara", model="Presence Sensor FP300")
     .replaces(AqaraFP300ManuCluster)
-    .adds(XiaomiPowerConfigurationPercent)
+    .replaces(FP300PowerConfigurationVoltage)
     .adds(FP300DetectionRangeCluster)
-    # Main presence entity (mmWave)
+    .adds(FP300LedScheduleCluster)
+    # Main occupancy entity (mmWave)
     .binary_sensor(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.presence.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         device_class=BinarySensorDeviceClass.OCCUPANCY,
         entity_type=EntityType.STANDARD,
-        translation_key="presence",
-        fallback_name="Presence",
         reporting_config=ReportingConfig(
-            min_interval=1,
-            max_interval=300,
+            min_interval=0,
+            max_interval=900,
             reportable_change=1,
         ),
+        translation_key="occupancy",
+        fallback_name="Occupancy",
     )
     # Diagnostic PIR detection
     .binary_sensor(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.pir_detection.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         device_class=BinarySensorDeviceClass.MOTION,
-        entity_type=EntityType.DIAGNOSTIC,
-        translation_key="pir_detection",
-        fallback_name="PIR detection",
         reporting_config=ReportingConfig(
-            min_interval=1,
-            max_interval=300,
+            min_interval=0,
+            max_interval=900,
             reportable_change=1,
         ),
+        entity_type=EntityType.DIAGNOSTIC,
         initially_disabled=True,
+        translation_key="pir_detection",
+        fallback_name="PIR detection",
     )
     # Target distance (from fp1eTargetDistance)
     .sensor(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.target_distance.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         device_class=SensorDeviceClass.DISTANCE,
         state_class=SensorStateClass.MEASUREMENT,
-        unit="m",
-        multiplier=0.01,  # raw = meters * 100
+        unit=UnitOfLength.METERS,
+        multiplier=0.01,
         entity_type=EntityType.DIAGNOSTIC,
         translation_key="target_distance",
         fallback_name="Target distance",
+    )
+    .sensor(
+        attribute_name="battery_voltage",
+        cluster_id=FP300PowerConfigurationVoltage.cluster_id,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        unit=UnitOfElectricPotential.VOLT,
+        entity_type=EntityType.DIAGNOSTIC,
+        initially_disabled=True,
+        translation_key="battery_voltage",
+        fallback_name="Battery voltage",
     )
     # Button: start tracking current target distance
     .write_attr_button(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.track_target_distance.name,
         attribute_value=1,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
-        entity_type=EntityType.CONFIG,
+        entity_type=EntityType.DIAGNOSTIC,
         translation_key="track_target_distance",
-        fallback_name="Start target distance tracking",
+        fallback_name="Track target distance",
     )
     # Motion / presence config
     .enum(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.motion_sensitivity.name,
         enum_class=MotionSensitivity,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="motion_sensitivity",
         fallback_name="Motion sensitivity",
@@ -535,7 +640,6 @@ FP300_QUIRK = (
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.presence_detection_options.name,
         enum_class=PresenceDetectionMode,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="presence_detection_options",
         fallback_name="Presence detection options",
@@ -543,42 +647,38 @@ FP300_QUIRK = (
     .number(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.absence_delay_timer.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         device_class=NumberDeviceClass.DURATION,
         entity_type=EntityType.CONFIG,
-        translation_key="absence_delay_timer",
-        fallback_name="Absence delay timer",
         min_value=10,
         max_value=300,
         step=5,
         unit=UnitOfTime.SECONDS,
+        translation_key="absence_delay_timer",
+        fallback_name="Absence delay timer",
     )
     .number(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.pir_detection_interval.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         device_class=NumberDeviceClass.DURATION,
         entity_type=EntityType.CONFIG,
-        translation_key="pir_detection_interval",
-        fallback_name="PIR detection interval",
         min_value=2,
         max_value=300,
         step=1,
         unit=UnitOfTime.SECONDS,
+        translation_key="pir_detection_interval",
+        fallback_name="PIR detection interval",
     )
     # AI helper switches
     .switch(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.ai_interference_source_selfidentification.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="ai_interference_source_selfidentification",
-        fallback_name="AI interference source self-identification",
+        fallback_name="AI interference identification",
     )
     .switch(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.ai_sensitivity_adaptive.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="ai_sensitivity_adaptive",
         fallback_name="AI adaptive sensitivity",
@@ -586,107 +686,105 @@ FP300_QUIRK = (
     # Temp/humidity sampling & reporting
     .enum(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.temp_humidity_sampling.name,
-        enum_class=TempHumiditySampling,
+        enum_class=SamplingFrequency,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="temp_humidity_sampling",
-        fallback_name="Temp & humidity sampling",
+        fallback_name="Temperature and humidity sampling",
     )
     .number(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.temp_humidity_sampling_period.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         device_class=NumberDeviceClass.DURATION,
         entity_type=EntityType.CONFIG,
-        translation_key="temp_humidity_sampling_period",
-        fallback_name="Temp & humidity sampling period",
         min_value=0.5,
         max_value=3600.0,
         step=0.5,
-        multiplier=0.001,  # ms -> s
+        multiplier=0.001,
         unit=UnitOfTime.SECONDS,
+        initially_disabled=True,
+        translation_key="temp_humidity_sampling_period",
+        fallback_name="Temperature and humidity sampling period",
     )
     .number(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.temp_reporting_interval.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         device_class=NumberDeviceClass.DURATION,
         entity_type=EntityType.CONFIG,
-        translation_key="temp_reporting_interval",
-        fallback_name="Temperature reporting interval",
         min_value=600,
         max_value=3600,
         step=600,
         multiplier=0.001,
         unit=UnitOfTime.SECONDS,
+        initially_disabled=True,
+        translation_key="temp_reporting_interval",
+        fallback_name="Temperature reporting interval",
     )
     .number(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.temp_reporting_threshold.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         device_class=NumberDeviceClass.TEMPERATURE,
         entity_type=EntityType.CONFIG,
-        translation_key="temp_reporting_threshold",
-        fallback_name="Temperature reporting threshold",
         min_value=0.2,
         max_value=3.0,
         step=0.1,
         multiplier=0.01,
-        unit="°C",
+        unit=UnitOfTemperature.CELSIUS,
+        initially_disabled=True,
+        translation_key="temp_reporting_threshold",
+        fallback_name="Temperature reporting threshold",
     )
     .enum(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.temp_reporting_mode.name,
         enum_class=ReportMode,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
+        initially_disabled=True,
         translation_key="temp_reporting_mode",
         fallback_name="Temperature reporting mode",
     )
     .number(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.humidity_reporting_interval.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         device_class=NumberDeviceClass.DURATION,
         entity_type=EntityType.CONFIG,
-        translation_key="humidity_reporting_interval",
-        fallback_name="Humidity reporting interval",
         min_value=600,
         max_value=3600,
         step=600,
         multiplier=0.001,
         unit=UnitOfTime.SECONDS,
+        initially_disabled=True,
+        translation_key="humidity_reporting_interval",
+        fallback_name="Humidity reporting interval",
     )
     .number(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.humidity_reporting_threshold.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         device_class=NumberDeviceClass.HUMIDITY,
         entity_type=EntityType.CONFIG,
-        translation_key="humidity_reporting_threshold",
-        fallback_name="Humidity reporting threshold",
         min_value=2.0,
-        max_value=20.0,
+        max_value=15.0,
         step=0.5,
         multiplier=0.01,
-        unit="%",
+        unit=PERCENTAGE,
+        initially_disabled=True,
+        translation_key="humidity_reporting_threshold",
+        fallback_name="Humidity reporting threshold",
     )
     .enum(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.humidity_reporting_mode.name,
         enum_class=ReportMode,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
+        initially_disabled=True,
         translation_key="humidity_reporting_mode",
         fallback_name="Humidity reporting mode",
     )
     # Illuminance sampling & reporting
     .enum(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.light_sampling.name,
-        enum_class=LightSampling,
+        enum_class=SamplingFrequency,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="light_sampling",
         fallback_name="Light sampling",
@@ -694,121 +792,146 @@ FP300_QUIRK = (
     .number(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.light_sampling_period.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         device_class=NumberDeviceClass.DURATION,
         entity_type=EntityType.CONFIG,
-        translation_key="light_sampling_period",
-        fallback_name="Light sampling period",
         min_value=0.5,
         max_value=3600.0,
         step=0.5,
         multiplier=0.001,
         unit=UnitOfTime.SECONDS,
+        initially_disabled=True,
+        translation_key="light_sampling_period",
+        fallback_name="Light sampling period",
     )
     .number(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.light_reporting_interval.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         device_class=NumberDeviceClass.DURATION,
         entity_type=EntityType.CONFIG,
-        translation_key="light_reporting_interval",
-        fallback_name="Light reporting interval",
-        min_value=20,
+        min_value=600,
         max_value=3600,
-        step=20,
+        step=600,
         multiplier=0.001,
         unit=UnitOfTime.SECONDS,
+        initially_disabled=True,
+        translation_key="light_reporting_interval",
+        fallback_name="Light reporting interval",
     )
     .number(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.light_reporting_threshold.name,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
-        # “percentage change” – omit device_class
         entity_type=EntityType.CONFIG,
-        translation_key="light_reporting_threshold",
-        fallback_name="Light reporting threshold",
         min_value=3.0,
         max_value=20.0,
         step=0.5,
         multiplier=0.01,
-        unit="%",
+        unit=PERCENTAGE,
+        initially_disabled=True,
+        translation_key="light_reporting_threshold",
+        fallback_name="Light reporting threshold",
     )
     .enum(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.light_reporting_mode.name,
         enum_class=ReportMode,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
+        initially_disabled=True,
         translation_key="light_reporting_mode",
         fallback_name="Light reporting mode",
+    )
+    # LED
+    .number(
+        attribute_name=FP300LedScheduleCluster.AttributeDefs.led_off_schedule_start_hour.name,
+        cluster_id=FP300LedScheduleCluster.cluster_id,
+        entity_type=EntityType.CONFIG,
+        min_value=0,
+        max_value=23,
+        step=1,
+        mode="box",
+        initially_disabled=True,
+        translation_key="led_off_schedule_start_hour",
+        fallback_name="LED off schedule start hour",
+    )
+    .number(
+        attribute_name=FP300LedScheduleCluster.AttributeDefs.led_off_schedule_end_hour.name,
+        cluster_id=FP300LedScheduleCluster.cluster_id,
+        entity_type=EntityType.CONFIG,
+        min_value=0,
+        max_value=23,
+        step=1,
+        mode="box",
+        initially_disabled=True,
+        translation_key="led_off_schedule_end_hour",
+        fallback_name="LED off schedule end hour",
+    )
+    .switch(
+        attribute_name=AqaraFP300ManuCluster.AttributeDefs.led_disabled_night.name,
+        cluster_id=AqaraFP300ManuCluster.cluster_id,
+        entity_type=EntityType.CONFIG,
+        initially_disabled=True,
+        translation_key="led_disabled_night",
+        fallback_name="LED disabled at night",
     )
     # Maintenance buttons
     .write_attr_button(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.spatial_learning.name,
         attribute_value=1,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="spatial_learning",
-        fallback_name="Start spatial learning",
+        fallback_name="Spatial learning",
     )
     .write_attr_button(
         attribute_name=AqaraFP300ManuCluster.AttributeDefs.restart_device.name,
         attribute_value=1,
         cluster_id=AqaraFP300ManuCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
+        initially_disabled=True,
         translation_key="restart_device",
         fallback_name="Restart device",
     )
-    # Detection range switches
+    # Detection range
     .switch(
         attribute_name=FP300DetectionRangeCluster.AttributeDefs.range_0_1m.name,
         cluster_id=FP300DetectionRangeCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="detection_range_0_1m",
-        fallback_name="Detection range 0–1 m",
+        fallback_name="Detection range 0-1 m",
     )
     .switch(
         attribute_name=FP300DetectionRangeCluster.AttributeDefs.range_1_2m.name,
         cluster_id=FP300DetectionRangeCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="detection_range_1_2m",
-        fallback_name="Detection range 1–2 m",
+        fallback_name="Detection range 1-2 m",
     )
     .switch(
         attribute_name=FP300DetectionRangeCluster.AttributeDefs.range_2_3m.name,
         cluster_id=FP300DetectionRangeCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="detection_range_2_3m",
-        fallback_name="Detection range 2–3 m",
+        fallback_name="Detection range 2-3 m",
     )
     .switch(
         attribute_name=FP300DetectionRangeCluster.AttributeDefs.range_3_4m.name,
         cluster_id=FP300DetectionRangeCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="detection_range_3_4m",
-        fallback_name="Detection range 3–4 m",
+        fallback_name="Detection range 3-4 m",
     )
     .switch(
         attribute_name=FP300DetectionRangeCluster.AttributeDefs.range_4_5m.name,
         cluster_id=FP300DetectionRangeCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="detection_range_4_5m",
-        fallback_name="Detection range 4–5 m",
+        fallback_name="Detection range 4-5 m",
     )
     .switch(
         attribute_name=FP300DetectionRangeCluster.AttributeDefs.range_5_6m.name,
         cluster_id=FP300DetectionRangeCluster.cluster_id,
-        endpoint_id=1,
         entity_type=EntityType.CONFIG,
         translation_key="detection_range_5_6m",
-        fallback_name="Detection range 5–6 m",
+        fallback_name="Detection range 5-6 m",
     )
     .add_to_registry()
 )
