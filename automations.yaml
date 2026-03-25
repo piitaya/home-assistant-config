@@ -3262,11 +3262,12 @@
   description: Synchronise l'heure de qualité de l'air lorsque la présence dans le
     bureau est détectée.
   triggers:
-  - trigger: binary_sensor.occupancy_detected
+  - trigger: occupancy.detected
     target:
       entity_id: binary_sensor.study_presence_sensor_presence
     options:
       behavior: any
+    enabled: true
   conditions: []
   actions:
   - action: button.press
