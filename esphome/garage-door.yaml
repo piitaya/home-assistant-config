@@ -1,0 +1,88 @@
+substitutions:
+  open_relay_pin: D3
+  close_relay_pin: D4
+  closed_sensor_pin: D1
+  
+esphome:
+  name: garage-door
+  friendly_name: Garage door
+
+esp8266:
+  board: d1_mini
+  
+logger:
+
+api:
+  encryption:
+    key: !secret garage_door_api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret garage_door_ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+    
+web_server:
+  port: 80
+
+switch:
+  - platform: gpio
+    id: open_switch
+    pin: 
+      number: $open_relay_pin
+      inverted: True
+    internal: True
+    restore_mode: ALWAYS_OFF
+  - platform: gpio
+    id: close_switch
+    pin: 
+      number: $close_relay_pin
+      inverted: true
+    internal: true
+    restore_mode: ALWAYS_OFF
+
+binary_sensor:
+  - platform: gpio
+    id: closed_sensor
+    pin:
+      number: $closed_sensor_pin
+      mode:
+        input: true
+    internal: true
+    
+cover:
+  - platform: template
+    name: ""
+    device_class: garage
+    open_action:
+      - switch.turn_off: close_switch
+      - switch.turn_on: open_switch
+      - delay: 0.1s
+      - switch.turn_off: open_switch
+    close_action:
+      - switch.turn_off: open_switch
+      - switch.turn_on: close_switch
+      - delay: 0.1s
+      - switch.turn_off: close_switch
+    lambda: |-
+      if (id(closed_sensor).state) {
+        return COVER_CLOSED;
+      } else {
+        return COVER_OPEN;
+      }
+
+button:
+  - platform: restart
+    name: Restart
+    entity_category: config
+    disabled_by_default: True
+    
+sensor:
+  - platform: wifi_signal
+    name: Wifi signal
+    update_interval: 120s
+    entity_category: diagnostic
+    device_class: signal_strength
+    disabled_by_default: True

@@ -1,0 +1,195 @@
+substitutions:
+  name: droid-assistant
+  friendly_name: Droid Assistant
+
+esphome:
+  name: "${name}"
+  friendly_name: "${friendly_name}"
+  name_add_mac_suffix: false
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+i2s_audio:
+  - id: i2s_microphone
+    i2s_lrclk_pin: GPIO25
+    i2s_bclk_pin: GPIO26
+  - id: i2s_speaker
+    i2s_lrclk_pin: GPIO13
+    i2s_bclk_pin: GPIO12
+
+speaker:
+  - platform: i2s_audio
+    id: external_speaker
+    dac_type: external
+    i2s_audio_id: i2s_speaker
+    i2s_dout_pin: GPIO14
+
+microphone:
+  - platform: i2s_audio
+    id: external_microphone
+    adc_type: external
+    i2s_audio_id: i2s_microphone
+    i2s_din_pin: GPIO27
+    pdm: false
+
+esp_adf:
+
+voice_assistant:
+  id: va
+  microphone: external_microphone
+  speaker: external_speaker
+  noise_suppression_level: 4
+  auto_gain: 31dBFS
+  volume_multiplier: 4.0
+  vad_threshold: 3
+  use_wake_word: true
+  on_client_connected:
+      - if:
+          condition:
+            switch.is_on: use_wake_word
+          then:
+            - voice_assistant.start_continuous
+  on_tts_start: 
+    - if:
+        condition:
+          switch.is_on: move_head_response
+        then:
+          button.press:
+            id: move_head
+
+button:
+  - platform: template
+    name: Move header
+    id: move_head
+    icon: mdi:robot
+    entity_category: config
+    on_press: 
+      - servo.write:
+          id: head_servo
+          level: "6%"
+      - delay: 1s
+      - servo.write:
+          id: head_servo
+          level: "-10%"
+      - delay: 1s
+      - servo.write:
+          id: head_servo
+          level: "0%"
+  - platform: restart
+    name: Restart
+
+switch:
+  - platform: template
+    name: Use Wake Word
+    id: use_wake_word
+    icon: mdi:waveform
+    optimistic: true
+    restore_mode: ALWAYS_ON
+    entity_category: config
+    on_turn_on:
+      - lambda: id(va).set_use_wake_word(true);
+      - if:
+          condition:
+            not:
+              - voice_assistant.is_running
+          then:
+            - voice_assistant.start_continuous
+    on_turn_off:
+      - voice_assistant.stop
+      - lambda: id(va).set_use_wake_word(false);
+  - platform: template
+    name: "Move head after response"
+    id: move_head_response
+    icon: mdi:rotate-360
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+
+servo:
+  - id: head_servo
+    output: head_servo_output
+    auto_detach_time: 5s
+    transition_length: 5s
+  - id: left_servo
+    output: left_servo_output
+    auto_detach_time: 5s
+    transition_length: 5s
+  - id: right_servo
+    output: right_servo_output
+    auto_detach_time: 5s
+    transition_length: 5s
+
+output:
+  - platform: ledc
+    id: head_servo_output
+    pin: GPIO18
+    frequency: 50 Hz
+  - platform: ledc
+    id: left_servo_output
+    pin: GPIO17
+    frequency: 50 Hz
+  - platform: ledc
+    id: right_servo_output
+    pin: GPIO16
+    frequency: 50 Hz
+
+number:
+  - platform: template
+    name: Head motor
+    entity_category: config
+    min_value: -100
+    initial_value: 0
+    max_value: 100
+    step: 1
+    optimistic: true
+    set_action:
+      then:
+        - servo.write:
+            id: head_servo
+            level: !lambda 'return x / 100.0;'
+  - platform: template
+    name: Left motor
+    entity_category: config
+    min_value: -100
+    initial_value: 0
+    max_value: 100
+    step: 1
+    optimistic: true
+    set_action:
+      then:
+        - servo.write:
+            id: left_servo
+            level: !lambda 'return x / 100.0;'
+  - platform: template
+    name: Right motor
+    entity_category: config
+    min_value: -100
+    initial_value: 0
+    max_value: 100
+    step: 1
+    optimistic: true
+    set_action:
+      then:
+        - servo.write:
+            id: right_servo
+            level: !lambda 'return x / 100.0;'
+            
+external_components:
+  - source: github://pr#5230
+    components:
+      - esp_adf
+    refresh: 0s

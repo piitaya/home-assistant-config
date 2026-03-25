@@ -39,9 +39,6 @@ hab-linux-amd64
 # go2rtc config
 go2rtc.yaml
 
-# ESPHome configs (to clean up)
-esphome/
-
 # IDE & tools
 .vscode/
 .github/
