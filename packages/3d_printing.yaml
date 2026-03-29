@@ -7,6 +7,17 @@ binary_sensor:
       - binary_sensor.bambi_fin_recente
       - binary_sensor.panpan_fin_recente
 
+  - platform: group
+    unique_id: 594ca30f-cba6-466b-8e7c-f8a61295f824
+    name: Impression 3D séchage
+    device_class: running
+    all: false
+    entities:
+      - binary_sensor.bambi_ams_1_sechage
+      - binary_sensor.bambi_ams_2_sechage
+      - binary_sensor.bambi_ams_ht_sechage
+      - binary_sensor.panpan_ams_sechage
+
 template:
   - binary_sensor:
       - unique_id: 26c064ac-e5e7-4cb3-8878-c86b39638e10
