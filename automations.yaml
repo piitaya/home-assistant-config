@@ -3276,3 +3276,58 @@
       entity_id: button.capteur_qualite_de_l_air_synchroniser_l_heure
     data: {}
   mode: single
+- id: '1774787085935'
+  alias: Impression 3D - Purificateur
+  description: Active et ajuste le purificateur d'air en fonction du filament utilisé,
+    puis purge l'air après la fin de l'impression.
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.impression_3d_en_cours
+    - binary_sensor.impression_3d_terminee_recemment
+    - sensor.impression_3d_nocivite_materiau
+  - trigger: homeassistant
+    event: start
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.impression_3d_terminee_recemment
+        state: 'on'
+      sequence:
+      - action: fan.set_preset_mode
+        target:
+          entity_id: fan.purificateur_d_air
+        data:
+          preset_mode: high
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.impression_3d_en_cours
+        state: 'on'
+      sequence:
+      - action: fan.turn_on
+        target:
+          entity_id: fan.purificateur_d_air
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: sensor.impression_3d_nocivite_materiau
+            state: Forte
+          sequence:
+          - action: fan.set_preset_mode
+            target:
+              entity_id: fan.purificateur_d_air
+            data:
+              preset_mode: high
+        default:
+        - action: fan.set_preset_mode
+          target:
+            entity_id: fan.purificateur_d_air
+          data:
+            preset_mode: low
+    default:
+    - action: fan.turn_off
+      target:
+        entity_id: fan.purificateur_d_air
+  mode: restart
