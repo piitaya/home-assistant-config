@@ -1957,7 +1957,7 @@
     state: paused
   - condition: numeric_state
     entity_id: sensor.yuka_mini_progression
-    above: 80
+    above: 65
     below: 100
   - condition: numeric_state
     entity_id: sensor.yuka_mini_batterie
