@@ -3283,18 +3283,26 @@
   triggers:
   - trigger: state
     entity_id:
-    - binary_sensor.impression_3d_en_cours
-    - binary_sensor.impression_3d_terminee_recemment
-    - sensor.impression_3d_nocivite_materiau
+    - sensor.bambi_etat_de_l_impression
+    - sensor.panpan_etat_de_l_impression
+    - binary_sensor.bambi_fin_recente
+    - binary_sensor.panpan_fin_recente
+    - binary_sensor.bambi_materiau_nocif
+    - binary_sensor.panpan_materiau_nocif
   - trigger: homeassistant
     event: start
   conditions: []
   actions:
   - choose:
     - conditions:
-      - condition: state
-        entity_id: binary_sensor.impression_3d_terminee_recemment
-        state: 'on'
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: binary_sensor.bambi_fin_recente
+          state: 'on'
+        - condition: state
+          entity_id: binary_sensor.panpan_fin_recente
+          state: 'on'
       sequence:
       - action: fan.set_preset_mode
         target:
@@ -3302,25 +3310,34 @@
         data:
           preset_mode: high
     - conditions:
-      - condition: state
-        entity_id: binary_sensor.impression_3d_en_cours
-        state: 'on'
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: sensor.bambi_etat_de_l_impression
+          state: running
+        - condition: state
+          entity_id: sensor.panpan_etat_de_l_impression
+          state: running
       sequence:
       - action: fan.turn_on
         target:
           entity_id: fan.purificateur_d_air
-      - choose:
-        - conditions:
+      - if:
+        - condition: or
+          conditions:
           - condition: state
-            entity_id: sensor.impression_3d_nocivite_materiau
-            state: Forte
-          sequence:
-          - action: fan.set_preset_mode
-            target:
-              entity_id: fan.purificateur_d_air
-            data:
-              preset_mode: high
-        default:
+            entity_id: binary_sensor.bambi_materiau_nocif
+            state: 'on'
+          - condition: state
+            entity_id: binary_sensor.panpan_materiau_nocif
+            state: 'on'
+        then:
+        - action: fan.set_preset_mode
+          target:
+            entity_id: fan.purificateur_d_air
+          data:
+            preset_mode: high
+        else:
         - action: fan.set_preset_mode
           target:
             entity_id: fan.purificateur_d_air
