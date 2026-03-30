@@ -1,0 +1,64 @@
+substitutions:
+  name: lecteur-de-filament
+  friendly_name: Lecteur de filament
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: adafruit_feather_esp32_v2
+  framework:
+    type: esp-idf
+
+logger:
+
+api:
+  encryption:
+    key: !secret lecteur_de_filament_api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret lecteur_de_filament_ota_password
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [bambu_nfc]
+
+i2c:
+  sda: GPIO22
+  scl: GPIO20
+
+bambu_nfc:
+  update_interval: 1s
+  on_tag:
+    then:
+      - homeassistant.tag_scanned: !lambda 'return x;'
+  filament_type:
+    name: "Type de filament"
+  filament_color:
+    name: "Couleur du filament"
+  min_hotend_temp:
+    name: "Temp min buse"
+  max_hotend_temp:
+    name: "Temp max buse"
+  bed_temp:
+    name: "Temp plateau"
+  tray_uid:
+    name: "Tray UID"
+  production_date:
+    name: "Date de production"
+  last_scan_date:
+    name: "Dernier scan"
+  reset:
+    name: "Reset filament"
+
+time:
+  - platform: homeassistant
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
