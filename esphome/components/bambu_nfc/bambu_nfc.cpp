@@ -169,7 +169,7 @@ void BambuNfc::clear_sensors() {
       filament_type_sensor_, filament_color_sensor_, filament_color_name_sensor_,
       tray_uid_sensor_, tray_info_idx_sensor_, production_date_sensor_, last_scan_date_sensor_};
   for (auto *s : text_sensors)
-    if (s) s->publish_state("");
+    if (s) s->publish_state("unknown");
 
   sensor::Sensor *num_sensors[] = {
       min_temp_sensor_, max_temp_sensor_, bed_temp_sensor_, spool_weight_sensor_,
@@ -470,12 +470,10 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
   if (last_scan_date_sensor_ != nullptr) {
     time_t now_ts = ::time(nullptr);
     struct tm timeinfo;
-    localtime_r(&now_ts, &timeinfo);
+    gmtime_r(&now_ts, &timeinfo);
     if (timeinfo.tm_year > 100) {
       char buf[32];
-      size_t len = strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S", &timeinfo);
-      // Append timezone offset
-      strftime(buf + len, sizeof(buf) - len, "%z", &timeinfo);
+      strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S+00:00", &timeinfo);
       last_scan_date_sensor_->publish_state(std::string(buf));
     }
   }
