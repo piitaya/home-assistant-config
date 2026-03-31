@@ -165,14 +165,19 @@ void BambuNfcResetButton::press_action() {
 }
 
 void BambuNfc::clear_sensors() {
-  if (filament_type_sensor_) filament_type_sensor_->publish_state("");
-  if (filament_color_sensor_) filament_color_sensor_->publish_state("");
-  if (tray_uid_sensor_) tray_uid_sensor_->publish_state("");
-  if (production_date_sensor_) production_date_sensor_->publish_state("");
-  if (last_scan_date_sensor_) last_scan_date_sensor_->publish_state("");
-  if (min_temp_sensor_) min_temp_sensor_->publish_state(NAN);
-  if (max_temp_sensor_) max_temp_sensor_->publish_state(NAN);
-  if (bed_temp_sensor_) bed_temp_sensor_->publish_state(NAN);
+  text_sensor::TextSensor *text_sensors[] = {
+      filament_type_sensor_, filament_color_sensor_, tray_uid_sensor_,
+      tray_info_idx_sensor_, production_date_sensor_, last_scan_date_sensor_};
+  for (auto *s : text_sensors)
+    if (s) s->publish_state("");
+
+  sensor::Sensor *num_sensors[] = {
+      min_temp_sensor_, max_temp_sensor_, bed_temp_sensor_, spool_weight_sensor_,
+      filament_diameter_sensor_, drying_temp_sensor_, drying_time_sensor_,
+      nozzle_diameter_sensor_, spool_width_sensor_, filament_length_sensor_};
+  for (auto *s : num_sensors)
+    if (s) s->publish_state(NAN);
+
   this->current_uid_ = {};
   ESP_LOGD(TAG, "Sensors cleared");
 }
@@ -241,16 +246,23 @@ void BambuNfc::loop() {
   this->current_uid_ = nfcid;
 
   if (this->next_task_ == READ) {
-    // Read Bambu data before turning off RF
-    this->read_bambu_data_(nfcid);
+    char uid_buf[nfc::FORMAT_UID_BUFFER_SIZE];
+    ESP_LOGD(TAG, "Found tag '%s'", nfc::format_uid_to(uid_buf, nfcid));
+
+    // Read Bambu data and fire appropriate trigger
+    bool success = this->read_bambu_data_(nfcid);
+    if (success) {
+      for (auto *trigger : this->success_triggers_)
+        trigger->trigger();
+    } else {
+      for (auto *trigger : this->error_triggers_)
+        trigger->trigger();
+    }
 
     // Fire standard on_tag triggers
     auto tag = make_unique<nfc::NfcTag>(nfcid, nfc::MIFARE_CLASSIC);
     for (auto *trigger : this->triggers_ontag_)
       trigger->process(tag);
-
-    char uid_buf[nfc::FORMAT_UID_BUFFER_SIZE];
-    ESP_LOGD(TAG, "Found tag '%s'", nfc::format_uid_to(uid_buf, nfcid));
   }
 
   this->read_mode();
@@ -267,117 +279,189 @@ static std::string trim_string(const std::vector<uint8_t> &data) {
   return s.substr(0, end + 1);
 }
 
-void BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
+static void publish_text(text_sensor::TextSensor *s, const std::string &val) {
+  if (s != nullptr) s->publish_state(val);
+}
+
+static void publish_num(sensor::Sensor *s, float val) {
+  if (s != nullptr) s->publish_state(val);
+}
+
+static std::string format_hex(const std::vector<uint8_t> &data, size_t max_len = 16) {
+  char buf[33];
+  size_t len = data.size() > max_len ? max_len : data.size();
+  for (size_t i = 0; i < len; i++)
+    snprintf(buf + i * 2, 3, "%02X", data[i]);
+  buf[len * 2] = '\0';
+  return std::string(buf);
+}
+
+static float read_float_le(const std::vector<uint8_t> &data, size_t offset) {
+  float val;
+  memcpy(&val, &data[offset], 4);
+  return val;
+}
+
+static uint16_t read_uint16_le(const std::vector<uint8_t> &data, size_t offset) {
+  return data[offset] | (data[offset + 1] << 8);
+}
+
+bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
   if (uid.size() != 4) {
     ESP_LOGW(TAG, "Non-4-byte UID, not a Bambu tag");
-    return;
+    return false;
   }
 
   uint8_t keys[96];
   if (!this->derive_bambu_keys_(uid.data(), uid.size(), keys)) {
     ESP_LOGE(TAG, "Failed to derive Bambu keys");
-    return;
+    return false;
   }
 
   ESP_LOGD(TAG, "Bambu keys derived, reading tag data...");
 
-  // Sector 0 (key at keys[0..5]): blocks 1, 2
-  if (this->auth_mifare_classic_block_(uid, 1, nfc::MIFARE_CMD_AUTH_A, &keys[0])) {
-    std::vector<uint8_t> block2;
-    if (this->read_mifare_classic_block_(2, block2)) {
-      std::string type = trim_string(block2);
-      ESP_LOGD(TAG, "Filament type: %s", type.c_str());
-    }
-  } else {
+  // ---- Phase 1: Read all blocks into local storage ----
+  std::vector<uint8_t> b1, b2, b4, b5, b6, b8, b9, b10, b12, b14;
+
+  // Sector 0 (keys[0..5]): blocks 1, 2
+  if (!this->auth_mifare_classic_block_(uid, 1, nfc::MIFARE_CMD_AUTH_A, &keys[0])) {
     ESP_LOGE(TAG, "Auth failed sector 0 - not a Bambu tag?");
-    return;
+    return false;
+  }
+  if (!this->read_mifare_classic_block_(1, b1) || !this->read_mifare_classic_block_(2, b2)) {
+    ESP_LOGE(TAG, "Read failed sector 0");
+    return false;
   }
 
-  // Sector 1 (key at keys[6..11]): blocks 4, 5, 6
-  if (this->auth_mifare_classic_block_(uid, 4, nfc::MIFARE_CMD_AUTH_A, &keys[6])) {
-    std::vector<uint8_t> block4, block5, block6;
-
-    // Block 4: Detailed filament type
-    if (this->read_mifare_classic_block_(4, block4)) {
-      std::string detailed_type = trim_string(block4);
-      ESP_LOGD(TAG, "Detailed type: %s", detailed_type.c_str());
-      if (filament_type_sensor_ != nullptr)
-        filament_type_sensor_->publish_state(detailed_type);
-    }
-
-    // Block 5: Color RGBA (4B) + pad (4B) + Diameter float LE (4B)
-    if (this->read_mifare_classic_block_(5, block5) && block5.size() >= 4) {
-      char color_hex[8];
-      snprintf(color_hex, sizeof(color_hex), "#%02X%02X%02X", block5[0], block5[1], block5[2]);
-      ESP_LOGD(TAG, "Color: %s", color_hex);
-      if (filament_color_sensor_ != nullptr)
-        filament_color_sensor_->publish_state(std::string(color_hex));
-    }
-
-    // Block 6: Drying temp (2) + Drying time (2) + Bed temp type (2) + Bed temp (2) + Max temp (2) + Min temp (2)
-    if (this->read_mifare_classic_block_(6, block6) && block6.size() >= 12) {
-      uint16_t bed_temp = block6[6] | (block6[7] << 8);
-      uint16_t max_temp = block6[8] | (block6[9] << 8);
-      uint16_t min_temp = block6[10] | (block6[11] << 8);
-
-      ESP_LOGD(TAG, "Bed: %d°C, Hotend: %d-%d°C", bed_temp, min_temp, max_temp);
-
-      if (bed_temp_sensor_ != nullptr)
-        bed_temp_sensor_->publish_state(bed_temp);
-      if (max_temp_sensor_ != nullptr)
-        max_temp_sensor_->publish_state(max_temp);
-      if (min_temp_sensor_ != nullptr)
-        min_temp_sensor_->publish_state(min_temp);
-    }
-  } else {
-    ESP_LOGE(TAG, "Auth failed sector 1 - tag halted, will retry");
-    return;
+  // Sector 1 (keys[6..11]): blocks 4, 5, 6
+  if (!this->auth_mifare_classic_block_(uid, 4, nfc::MIFARE_CMD_AUTH_A, &keys[6])) {
+    ESP_LOGE(TAG, "Auth failed sector 1");
+    return false;
+  }
+  if (!this->read_mifare_classic_block_(4, b4) || !this->read_mifare_classic_block_(5, b5) ||
+      !this->read_mifare_classic_block_(6, b6)) {
+    ESP_LOGE(TAG, "Read failed sector 1");
+    return false;
   }
 
-  // Sector 2 (key at keys[12..17]): block 9
-  if (this->auth_mifare_classic_block_(uid, 9, nfc::MIFARE_CMD_AUTH_A, &keys[12])) {
-    std::vector<uint8_t> block9;
-    if (this->read_mifare_classic_block_(9, block9)) {
-      char hex_buf[33];
-      size_t len = block9.size() > 16 ? 16 : block9.size();
-      for (size_t i = 0; i < len; i++)
-        snprintf(hex_buf + i * 2, 3, "%02X", block9[i]);
-      hex_buf[len * 2] = '\0';
-      std::string tray_uid(hex_buf);
-      ESP_LOGD(TAG, "Tray UID: %s", tray_uid.c_str());
-      if (tray_uid_sensor_ != nullptr)
-        tray_uid_sensor_->publish_state(tray_uid);
-    }
-  } else {
-    ESP_LOGE(TAG, "Auth failed sector 2 - tag halted, will retry");
-    return;
+  // Sector 2 (keys[12..17]): blocks 8, 9, 10
+  if (!this->auth_mifare_classic_block_(uid, 8, nfc::MIFARE_CMD_AUTH_A, &keys[12])) {
+    ESP_LOGE(TAG, "Auth failed sector 2");
+    return false;
+  }
+  if (!this->read_mifare_classic_block_(8, b8) || !this->read_mifare_classic_block_(9, b9) ||
+      !this->read_mifare_classic_block_(10, b10)) {
+    ESP_LOGE(TAG, "Read failed sector 2");
+    return false;
   }
 
-  // Sector 3 (key at keys[18..23]): block 12
-  if (this->auth_mifare_classic_block_(uid, 12, nfc::MIFARE_CMD_AUTH_A, &keys[18])) {
-    std::vector<uint8_t> block12;
-    if (this->read_mifare_classic_block_(12, block12)) {
-      std::string prod_date = trim_string(block12);
-      ESP_LOGD(TAG, "Production date: %s", prod_date.c_str());
-      if (production_date_sensor_ != nullptr)
-        production_date_sensor_->publish_state(prod_date);
-    }
-  } else {
-    ESP_LOGE(TAG, "Auth failed sector 3 - tag halted, will retry");
-    return;
+  // Sector 3 (keys[18..23]): blocks 12, 14
+  if (!this->auth_mifare_classic_block_(uid, 12, nfc::MIFARE_CMD_AUTH_A, &keys[18])) {
+    ESP_LOGE(TAG, "Auth failed sector 3");
+    return false;
+  }
+  if (!this->read_mifare_classic_block_(12, b12) || !this->read_mifare_classic_block_(14, b14)) {
+    ESP_LOGE(TAG, "Read failed sector 3");
+    return false;
   }
 
-  // Record last scan timestamp
+  // ---- Phase 2: All reads OK — parse and publish atomically ----
+  ESP_LOGD(TAG, "All sectors read successfully, publishing...");
+
+  // Block 1: Tray Info Index
+  std::string tray_info = trim_string(b1);
+  ESP_LOGD(TAG, "Tray info idx: %s", tray_info.c_str());
+  publish_text(tray_info_idx_sensor_, tray_info);
+
+  // Block 2: Filament type
+  ESP_LOGD(TAG, "Filament type: %s", trim_string(b2).c_str());
+
+  // Block 4: Detailed filament type
+  std::string detailed_type = trim_string(b4);
+  ESP_LOGD(TAG, "Detailed type: %s", detailed_type.c_str());
+  publish_text(filament_type_sensor_, detailed_type);
+
+  // Block 5: Color (4B) + Weight (2B) + pad (2B) + Diameter (4B)
+  if (b5.size() >= 12) {
+    char color_hex[8];
+    snprintf(color_hex, sizeof(color_hex), "#%02X%02X%02X", b5[0], b5[1], b5[2]);
+    ESP_LOGD(TAG, "Color: %s", color_hex);
+    publish_text(filament_color_sensor_, std::string(color_hex));
+
+    uint16_t weight = read_uint16_le(b5, 4);
+    ESP_LOGD(TAG, "Spool weight: %d g", weight);
+    publish_num(spool_weight_sensor_, weight);
+
+    float diameter = read_float_le(b5, 8);
+    ESP_LOGD(TAG, "Filament diameter: %.2f mm", diameter);
+    publish_num(filament_diameter_sensor_, diameter);
+  }
+
+  // Block 6: Drying temp/time + Bed temp + Hotend min/max
+  if (b6.size() >= 12) {
+    uint16_t drying_temp = read_uint16_le(b6, 0);
+    uint16_t drying_time = read_uint16_le(b6, 2);
+    uint16_t bed_temp = read_uint16_le(b6, 6);
+    uint16_t max_temp = read_uint16_le(b6, 8);
+    uint16_t min_temp = read_uint16_le(b6, 10);
+
+    ESP_LOGD(TAG, "Drying: %d°C/%dh, Bed: %d°C, Hotend: %d-%d°C",
+             drying_temp, drying_time, bed_temp, min_temp, max_temp);
+
+    publish_num(drying_temp_sensor_, drying_temp);
+    publish_num(drying_time_sensor_, drying_time);
+    publish_num(bed_temp_sensor_, bed_temp);
+    publish_num(max_temp_sensor_, max_temp);
+    publish_num(min_temp_sensor_, min_temp);
+  }
+
+  // Block 8: Nozzle diameter
+  if (b8.size() >= 16) {
+    float nozzle = read_float_le(b8, 12);
+    ESP_LOGD(TAG, "Nozzle diameter: %.2f mm", nozzle);
+    publish_num(nozzle_diameter_sensor_, nozzle);
+  }
+
+  // Block 9: Tray UID
+  std::string tray_uid = format_hex(b9);
+  ESP_LOGD(TAG, "Tray UID: %s", tray_uid.c_str());
+  publish_text(tray_uid_sensor_, tray_uid);
+
+  // Block 10: Spool width
+  if (b10.size() >= 6) {
+    float spool_width = read_uint16_le(b10, 4) / 100.0f;
+    ESP_LOGD(TAG, "Spool width: %.1f mm", spool_width);
+    publish_num(spool_width_sensor_, spool_width);
+  }
+
+  // Block 12: Production date (format: "year_month_day_hour_minute" → "YYYY-MM-DD")
+  std::string prod_date_raw = trim_string(b12);
+  ESP_LOGD(TAG, "Production date raw: %s", prod_date_raw.c_str());
+  std::string prod_date = prod_date_raw;
+  if (prod_date_raw.size() >= 10 && prod_date_raw[4] == '_' && prod_date_raw[7] == '_') {
+    prod_date = prod_date_raw.substr(0, 4) + "-" + prod_date_raw.substr(5, 2) + "-" + prod_date_raw.substr(8, 2);
+  }
+  publish_text(production_date_sensor_, prod_date);
+
+  // Block 14: Filament length
+  if (b14.size() >= 6) {
+    uint16_t length = read_uint16_le(b14, 4);
+    ESP_LOGD(TAG, "Filament length: %d m", length);
+    publish_num(filament_length_sensor_, length);
+  }
+
+  // Last scan timestamp
   if (last_scan_date_sensor_ != nullptr) {
     time_t now_ts = ::time(nullptr);
     struct tm timeinfo;
     localtime_r(&now_ts, &timeinfo);
     if (timeinfo.tm_year > 100) {
-      char buf[20];
-      strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M", &timeinfo);
+      char buf[32];
+      strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S", &timeinfo);
       last_scan_date_sensor_->publish_state(std::string(buf));
     }
   }
+  return true;
 }
 
 }  // namespace bambu_nfc

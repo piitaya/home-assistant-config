@@ -31,27 +31,78 @@ i2c:
   sda: GPIO22
   scl: GPIO20
 
+output:
+  - platform: gpio
+    pin: GPIO2
+    id: neopixel_power
+
+light:
+  - platform: esp32_rmt_led_strip
+    id: status_led
+    pin: GPIO0
+    num_leds: 1
+    chipset: WS2812
+    rgb_order: GRB
+    default_transition_length: 0s
+
 bambu_nfc:
   update_interval: 1s
-  on_tag:
+  on_bambu_success:
     then:
-      - homeassistant.tag_scanned: !lambda 'return x;'
+      - output.turn_on: neopixel_power
+      - light.turn_on:
+          id: status_led
+          red: 0%
+          green: 100%
+          blue: 0%
+          brightness: 50%
+      - delay: 2s
+      - light.turn_off: status_led
+      - output.turn_off: neopixel_power
+  on_bambu_error:
+    then:
+      - output.turn_on: neopixel_power
+      - light.turn_on:
+          id: status_led
+          red: 100%
+          green: 0%
+          blue: 0%
+          brightness: 50%
+      - delay: 2s
+      - light.turn_off: status_led
+      - output.turn_off: neopixel_power
   filament_type:
     name: "Type de filament"
   filament_color:
     name: "Couleur du filament"
-  min_hotend_temp:
-    name: "Temp min buse"
-  max_hotend_temp:
-    name: "Temp max buse"
-  bed_temp:
-    name: "Temp plateau"
+  tray_info_idx:
+    name: "Code filament"
   tray_uid:
     name: "Tray UID"
   production_date:
     name: "Date de production"
   last_scan_date:
     name: "Dernier scan"
+  min_hotend_temp:
+    name: "Temp min buse"
+  max_hotend_temp:
+    name: "Temp max buse"
+  bed_temp:
+    name: "Temp plateau"
+  spool_weight:
+    name: "Poids bobine"
+  filament_diameter:
+    name: "Diamètre filament"
+  drying_temp:
+    name: "Temp séchage"
+  drying_time:
+    name: "Durée séchage"
+  nozzle_diameter:
+    name: "Diamètre buse"
+  spool_width:
+    name: "Largeur bobine"
+  filament_length:
+    name: "Longueur filament"
   reset:
     name: "Reset filament"
 
