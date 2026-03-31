@@ -19,86 +19,87 @@ static const uint8_t BAMBU_MASTER_KEY[] = {
 
 static const uint8_t BAMBU_HKDF_INFO[] = {'R', 'F', 'I', 'D', '-', 'A', '\0'};
 
-// ---- I2C Transport (from PN532I2C) ----
+// ---- SPI Transport (identical to pn532_spi.cpp) ----
+
+void BambuNfc::setup() {
+  this->spi_setup();
+  this->cs_->digital_write(false);
+  delay(10);
+  PN532::setup();
+}
 
 bool BambuNfc::is_read_ready() {
-  uint8_t ready;
-  if (!this->read_bytes_raw(&ready, 1))
-    return false;
-  return ready == 0x01;
+  this->enable();
+  this->write_byte(0x02);
+  bool ready = this->read_byte() == 0x01;
+  this->disable();
+  return ready;
 }
 
 bool BambuNfc::write_data(const std::vector<uint8_t> &data) {
-  return this->write(data.data(), data.size()) == i2c::ERROR_OK;
+  this->enable();
+  delay(2);
+  this->write_byte(0x01);
+  this->write_array(data.data(), data.size());
+  this->disable();
+  return true;
 }
 
 bool BambuNfc::read_data(std::vector<uint8_t> &data, uint8_t len) {
-  delay(1);
   if (this->read_ready_(true) != pn532::PN532ReadReady::READY)
     return false;
-  data.resize(len + 1);
-  this->read_bytes_raw(data.data(), len + 1);
+  this->enable();
+  delay(2);
+  this->write_byte(0x03);
+  data.resize(len);
+  this->read_array(data.data(), len);
+  this->disable();
+  data.insert(data.begin(), 0x01);
   return true;
 }
 
 bool BambuNfc::read_response(uint8_t command, std::vector<uint8_t> &data) {
-  uint8_t len = this->read_response_length_();
-  if (len == 0)
+  if (this->read_ready_(true) != pn532::PN532ReadReady::READY)
     return false;
-
-  if (!this->read_data(data, 6 + len + 2))
+  this->enable();
+  delay(2);
+  this->write_byte(0x03);
+  std::vector<uint8_t> header(7);
+  this->read_array(header.data(), 7);
+  if (header[0] != 0x00 || header[1] != 0x00 || header[2] != 0xFF) {
+    this->disable();
     return false;
-
-  if (data[1] != 0x00 || data[2] != 0x00 || data[3] != 0xFF)
+  }
+  bool valid_header = (static_cast<uint8_t>(header[3] + header[4]) == 0 &&
+                       header[5] == 0xD5 && header[6] == command + 1);
+  if (!valid_header) {
+    this->disable();
     return false;
-
-  bool valid_header = (static_cast<uint8_t>(data[4] + data[5]) == 0 &&
-                       data[6] == 0xD5 &&
-                       data[7] == command + 1);
-  if (!valid_header)
+  }
+  uint8_t full_len = header[3];
+  if (full_len < 2) {
+    this->disable();
     return false;
-
-  data.erase(data.begin(), data.begin() + 6);
-
-  uint8_t checksum = 0;
-  for (int i = 0; i < len + 1; i++)
+  }
+  uint8_t len = full_len - 1;
+  data.resize(len + 1);
+  this->read_array(data.data(), len + 1);
+  this->disable();
+  uint8_t checksum = header[5] + header[6];
+  for (int i = 0; i < len - 1; i++)
     checksum += data[i];
   checksum = ~checksum + 1;
-
-  if (data[len + 1] != checksum)
+  if (data[len - 1] != checksum)
     return false;
-  if (data[len + 2] != 0x00)
+  if (data[len] != 0x00)
     return false;
-
-  data.erase(data.begin(), data.begin() + 2);
   data.erase(data.end() - 2, data.end());
   return true;
 }
 
-uint8_t BambuNfc::read_response_length_() {
-  std::vector<uint8_t> data;
-  if (!this->read_data(data, 6))
-    return 0;
-
-  if (data[1] != 0x00 || data[2] != 0x00 || data[3] != 0xFF)
-    return 0;
-
-  bool valid_header = (static_cast<uint8_t>(data[4] + data[5]) == 0 && data[6] == 0xD5);
-  if (!valid_header)
-    return 0;
-
-  this->send_nack_();
-
-  uint8_t full_len = data[4];
-  uint8_t len = full_len - 1;
-  if (full_len == 0)
-    len = 0;
-  return len;
-}
-
 void BambuNfc::dump_config() {
   PN532::dump_config();
-  LOG_I2C_DEVICE(this);
+  LOG_PIN("  CS Pin: ", this->cs_);
 }
 
 // ---- HKDF Key Derivation ----
@@ -256,6 +257,8 @@ void BambuNfc::loop() {
       for (auto *trigger : this->success_triggers_)
         trigger->trigger();
     } else {
+      // Clear UID so the tag can be retried on next poll
+      this->current_uid_ = {};
       for (auto *trigger : this->error_triggers_)
         trigger->trigger();
     }

@@ -1,11 +1,11 @@
 import esphome.codegen as cg
 from esphome import automation
-from esphome.components import i2c, pn532, text_sensor, sensor, button
+from esphome.components import spi, pn532, text_sensor, sensor, button
 import esphome.config_validation as cv
 from esphome.const import CONF_ID, CONF_TRIGGER_ID
 
 AUTO_LOAD = ["pn532", "text_sensor", "sensor", "button"]
-DEPENDENCIES = ["i2c"]
+DEPENDENCIES = ["spi"]
 
 CONF_FILAMENT_TYPE = "filament_type"
 CONF_FILAMENT_COLOR = "filament_color"
@@ -30,7 +30,7 @@ CONF_ON_BAMBU_SUCCESS = "on_bambu_success"
 CONF_ON_BAMBU_ERROR = "on_bambu_error"
 
 bambu_nfc_ns = cg.esphome_ns.namespace("bambu_nfc")
-BambuNfc = bambu_nfc_ns.class_("BambuNfc", pn532.PN532, i2c.I2CDevice)
+BambuNfc = bambu_nfc_ns.class_("BambuNfc", pn532.PN532, spi.SPIDevice)
 BambuNfcResetButton = bambu_nfc_ns.class_(
     "BambuNfcResetButton", button.Button, cg.Parented.template(BambuNfc)
 )
@@ -79,14 +79,14 @@ for key, _, kwargs in SENSORS:
     schema_dict[cv.Optional(key)] = sensor.sensor_schema(**kwargs)
 
 CONFIG_SCHEMA = cv.All(
-    pn532.PN532_SCHEMA.extend(schema_dict).extend(i2c.i2c_device_schema(0x24))
+    pn532.PN532_SCHEMA.extend(schema_dict).extend(spi.spi_device_schema(cs_pin_required=True))
 )
 
 
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await pn532.setup_pn532(var, config)
-    await i2c.register_i2c_device(var, config)
+    await spi.register_spi_device(var, config)
 
     for key, setter, _ in TEXT_SENSORS:
         if key in config:

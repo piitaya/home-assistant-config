@@ -27,9 +27,10 @@ external_components:
       path: components
     components: [bambu_nfc]
 
-i2c:
-  sda: GPIO22
-  scl: GPIO20
+spi:
+  clk_pin: GPIO5
+  mosi_pin: GPIO19
+  miso_pin: GPIO21
 
 output:
   - platform: gpio
@@ -46,6 +47,7 @@ light:
     default_transition_length: 0s
 
 bambu_nfc:
+  cs_pin: GPIO33
   update_interval: 1s
   on_bambu_success:
     then:
