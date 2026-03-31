@@ -2071,18 +2071,6 @@
     data:
       message: Tag
   mode: single
-- id: '1751117568981'
-  alias: TagTuner music player for NFC tags automation
-  description: ''
-  use_blueprint:
-    path: luka6000/TagTuner4HAss.yaml
-    input:
-      massplayer: media_player.sonos_move_music_assistant
-      tuner_id: e9aa8ac4367cee2d39fb2e666df08e70
-      stop_on_tagremoved: true
-      next_on_rescan: true
-      default_volume_set: false
-      httpplayer: media_player.sonos_move_music_assistant
 - id: '1751410702179'
   alias: Désactivation prise anti moustique
   description: Désactive automatiquement la prise anti moustique chaque jour à 4h
