@@ -372,10 +372,19 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
   // ---- Phase 2: All reads OK — parse and publish atomically ----
   ESP_LOGD(TAG, "All sectors read successfully, publishing...");
 
-  // Block 1: Tray Info Index
-  std::string tray_info = trim_string(b1);
-  ESP_LOGD(TAG, "Tray info idx: %s", tray_info.c_str());
-  publish_text(tray_info_idx_sensor_, tray_info);
+  // Block 1: Tray Info Index — variant (8B) + material ID (8B)
+  if (b1.size() >= 16) {
+    std::string variant(b1.begin(), b1.begin() + 8);
+    variant.erase(variant.find_last_not_of(std::string("\0 ", 2)) + 1);
+    std::string material_id(b1.begin() + 8, b1.begin() + 16);
+    material_id.erase(material_id.find_last_not_of(std::string("\0 ", 2)) + 1);
+    ESP_LOGD(TAG, "Tray info: variant=%s material_id=%s", variant.c_str(), material_id.c_str());
+    publish_text(tray_info_idx_sensor_, material_id);
+  } else {
+    std::string tray_info = trim_string(b1);
+    ESP_LOGD(TAG, "Tray info idx: %s", tray_info.c_str());
+    publish_text(tray_info_idx_sensor_, tray_info);
+  }
 
   // Block 2: Filament type
   ESP_LOGD(TAG, "Filament type: %s", trim_string(b2).c_str());

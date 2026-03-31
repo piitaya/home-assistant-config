@@ -27,7 +27,7 @@ static const BambuColorEntry BAMBU_COLORS[] = {
   {"ABS Basic", "FCE900", "Yellow"},
   {"ABS Basic", "FF6A13", "Orange"},
   {"ABS Basic", "FFC72C", "Tangerine Yellow"},
-  {"ABS Basic", "FFFFFF", "Support for ABS"},
+  {"ABS Basic", "FFFFFF", "White"},
   {"ABS-GF", "000000", "Black"},
   {"ABS-GF", "0C3B95", "Blue"},
   {"ABS-GF", "61BF36", "Green"},

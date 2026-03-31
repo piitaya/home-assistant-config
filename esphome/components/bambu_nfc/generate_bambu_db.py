@@ -42,9 +42,8 @@ def fetch_and_generate():
     with urllib.request.urlopen(URL) as resp:
         data = json.loads(resp.read())
 
-    # --- Colors ---
-    colors = []
-    seen = set()
+    # First pass: collect all entries, mark support/variant names
+    all_entries = []  # (detailed_type, hex, display_name, is_variant)
     densities = {}
 
     for fil in data["filaments"]:
@@ -66,10 +65,24 @@ def fetch_and_generate():
                 continue
             hx = hx.upper()
             display = name_tpl.replace("{color_name}", cn)
-            key = f"{dt}|{hx}"
-            if key in seen:
-                continue
-            seen.add(key)
+            is_variant = display.startswith("Support") or display.startswith("Tough+") or display.startswith("For AMS")
+            all_entries.append((dt, hx, display, is_variant))
+
+    # Second pass: deduplicate, prefer normal names over variants
+    colors = []
+    seen = {}  # key -> (display, is_variant)
+
+    for dt, hx, display, is_variant in all_entries:
+        key = f"{dt}|{hx}"
+        if key in seen:
+            prev_display, prev_is_variant = seen[key]
+            # Replace variant with normal name
+            if prev_is_variant and not is_variant:
+                colors = [(d, h, n) for d, h, n in colors if f"{d}|{h}" != key]
+                colors.append((dt, hx, display))
+                seen[key] = (display, is_variant)
+        else:
+            seen[key] = (display, is_variant)
             colors.append((dt, hx, display))
 
     colors.sort()
@@ -86,9 +99,13 @@ def fetch_and_generate():
             f.write(f'  {{"{dt}", "{hx}", "{name_esc}"}},\n')
         f.write("};\n\n")
         f.write(f"static const size_t BAMBU_COLORS_COUNT = {len(colors)};\n\n")
-        f.write("inline const char *find_bambu_color_name(const char *detailed_type, const char *hex) {\n")
+        f.write(
+            "inline const char *find_bambu_color_name(const char *detailed_type, const char *hex) {\n"
+        )
         f.write("  for (size_t i = 0; i < BAMBU_COLORS_COUNT; i++) {\n")
-        f.write("    if (strcasecmp(BAMBU_COLORS[i].detailed_type, detailed_type) == 0 &&\n")
+        f.write(
+            "    if (strcasecmp(BAMBU_COLORS[i].detailed_type, detailed_type) == 0 &&\n"
+        )
         f.write("        strcasecmp(BAMBU_COLORS[i].hex, hex) == 0)\n")
         f.write("      return BAMBU_COLORS[i].color_name;\n")
         f.write("  }\n  return nullptr;\n}\n\n")
@@ -99,23 +116,35 @@ def fetch_and_generate():
     with open("bambu_densities.h", "w") as f:
         f.write("#pragma once\n\n#include <cstring>\n\n")
         f.write("namespace esphome {\nnamespace bambu_nfc {\n\n")
-        f.write("struct DensityEntry {\n  const char *detailed_type;\n  float density;\n};\n\n")
+        f.write(
+            "struct DensityEntry {\n  const char *detailed_type;\n  float density;\n};\n\n"
+        )
         f.write("static const DensityEntry BAMBU_DENSITIES[] = {\n")
         for dt, d in sorted_densities:
             f.write(f'  {{"{dt}", {d}f}},\n')
         f.write("};\n\n")
-        f.write(f"static const size_t BAMBU_DENSITIES_COUNT = {len(sorted_densities)};\n\n")
-        f.write("inline float find_bambu_density(const char *detailed_type) {\n")
+        f.write(
+            f"static const size_t BAMBU_DENSITIES_COUNT = {len(sorted_densities)};\n\n"
+        )
+        f.write(
+            "inline float find_bambu_density(const char *detailed_type) {\n"
+        )
         f.write("  for (size_t i = 0; i < BAMBU_DENSITIES_COUNT; i++) {\n")
-        f.write("    if (strcasecmp(BAMBU_DENSITIES[i].detailed_type, detailed_type) == 0)\n")
+        f.write(
+            "    if (strcasecmp(BAMBU_DENSITIES[i].detailed_type, detailed_type) == 0)\n"
+        )
         f.write("      return BAMBU_DENSITIES[i].density;\n")
         f.write("  }\n")
         f.write("  const char *space = strchr(detailed_type, ' ');\n")
         f.write("  if (space) {\n")
         f.write("    size_t base_len = space - detailed_type;\n")
         f.write("    for (size_t i = 0; i < BAMBU_DENSITIES_COUNT; i++) {\n")
-        f.write("      if (strncasecmp(BAMBU_DENSITIES[i].detailed_type, detailed_type, base_len) == 0 &&\n")
-        f.write("          BAMBU_DENSITIES[i].detailed_type[base_len] == ' ')\n")
+        f.write(
+            "      if (strncasecmp(BAMBU_DENSITIES[i].detailed_type, detailed_type, base_len) == 0 &&\n"
+        )
+        f.write(
+            "          BAMBU_DENSITIES[i].detailed_type[base_len] == ' ')\n"
+        )
         f.write("        return BAMBU_DENSITIES[i].density;\n")
         f.write("    }\n  }\n")
         f.write("  return 1.24f;\n}\n\n")
