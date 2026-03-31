@@ -1,4 +1,4 @@
-# Mise a jour de la table de couleurs Bambu Lab
+# Mise a jour des tables Bambu Lab (couleurs + densites)
 
 Source: [SpoolmanDB](https://github.com/Donkie/SpoolmanDB/blob/main/filaments/bambulab.json)
 
@@ -10,7 +10,7 @@ Quand un scan affiche le hex brut au lieu d'un nom de couleur.
 
 ```bash
 cd /homeassistant/esphome/components/bambu_nfc
-python3 generate_colors.py
+python3 generate_bambu_db.py
 ```
 
-Puis recompiler et reflasher.
+Genere `bambu_colors.h` et `bambu_densities.h`. Puis recompiler et reflasher.

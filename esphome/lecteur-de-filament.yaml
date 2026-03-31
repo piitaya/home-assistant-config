@@ -105,6 +105,8 @@ bambu_nfc:
     name: "Largeur bobine"
   filament_length:
     name: "Longueur filament"
+  material_density:
+    name: "Densité matériau"
   reset:
     name: "Reset filament"
 

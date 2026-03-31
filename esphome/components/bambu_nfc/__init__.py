@@ -23,6 +23,7 @@ CONF_DRYING_TIME = "drying_time"
 CONF_NOZZLE_DIAMETER = "nozzle_diameter"
 CONF_SPOOL_WIDTH = "spool_width"
 CONF_FILAMENT_LENGTH = "filament_length"
+CONF_MATERIAL_DENSITY = "material_density"
 CONF_FILAMENT_COLOR_NAME = "filament_color_name"
 CONF_RESET = "reset"
 CONF_ON_BAMBU_SUCCESS = "on_bambu_success"
@@ -41,7 +42,7 @@ TEXT_SENSORS = [
     (CONF_FILAMENT_COLOR, "set_filament_color_sensor", {"icon": "mdi:palette"}),
     (CONF_TRAY_UID, "set_tray_uid_sensor", {"icon": "mdi:identifier"}),
     (CONF_TRAY_INFO_IDX, "set_tray_info_idx_sensor", {"icon": "mdi:barcode"}),
-    (CONF_PRODUCTION_DATE, "set_production_date_sensor", {"icon": "mdi:calendar", "device_class": "date"}),
+    (CONF_PRODUCTION_DATE, "set_production_date_sensor", {"icon": "mdi:calendar"}),
     (CONF_LAST_SCAN_DATE, "set_last_scan_date_sensor", {"icon": "mdi:nfc-tap", "device_class": "timestamp"}),
     (CONF_FILAMENT_COLOR_NAME, "set_filament_color_name_sensor", {"icon": "mdi:format-color-fill"}),
 ]
@@ -57,6 +58,7 @@ SENSORS = [
     (CONF_NOZZLE_DIAMETER, "set_nozzle_diameter_sensor", {"unit_of_measurement": "mm", "accuracy_decimals": 2, "device_class": "distance", "icon": "mdi:printer-3d-nozzle"}),
     (CONF_SPOOL_WIDTH, "set_spool_width_sensor", {"unit_of_measurement": "mm", "accuracy_decimals": 1, "device_class": "distance", "icon": "mdi:ruler"}),
     (CONF_FILAMENT_LENGTH, "set_filament_length_sensor", {"unit_of_measurement": "m", "accuracy_decimals": 0, "device_class": "distance", "icon": "mdi:ruler"}),
+    (CONF_MATERIAL_DENSITY, "set_material_density_sensor", {"unit_of_measurement": "g/cm³", "accuracy_decimals": 2, "icon": "mdi:cube-outline"}),
 ]
 
 schema_dict = {

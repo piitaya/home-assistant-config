@@ -9,6 +9,7 @@
 #include "esphome/components/button/button.h"
 
 #include "bambu_colors.h"
+#include "bambu_densities.h"
 
 namespace esphome {
 namespace bambu_nfc {
@@ -47,6 +48,7 @@ class BambuNfc : public pn532::PN532, public i2c::I2CDevice {
   void set_nozzle_diameter_sensor(sensor::Sensor *s) { nozzle_diameter_sensor_ = s; }
   void set_spool_width_sensor(sensor::Sensor *s) { spool_width_sensor_ = s; }
   void set_filament_length_sensor(sensor::Sensor *s) { filament_length_sensor_ = s; }
+  void set_material_density_sensor(sensor::Sensor *s) { material_density_sensor_ = s; }
 
   void register_bambu_success_trigger(BambuSuccessTrigger *t) { success_triggers_.push_back(t); }
   void register_bambu_error_trigger(BambuErrorTrigger *t) { error_triggers_.push_back(t); }
@@ -79,6 +81,7 @@ class BambuNfc : public pn532::PN532, public i2c::I2CDevice {
   sensor::Sensor *nozzle_diameter_sensor_{nullptr};
   sensor::Sensor *spool_width_sensor_{nullptr};
   sensor::Sensor *filament_length_sensor_{nullptr};
+  sensor::Sensor *material_density_sensor_{nullptr};
 
   std::vector<BambuSuccessTrigger *> success_triggers_;
   std::vector<BambuErrorTrigger *> error_triggers_;

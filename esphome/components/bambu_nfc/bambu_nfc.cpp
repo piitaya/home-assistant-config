@@ -174,7 +174,8 @@ void BambuNfc::clear_sensors() {
   sensor::Sensor *num_sensors[] = {
       min_temp_sensor_, max_temp_sensor_, bed_temp_sensor_, spool_weight_sensor_,
       filament_diameter_sensor_, drying_temp_sensor_, drying_time_sensor_,
-      nozzle_diameter_sensor_, spool_width_sensor_, filament_length_sensor_};
+      nozzle_diameter_sensor_, spool_width_sensor_, filament_length_sensor_,
+      material_density_sensor_};
   for (auto *s : num_sensors)
     if (s) s->publish_state(NAN);
 
@@ -381,6 +382,11 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
   ESP_LOGD(TAG, "Detailed type: %s", detailed_type.c_str());
   publish_text(filament_type_sensor_, detailed_type);
 
+  // Material density
+  float density = find_bambu_density(detailed_type.c_str());
+  ESP_LOGD(TAG, "Material density: %.2f g/cm3", density);
+  publish_num(material_density_sensor_, density);
+
   // Block 5: Color (4B) + Weight (2B) + pad (2B) + Diameter (4B)
   if (b5.size() >= 12) {
     char color_hex[8];
@@ -467,7 +473,9 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
     localtime_r(&now_ts, &timeinfo);
     if (timeinfo.tm_year > 100) {
       char buf[32];
-      strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S", &timeinfo);
+      size_t len = strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S", &timeinfo);
+      // Append timezone offset
+      strftime(buf + len, sizeof(buf) - len, "%z", &timeinfo);
       last_scan_date_sensor_->publish_state(std::string(buf));
     }
   }
