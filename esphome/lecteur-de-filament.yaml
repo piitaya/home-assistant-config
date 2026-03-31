@@ -75,6 +75,8 @@ bambu_nfc:
     name: "Type de filament"
   filament_color:
     name: "Couleur du filament"
+  filament_color_name:
+    name: "Nom couleur"
   tray_info_idx:
     name: "Code filament"
   tray_uid:

@@ -8,6 +8,8 @@
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/button/button.h"
 
+#include "bambu_colors.h"
+
 namespace esphome {
 namespace bambu_nfc {
 
@@ -27,15 +29,14 @@ class BambuNfc : public pn532::PN532, public i2c::I2CDevice {
   void loop() override;
   void clear_sensors();
 
-  // Text sensor setters
   void set_filament_type_sensor(text_sensor::TextSensor *s) { filament_type_sensor_ = s; }
   void set_filament_color_sensor(text_sensor::TextSensor *s) { filament_color_sensor_ = s; }
+  void set_filament_color_name_sensor(text_sensor::TextSensor *s) { filament_color_name_sensor_ = s; }
   void set_tray_uid_sensor(text_sensor::TextSensor *s) { tray_uid_sensor_ = s; }
   void set_tray_info_idx_sensor(text_sensor::TextSensor *s) { tray_info_idx_sensor_ = s; }
   void set_production_date_sensor(text_sensor::TextSensor *s) { production_date_sensor_ = s; }
   void set_last_scan_date_sensor(text_sensor::TextSensor *s) { last_scan_date_sensor_ = s; }
 
-  // Sensor setters
   void set_min_temp_sensor(sensor::Sensor *s) { min_temp_sensor_ = s; }
   void set_max_temp_sensor(sensor::Sensor *s) { max_temp_sensor_ = s; }
   void set_bed_temp_sensor(sensor::Sensor *s) { bed_temp_sensor_ = s; }
@@ -47,7 +48,6 @@ class BambuNfc : public pn532::PN532, public i2c::I2CDevice {
   void set_spool_width_sensor(sensor::Sensor *s) { spool_width_sensor_ = s; }
   void set_filament_length_sensor(sensor::Sensor *s) { filament_length_sensor_ = s; }
 
-  // Trigger setters
   void register_bambu_success_trigger(BambuSuccessTrigger *t) { success_triggers_.push_back(t); }
   void register_bambu_error_trigger(BambuErrorTrigger *t) { error_triggers_.push_back(t); }
 
@@ -61,15 +61,14 @@ class BambuNfc : public pn532::PN532, public i2c::I2CDevice {
   bool read_bambu_data_(nfc::NfcTagUid &uid);
   bool derive_bambu_keys_(const uint8_t *uid, size_t uid_len, uint8_t *keys_out);
 
-  // Text sensors
   text_sensor::TextSensor *filament_type_sensor_{nullptr};
   text_sensor::TextSensor *filament_color_sensor_{nullptr};
+  text_sensor::TextSensor *filament_color_name_sensor_{nullptr};
   text_sensor::TextSensor *tray_uid_sensor_{nullptr};
   text_sensor::TextSensor *tray_info_idx_sensor_{nullptr};
   text_sensor::TextSensor *production_date_sensor_{nullptr};
   text_sensor::TextSensor *last_scan_date_sensor_{nullptr};
 
-  // Sensors
   sensor::Sensor *min_temp_sensor_{nullptr};
   sensor::Sensor *max_temp_sensor_{nullptr};
   sensor::Sensor *bed_temp_sensor_{nullptr};
@@ -81,7 +80,6 @@ class BambuNfc : public pn532::PN532, public i2c::I2CDevice {
   sensor::Sensor *spool_width_sensor_{nullptr};
   sensor::Sensor *filament_length_sensor_{nullptr};
 
-  // Triggers
   std::vector<BambuSuccessTrigger *> success_triggers_;
   std::vector<BambuErrorTrigger *> error_triggers_;
 };

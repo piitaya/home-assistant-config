@@ -166,8 +166,8 @@ void BambuNfcResetButton::press_action() {
 
 void BambuNfc::clear_sensors() {
   text_sensor::TextSensor *text_sensors[] = {
-      filament_type_sensor_, filament_color_sensor_, tray_uid_sensor_,
-      tray_info_idx_sensor_, production_date_sensor_, last_scan_date_sensor_};
+      filament_type_sensor_, filament_color_sensor_, filament_color_name_sensor_,
+      tray_uid_sensor_, tray_info_idx_sensor_, production_date_sensor_, last_scan_date_sensor_};
   for (auto *s : text_sensors)
     if (s) s->publish_state("");
 
@@ -387,6 +387,16 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
     snprintf(color_hex, sizeof(color_hex), "#%02X%02X%02X", b5[0], b5[1], b5[2]);
     ESP_LOGD(TAG, "Color: %s", color_hex);
     publish_text(filament_color_sensor_, std::string(color_hex));
+
+    // Color name lookup (strip # from hex for lookup)
+    const char *color_name = find_bambu_color_name(detailed_type.c_str(), color_hex + 1);
+    if (color_name) {
+      ESP_LOGD(TAG, "Color name: %s", color_name);
+      publish_text(filament_color_name_sensor_, std::string(color_name));
+    } else {
+      ESP_LOGD(TAG, "No color match for %s / %s", detailed_type.c_str(), color_hex + 1);
+      publish_text(filament_color_name_sensor_, std::string(color_hex));
+    }
 
     uint16_t weight = read_uint16_le(b5, 4);
     ESP_LOGD(TAG, "Spool weight: %d g", weight);

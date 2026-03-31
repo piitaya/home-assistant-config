@@ -23,6 +23,7 @@ CONF_DRYING_TIME = "drying_time"
 CONF_NOZZLE_DIAMETER = "nozzle_diameter"
 CONF_SPOOL_WIDTH = "spool_width"
 CONF_FILAMENT_LENGTH = "filament_length"
+CONF_FILAMENT_COLOR_NAME = "filament_color_name"
 CONF_RESET = "reset"
 CONF_ON_BAMBU_SUCCESS = "on_bambu_success"
 CONF_ON_BAMBU_ERROR = "on_bambu_error"
@@ -42,6 +43,7 @@ TEXT_SENSORS = [
     (CONF_TRAY_INFO_IDX, "set_tray_info_idx_sensor", {"icon": "mdi:barcode"}),
     (CONF_PRODUCTION_DATE, "set_production_date_sensor", {"icon": "mdi:calendar", "device_class": "date"}),
     (CONF_LAST_SCAN_DATE, "set_last_scan_date_sensor", {"icon": "mdi:nfc-tap", "device_class": "timestamp"}),
+    (CONF_FILAMENT_COLOR_NAME, "set_filament_color_name_sensor", {"icon": "mdi:format-color-fill"}),
 ]
 
 SENSORS = [
