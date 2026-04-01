@@ -50,17 +50,17 @@ template:
             target:
               entity_id:
                 - remote.rm4_pro
-        default_entity_id: fan.cooker_hood
+        default_entity_id: fan.hotte
         name: Hotte
-        percentage: "{{ states('sensor.cooker_hood_fan_level') | int * 25 }}"
-        state: "{{ states('sensor.cooker_hood_fan_level') | int > 0 }}"
+        percentage: "{{ states('sensor.hotte_niveau_ventilation') | int * 25 }}"
+        state: "{{ states('sensor.hotte_niveau_ventilation') | int > 0 }}"
 
   - light:
       - unique_id: 285641c8-d01b-4de2-8ce7-487684ad1238
         turn_on:
           - condition: state
             entity_id:
-              - binary_sensor.cooker_hood_light_state
+              - binary_sensor.hotte_etat_lumiere
             state: "off"
             match: all
           - action: remote.send_command
@@ -73,7 +73,7 @@ template:
         turn_off:
           - condition: state
             entity_id:
-              - binary_sensor.cooker_hood_light_state
+              - binary_sensor.hotte_etat_lumiere
             state: "on"
             match: all
           - action: remote.send_command
@@ -83,26 +83,26 @@ template:
             target:
               entity_id:
                 - remote.rm4_pro
-        default_entity_id: light.cooker_hood_light
+        default_entity_id: light.lumiere_de_la_hotte
         name: Lumière de la hotte
-        state: "{{ states('binary_sensor.cooker_hood_light_state') }}"
+        state: "{{ states('binary_sensor.hotte_etat_lumiere') }}"
 
   - trigger:
       - trigger: homeassistant
         event: start
       - trigger: state
-        entity_id: sensor.cooker_hood_power
+        entity_id: sensor.hotte_puissance
         to:
         for:
           seconds: 2.5
       - trigger: numeric_state
-        entity_id: sensor.cooker_hood_power
+        entity_id: sensor.hotte_puissance
         below: 4
     binary_sensor:
       - unique_id: 2499d9d0-b1ca-476e-95f2-3a6694e2f4ea
         name: "Hotte état lumière"
         state: >
-          {% set value = states("sensor.cooker_hood_power") | float %}
+          {% set value = states("sensor.hotte_puissance") | float %}
           {% set light = "off" %}
           {% if value > 110 %}
           {% set light = "on" %}
@@ -128,7 +128,7 @@ template:
       - unique_id: 27efd0b8-cfbd-4af7-8d51-d72ae9efd971
         name: "Hotte niveau ventilation"
         state: >
-          {% set value = states("sensor.cooker_hood_power") | float %}
+          {% set value = states("sensor.hotte_puissance") | float %}
           {% set fan = 0 %}
           {% if value > 110 %}
           {% set fan = 4 %}
