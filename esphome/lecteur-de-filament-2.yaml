@@ -1,0 +1,338 @@
+substitutions:
+  name: lecteur-de-filament-2
+  friendly_name: Lecteur de filament 2
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+
+api:
+  encryption:
+    key: !secret lecteur_de_filament_2_api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret lecteur_de_filament_2_ota_password
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [bambu_nfc]
+  - source:
+      type: git
+      url: https://github.com/BluetriX/esphome-CST328-Touch
+    components: [cst328]
+
+spi:
+  - id: nfc_spi
+    clk_pin: GPIO18
+    mosi_pin: GPIO15
+    miso_pin: GPIO44
+  - id: display_spi
+    clk_pin: GPIO40
+    mosi_pin: GPIO45
+    miso_pin: GPIO46
+
+# Fonts
+font:
+  - file: "gfonts://Roboto@700"
+    id: font_title
+    size: 24
+    bpp: 4
+    extras:
+      - file: "gfonts://Roboto@700"
+        glyphs: "°éèêëàâäùûüôöîïçøØ"
+  - file: "gfonts://Roboto@500"
+    id: font_large
+    size: 20
+    bpp: 4
+    extras:
+      - file: "gfonts://Roboto@500"
+        glyphs: "°éèêëàâäùûüôöîïçøØ"
+  - file: "gfonts://Roboto"
+    id: font_medium
+    size: 18
+    bpp: 4
+    extras:
+      - file: "gfonts://Roboto"
+        glyphs: "°éèêëàâäùûüôöîïçøØ"
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 14
+    bpp: 4
+    extras:
+      - file: "gfonts://Roboto"
+        glyphs: "°éèêëàâäùûüôöîïçøØ"
+  - file: "gfonts://Roboto"
+    id: font_tiny
+    size: 10
+    bpp: 4
+
+# NFC Reader
+bambu_nfc:
+  spi_id: nfc_spi
+  cs_pin: GPIO43
+  update_interval: 1s
+  on_bambu_success:
+    then:
+      - lvgl.widget.update:
+          id: color_circle
+          bg_color: !lambda |-
+            auto hex = id(filament_color_sens).state;
+            if (hex.length() >= 7) {
+              uint32_t color = strtol(hex.c_str() + 1, NULL, 16);
+              return lv_color_hex(color);
+            }
+            return lv_color_hex(0x808080);
+      - lvgl.label.update:
+          id: lbl_type
+          text: !lambda 'return id(filament_type_sens).state.c_str();'
+      - lvgl.label.update:
+          id: lbl_color_name
+          text: !lambda 'return id(filament_color_name_sens).state.c_str();'
+      - lvgl.label.update:
+          id: lbl_uid
+          text: !lambda 'return id(tray_uid_sens).state.c_str();'
+      - lvgl.page.show: page_filament
+  on_bambu_error:
+    then:
+      - lvgl.page.show: page_idle
+      - lvgl.label.update:
+          id: error_label
+          text: "Erreur de lecture"
+      - delay: 3s
+      - lvgl.label.update:
+          id: error_label
+          text: ""
+  filament_type:
+    id: filament_type_sens
+    name: "Type de filament"
+  filament_color:
+    id: filament_color_sens
+    name: "Couleur du filament"
+  filament_color_name:
+    id: filament_color_name_sens
+    name: "Nom couleur"
+  tray_info_idx:
+    name: "Code filament"
+  tray_uid:
+    id: tray_uid_sens
+    name: "Tray UID"
+  production_date:
+    name: "Date de production"
+  last_scan_date:
+    id: last_scan_date_sens
+    name: "Dernier scan"
+  min_hotend_temp:
+    id: min_hotend_temp_sens
+    name: "Temp min buse"
+  max_hotend_temp:
+    id: max_hotend_temp_sens
+    name: "Temp max buse"
+  bed_temp:
+    id: bed_temp_sens
+    name: "Temp plateau"
+  spool_weight:
+    id: spool_weight_sens
+    name: "Poids bobine"
+  filament_diameter:
+    id: filament_diameter_sens
+    name: "Diamètre filament"
+  drying_temp:
+    id: drying_temp_sens
+    name: "Temp séchage"
+  drying_time:
+    id: drying_time_sens
+    name: "Durée séchage"
+  nozzle_diameter:
+    name: "Diamètre buse"
+  spool_width:
+    name: "Largeur bobine"
+  filament_length:
+    id: filament_length_sens
+    name: "Longueur filament"
+  material_density:
+    name: "Densité matériau"
+  reset:
+    name: "Reset filament"
+
+# Waveshare ESP32-S3 Touch LCD 2.8 display
+i2c:
+  - id: touch_i2c
+    sda: GPIO1
+    scl: GPIO3
+
+touchscreen:
+  - platform: cst328
+    id: my_touchscreen
+    i2c_id: touch_i2c
+    interrupt_pin: GPIO4
+    reset_pin: GPIO2
+
+display:
+  - platform: ili9xxx
+    id: my_display
+    model: st7789v
+    dimensions:
+      width: 240
+      height: 320
+    cs_pin: GPIO42
+    dc_pin: GPIO41
+    reset_pin: GPIO39
+    spi_id: display_spi
+    invert_colors: true
+    auto_clear_enabled: false
+    update_interval: never
+
+# Backlight control
+output:
+  - platform: ledc
+    pin: GPIO5
+    id: backlight_output
+
+light:
+  - platform: monochromatic
+    output: backlight_output
+    name: "Backlight"
+    id: backlight
+    restore_mode: ALWAYS_ON
+
+# LVGL UI
+lvgl:
+  displays:
+    - my_display
+  touchscreens:
+    - my_touchscreen
+  disp_bg_color: 0x1A1A1A
+  disp_bg_opa: COVER
+  pages:
+    # ── Page Idle ──
+    - id: page_idle
+      bg_color: 0x1A1A1A
+      bg_opa: COVER
+      scrollbar_mode: "OFF"
+      widgets:
+        # Bobine
+        - obj:
+            align: CENTER
+            y: -55
+            width: 120
+            height: 120
+            radius: 60
+            bg_color: 0x2D2D2D
+            bg_opa: COVER
+            border_width: 3
+            border_color: 0x00AE42
+            scrollbar_mode: "OFF"
+            widgets:
+              # Trou central
+              - obj:
+                  align: CENTER
+                  width: 40
+                  height: 40
+                  radius: 20
+                  bg_color: 0x1A1A1A
+                  bg_opa: COVER
+                  border_width: 2
+                  border_color: 0x00AE42
+                  scrollbar_mode: "OFF"
+        # Texte
+        - label:
+            align: CENTER
+            y: 40
+            width: 220
+            text: "Lecteur de filament"
+            text_color: 0xFFFFFF
+            text_font: font_large
+            text_align: CENTER
+        # Sous-texte
+        - label:
+            align: CENTER
+            y: 72
+            width: 220
+            text: "En attente d'un tag..."
+            text_color: 0x999999
+            text_font: font_medium
+            text_align: CENTER
+        # Message erreur
+        - label:
+            id: error_label
+            align: BOTTOM_MID
+            y: -20
+            text: ""
+            text_color: 0xFF4444
+            text_font: font_medium
+
+    # ── Page Filament ──
+    - id: page_filament
+      bg_color: 0x1A1A1A
+      bg_opa: COVER
+      scrollbar_mode: "OFF"
+      on_press:
+        then:
+          - lvgl.page.show: page_idle
+      widgets:
+        # Grand cercle couleur centré
+        - obj:
+            id: color_circle
+            align: CENTER
+            y: -55
+            width: 120
+            height: 120
+            radius: 60
+            bg_color: 0x808080
+            bg_opa: COVER
+            border_width: 3
+            border_color: 0x444444
+            scrollbar_mode: "OFF"
+            clickable: false
+        # Type filament
+        - label:
+            id: lbl_type
+            align: CENTER
+            y: 40
+            width: 220
+            text: "--"
+            text_color: 0xFFFFFF
+            text_font: font_large
+            text_align: CENTER
+        # Nom couleur
+        - label:
+            id: lbl_color_name
+            align: CENTER
+            y: 72
+            width: 220
+            text: "--"
+            text_color: 0x999999
+            text_font: font_medium
+            text_align: CENTER
+        # Tray UID
+        - label:
+            id: lbl_uid
+            align: BOTTOM_MID
+            y: -10
+            width: 230
+            text: ""
+            text_color: 0x999999
+            text_font: font_tiny
+            text_align: CENTER
+
+time:
+  - platform: homeassistant
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password

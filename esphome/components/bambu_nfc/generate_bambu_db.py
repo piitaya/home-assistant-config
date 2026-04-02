@@ -8,6 +8,7 @@ URL = "https://raw.githubusercontent.com/Donkie/SpoolmanDB/main/filaments/bambul
 
 
 def determine_detailed_type(fil):
+    """Map SpoolmanDB filament entry to tray_sub_brands as sent by Bambu firmware."""
     material = fil["material"]
     name_tpl = fil.get("name", "{color_name}")
     finish = fil.get("finish", "")
@@ -16,25 +17,80 @@ def determine_detailed_type(fil):
     pattern = fil.get("pattern", "")
     multi = fil.get("multi_color_direction", "")
 
+    # Support materials — keep as-is
+    if "Support" in name_tpl:
+        if "PA" in material or "PET" in material:
+            return "Support for PA/PET"
+        return f"Support for {material}"
+
+    # PLA+WOOD → "PLA Wood"
+    if "WOOD" in material:
+        return "PLA Wood"
+
+    # TPU special handling (firmware uses spaces, not hyphens)
+    if material == "TPU-95A":
+        if "HF " in name_tpl:
+            return "TPU 95A HF"
+        return "TPU 95A"
+    if material == "TPU-90A":
+        return "TPU 90A"
+    if material == "TPU-85A":
+        return "TPU 85A"
+    if material == "TPU":
+        if "For AMS" in name_tpl:
+            return "TPU for AMS"
+        return "TPU 95A"
+
+    # Materials with hyphen (PA6-CF, PETG-CF, PLA-CF, etc.)
     if "-" in material:
         return material
+
+    # HF variants (PETG HF, etc.)
+    if "HF " in name_tpl or name_tpl.startswith("HF "):
+        return f"{material} HF"
+
+    # Finish-based variants
     if finish == "matte":
         return f"{material} Matte"
     if glow:
         return f"{material} Glow"
     if translucent:
         return f"{material} Translucent"
-    if pattern == "galaxy":
-        return f"{material} Galaxy"
-    if pattern == "sparkle":
-        return f"{material} Sparkle"
-    if finish == "glossy" and "Silk" in name_tpl:
-        return f"{material} Silk"
-    if finish == "glossy" and "Marble" in name_tpl:
-        return f"{material} Marble"
+
+    # Pattern: Galaxy vs Sparkle (both have pattern="sparkle" in SpoolmanDB)
+    if pattern:
+        if "Galaxy" in name_tpl:
+            return f"{material} Galaxy"
+        if "Sparkle" in name_tpl:
+            return f"{material} Sparkle"
+
+    # Glossy finishes
+    if finish == "glossy":
+        if "Silk+" in name_tpl:
+            return f"{material} Silk+"
+        if "Silk" in name_tpl:
+            return f"{material} Silk"
+        if "Marble" in name_tpl:
+            return f"{material} Marble"
+        if "Metallic" in name_tpl:
+            return f"{material} Metal"
+
+    # Name-based special variants
+    if "Tough+" in name_tpl:
+        return f"{material} Tough"
+    if "Aero" in name_tpl:
+        return f"{material} Aero"
+    if "FR " in name_tpl or "FR}" in name_tpl:
+        return f"{material} FR"
+
+    # Multi-color → "Dynamic" (not "Dual Color")
     if multi:
-        return f"{material} Dual Color"
-    return f"{material} Basic"
+        return f"{material} Dynamic"
+
+    # Default: only PLA and PETG get "Basic" suffix
+    if material in ("PLA", "PETG"):
+        return f"{material} Basic"
+    return material
 
 
 def fetch_and_generate():
