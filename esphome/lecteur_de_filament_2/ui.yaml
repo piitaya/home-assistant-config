@@ -3,12 +3,57 @@ lvgl:
     - my_display
   touchscreens:
     - my_touchscreen
-  disp_bg_color: 0x1A1A1A
+  disp_bg_color: 0x1C1C1E
   disp_bg_opa: COVER
+  top_layer:
+    widgets:
+      # Icône batterie en haut à droite
+      - obj:
+          id: battery_border
+          x: 205
+          y: 6
+          width: 26
+          height: 14
+          radius: 3
+          bg_color: 0x1C1C1E
+          bg_opa: COVER
+          border_width: 2
+          border_color: 0x888888
+          scrollbar_mode: "OFF"
+          clickable: false
+          pad_left: 1
+          pad_top: 1
+          pad_right: 1
+          pad_bottom: 1
+          widgets:
+            - obj:
+                id: battery_fill
+                x: 0
+                y: 0
+                width: 20
+                height: 8
+                radius: 1
+                bg_color: 0x00AE42
+                bg_opa: COVER
+                border_width: 0
+                scrollbar_mode: "OFF"
+      # Borne positive
+      - obj:
+          x: 232
+          y: 10
+          width: 3
+          height: 6
+          radius: 1
+          bg_color: 0x888888
+          bg_opa: COVER
+          border_width: 0
+          scrollbar_mode: "OFF"
+          clickable: false
   style_definitions:
     - id: style_page
-      bg_color: 0x1A1A1A
+      bg_color: 0x1C1C1E
       bg_opa: COVER
+      border_width: 0
       scrollbar_mode: "OFF"
     - id: style_circle
       width: 120
@@ -22,7 +67,7 @@ lvgl:
       text_font: font_large
       text_align: CENTER
     - id: style_text_secondary
-      text_color: 0x999999
+      text_color: 0x888888
       text_font: font_medium
       text_align: CENTER
     - id: style_text_uid
@@ -34,42 +79,109 @@ lvgl:
     - id: page_idle
       styles: style_page
       widgets:
+        # Arc NFC extérieur
+        - arc:
+            id: arc_large
+            align: CENTER
+            y: -40
+            width: 100
+            height: 100
+            start_angle: 210
+            end_angle: 330
+            arc_width: 3
+            arc_color: 0x3D6B3D
+            arc_opa: TRANSP
+            indicator:
+              arc_color: 0x3D6B3D
+              arc_width: 3
+            value: 100
+            min_value: 0
+            max_value: 100
+            adjustable: false
+            clickable: false
+            scrollbar_mode: "OFF"
+        # Arc NFC moyen
+        - arc:
+            id: arc_medium
+            align: CENTER
+            y: -40
+            width: 72
+            height: 72
+            start_angle: 210
+            end_angle: 330
+            arc_width: 3
+            arc_color: 0x4A8A4A
+            arc_opa: TRANSP
+            indicator:
+              arc_color: 0x4A8A4A
+              arc_width: 3
+            value: 100
+            min_value: 0
+            max_value: 100
+            adjustable: false
+            clickable: false
+            scrollbar_mode: "OFF"
+        # Arc NFC petit
+        - arc:
+            id: arc_small
+            align: CENTER
+            y: -40
+            width: 48
+            height: 48
+            start_angle: 210
+            end_angle: 330
+            arc_width: 3
+            arc_color: 0x5AAA5A
+            arc_opa: TRANSP
+            indicator:
+              arc_color: 0x5AAA5A
+              arc_width: 3
+            value: 100
+            min_value: 0
+            max_value: 100
+            adjustable: false
+            clickable: false
+            scrollbar_mode: "OFF"
+        # Point central vert
         - obj:
             align: CENTER
-            y: -55
-            styles: style_circle
-            bg_color: 0x2D2D2D
-            border_color: 0x00AE42
-            widgets:
-              - obj:
-                  align: CENTER
-                  width: 40
-                  height: 40
-                  radius: 20
-                  bg_color: 0x1A1A1A
-                  bg_opa: COVER
-                  border_width: 2
-                  border_color: 0x00AE42
-                  scrollbar_mode: "OFF"
+            y: -40
+            width: 20
+            height: 20
+            radius: 10
+            bg_color: 0x00AE42
+            bg_opa: COVER
+            border_width: 0
+            scrollbar_mode: "OFF"
+        # Titre
         - label:
             align: CENTER
-            y: 40
+            y: 25
             width: 220
-            text: "Lecteur de filament"
+            text: "Scanner un filament"
             styles: style_text_primary
+        # Sous-titre
         - label:
             align: CENTER
-            y: 72
+            y: 55
             width: 220
             text: "En attente d'un tag..."
             styles: style_text_secondary
+        # Message erreur
         - label:
             id: error_label
             align: BOTTOM_MID
-            y: -20
+            y: -50
             text: ""
             text_color: 0xFF4444
             text_font: font_medium
+        # Footer
+        - label:
+            align: BOTTOM_MID
+            y: -10
+            text: "BAMBU LAB READER"
+            text_color: 0x555555
+            text_font: font_tiny
 
     # ── Page Filament ──
     - id: page_filament
@@ -103,10 +215,38 @@ lvgl:
         - label:
             id: lbl_uid
             align: BOTTOM_MID
-            y: -10
+            y: -12
             width: 230
             text: ""
             styles: style_text_uid
+
+number:
+  - platform: template
+    id: battery_level
+    name: "Niveau batterie"
+    min_value: 0
+    max_value: 100
+    step: 1
+    initial_value: 75
+    optimistic: true
+    on_value:
+      then:
+        - lambda: |-
+            int pct = (int)x;
+            // Largeur barre: 0-20px selon pourcentage
+            int w = (pct * 20) / 100;
+            if (w < 2) w = 2;
+            lv_obj_set_width(id(battery_fill), w);
+            // Couleur selon niveau
+            uint32_t color;
+            if (pct > 50) {
+              color = 0x00AE42;        // vert
+            } else if (pct > 20) {
+              color = 0xFFA500;        // orange
+            } else {
+              color = 0xFF4444;        // rouge
+            }
+            lv_obj_set_style_bg_color(id(battery_fill), lv_color_hex(color), 0);
 
 bambu_nfc:
   on_bambu_success:
