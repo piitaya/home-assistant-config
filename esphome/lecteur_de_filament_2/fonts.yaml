@@ -1,0 +1,33 @@
+font:
+  - file: "gfonts://Roboto@700"
+    id: font_title
+    size: 24
+    bpp: 4
+    extras:
+      - file: "gfonts://Roboto@700"
+        glyphs: "°éèêëàâäùûüôöîïçøØ"
+  - file: "gfonts://Roboto@500"
+    id: font_large
+    size: 20
+    bpp: 4
+    extras:
+      - file: "gfonts://Roboto@500"
+        glyphs: "°éèêëàâäùûüôöîïçøØ"
+  - file: "gfonts://Roboto"
+    id: font_medium
+    size: 18
+    bpp: 4
+    extras:
+      - file: "gfonts://Roboto"
+        glyphs: "°éèêëàâäùûüôöîïçøØ"
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 14
+    bpp: 4
+    extras:
+      - file: "gfonts://Roboto"
+        glyphs: "°éèêëàâäùûüôöîïçøØ"
+  - file: "gfonts://Roboto"
+    id: font_tiny
+    size: 10
+    bpp: 4

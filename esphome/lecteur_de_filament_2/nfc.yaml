@@ -1,0 +1,67 @@
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [bambu_nfc]
+
+spi:
+  - id: nfc_spi
+    clk_pin: GPIO18
+    mosi_pin: GPIO15
+    miso_pin: GPIO44
+
+bambu_nfc:
+  spi_id: nfc_spi
+  cs_pin: GPIO43
+  update_interval: 1s
+  filament_type:
+    id: filament_type_sens
+    name: "Type de filament"
+  filament_color:
+    id: filament_color_sens
+    name: "Couleur du filament"
+  filament_color_name:
+    id: filament_color_name_sens
+    name: "Nom couleur"
+  tray_info_idx:
+    name: "Code filament"
+  tray_uid:
+    id: tray_uid_sens
+    name: "Tray UID"
+  production_date:
+    name: "Date de production"
+  last_scan_date:
+    id: last_scan_date_sens
+    name: "Dernier scan"
+  min_hotend_temp:
+    id: min_hotend_temp_sens
+    name: "Temp min buse"
+  max_hotend_temp:
+    id: max_hotend_temp_sens
+    name: "Temp max buse"
+  bed_temp:
+    id: bed_temp_sens
+    name: "Temp plateau"
+  spool_weight:
+    id: spool_weight_sens
+    name: "Poids bobine"
+  filament_diameter:
+    id: filament_diameter_sens
+    name: "Diamètre filament"
+  drying_temp:
+    id: drying_temp_sens
+    name: "Temp séchage"
+  drying_time:
+    id: drying_time_sens
+    name: "Durée séchage"
+  nozzle_diameter:
+    name: "Diamètre buse"
+  spool_width:
+    name: "Largeur bobine"
+  filament_length:
+    id: filament_length_sens
+    name: "Longueur filament"
+  material_density:
+    name: "Densité matériau"
+  reset:
+    name: "Reset filament"
