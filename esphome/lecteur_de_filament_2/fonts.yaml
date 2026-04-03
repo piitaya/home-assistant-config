@@ -27,7 +27,12 @@ font:
     extras:
       - file: "gfonts://Roboto"
         glyphs: "°éèêëàâäùûüôöîïçøØ"
+      - file: "https://github.com/Templarian/MaterialDesign-Webfont/raw/master/fonts/materialdesignicons-webfont.ttf"
+        glyphs: ["\U000F0142"]
   - file: "gfonts://Roboto"
     id: font_tiny
     size: 10
     bpp: 4
+    extras:
+      - file: "gfonts://Roboto"
+        glyphs: "°éèêëàâäùûüôöîïçøØ"

@@ -22,4 +22,8 @@ packages:
   display: !include lecteur_de_filament_2/display.yaml
   fonts: !include lecteur_de_filament_2/fonts.yaml
   nfc: !include lecteur_de_filament_2/nfc.yaml
-  ui: !include lecteur_de_filament_2/ui.yaml
+  styles: !include lecteur_de_filament_2/styles.yaml
+  page_idle: !include lecteur_de_filament_2/page_idle.yaml
+  page_filament: !include lecteur_de_filament_2/page_filament.yaml
+  page_details: !include lecteur_de_filament_2/page_details.yaml
+  triggers: !include lecteur_de_filament_2/triggers.yaml

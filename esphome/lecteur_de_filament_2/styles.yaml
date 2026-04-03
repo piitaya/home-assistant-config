@@ -1,0 +1,119 @@
+lvgl:
+  displays:
+    - my_display
+  touchscreens:
+    - my_touchscreen
+  disp_bg_color: 0x111111
+  disp_bg_opa: COVER
+  top_layer:
+    widgets:
+      # Icône batterie en haut à droite
+      - obj:
+          id: battery_border
+          x: 205
+          y: 6
+          width: 26
+          height: 14
+          radius: 3
+          bg_color: 0x111111
+          bg_opa: COVER
+          border_width: 2
+          border_color: 0x888888
+          scrollbar_mode: "OFF"
+          clickable: false
+          pad_left: 1
+          pad_top: 1
+          pad_right: 1
+          pad_bottom: 1
+          widgets:
+            - obj:
+                id: battery_fill
+                x: 0
+                y: 0
+                width: 20
+                height: 8
+                radius: 1
+                bg_color: 0x00AE42
+                bg_opa: COVER
+                border_width: 0
+                scrollbar_mode: "OFF"
+      # Borne positive
+      - obj:
+          x: 232
+          y: 10
+          width: 3
+          height: 6
+          radius: 1
+          bg_color: 0x888888
+          bg_opa: COVER
+          border_width: 0
+          scrollbar_mode: "OFF"
+          clickable: false
+  style_definitions:
+    - id: style_page
+      bg_color: 0x111111
+      bg_opa: COVER
+      border_width: 0
+      scrollbar_mode: "OFF"
+    - id: style_text_primary
+      text_color: 0xFFFFFF
+      text_font: font_large
+      text_align: CENTER
+    - id: style_text_secondary
+      text_color: 0x888888
+      text_font: font_medium
+      text_align: CENTER
+    - id: style_btn_dark
+      radius: 12
+      bg_color: 0x2D2D2D
+      bg_opa: COVER
+      border_width: 0
+      pad_left: 14
+      pad_right: 14
+      pad_top: 0
+      pad_bottom: 0
+      scrollbar_mode: "OFF"
+    - id: style_btn_outline_green
+      radius: 12
+      bg_color: 0x111111
+      bg_opa: COVER
+      border_width: 2
+      border_color: 0x00AE42
+      pad_all: 0
+      scrollbar_mode: "OFF"
+    - id: style_separator
+      bg_color: 0x333333
+      bg_opa: COVER
+      border_width: 0
+      scrollbar_mode: "OFF"
+    - id: style_detail_row
+      bg_opa: TRANSP
+      border_width: 0
+      pad_all: 0
+      scrollbar_mode: "OFF"
+
+number:
+  - platform: template
+    id: battery_level
+    name: "Niveau batterie"
+    min_value: 0
+    max_value: 100
+    step: 1
+    initial_value: 75
+    optimistic: true
+    on_value:
+      then:
+        - lambda: |-
+            int pct = (int)x;
+            int w = (pct * 20) / 100;
+            if (w < 2) w = 2;
+            lv_obj_set_width(id(battery_fill), w);
+            uint32_t color;
+            if (pct > 50) {
+              color = 0x00AE42;
+            } else if (pct > 20) {
+              color = 0xFFA500;
+            } else {
+              color = 0xFF4444;
+            }
+            lv_obj_set_style_bg_color(id(battery_fill), lv_color_hex(color), 0);

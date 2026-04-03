@@ -1,0 +1,132 @@
+# NFC → UI triggers
+bambu_nfc:
+  on_bambu_success:
+    then:
+      # Couleur bandeau
+      - lvgl.widget.update:
+          id: color_banner
+          bg_color: !lambda |-
+            auto hex = id(filament_color_sens).state;
+            if (hex.length() >= 7) {
+              uint32_t color = strtol(hex.c_str() + 1, NULL, 16);
+              return lv_color_hex(color);
+            }
+            return lv_color_hex(0x808080);
+      # Cercle assombri
+      - lvgl.widget.update:
+          id: color_circle
+          bg_color: !lambda |-
+            auto hex = id(filament_color_sens).state;
+            if (hex.length() >= 7) {
+              uint32_t c = strtol(hex.c_str() + 1, NULL, 16);
+              uint8_t r = ((c >> 16) & 0xFF) * 2 / 3;
+              uint8_t g = ((c >> 8) & 0xFF) * 2 / 3;
+              uint8_t b = (c & 0xFF) * 2 / 3;
+              return lv_color_make(r, g, b);
+            }
+            return lv_color_hex(0x606060);
+          border_color: !lambda |-
+            auto hex = id(filament_color_sens).state;
+            if (hex.length() >= 7) {
+              uint32_t c = strtol(hex.c_str() + 1, NULL, 16);
+              uint8_t r = std::min(255, (int)(((c >> 16) & 0xFF) * 1.2));
+              uint8_t g = std::min(255, (int)(((c >> 8) & 0xFF) * 1.2));
+              uint8_t b = std::min(255, (int)((c & 0xFF) * 1.2));
+              return lv_color_make(r, g, b);
+            }
+            return lv_color_hex(0x909090);
+      # Type espacé + contraste auto
+      - lvgl.label.update:
+          id: lbl_type_spaced
+          text: !lambda |-
+            auto type = id(filament_type_sens).state;
+            std::string spaced;
+            for (size_t i = 0; i < type.length(); i++) {
+              if (i > 0) spaced += ' ';
+              spaced += toupper(type[i]);
+            }
+            return spaced.c_str();
+          text_color: !lambda |-
+            auto hex = id(filament_color_sens).state;
+            if (hex.length() >= 7) {
+              uint32_t c = strtol(hex.c_str() + 1, NULL, 16);
+              float lum = (0.299f * ((c >> 16) & 0xFF) + 0.587f * ((c >> 8) & 0xFF) + 0.114f * (c & 0xFF)) / 255.0f;
+              return lv_color_hex(lum > 0.5f ? 0x000000 : 0xFFFFFF);
+            }
+            return lv_color_hex(0xFFFFFF);
+      # Nom couleur + contraste auto
+      - lvgl.label.update:
+          id: lbl_color_name
+          text: !lambda 'return id(filament_color_name_sens).state.c_str();'
+          text_color: !lambda |-
+            auto hex = id(filament_color_sens).state;
+            if (hex.length() >= 7) {
+              uint32_t c = strtol(hex.c_str() + 1, NULL, 16);
+              float lum = (0.299f * ((c >> 16) & 0xFF) + 0.587f * ((c >> 8) & 0xFF) + 0.114f * (c & 0xFF)) / 255.0f;
+              return lv_color_hex(lum > 0.5f ? 0x000000 : 0xFFFFFF);
+            }
+            return lv_color_hex(0xFFFFFF);
+      # Détails — cercle
+      - lvgl.widget.update:
+          id: detail_circle
+          bg_color: !lambda |-
+            auto hex = id(filament_color_sens).state;
+            if (hex.length() >= 7) {
+              return lv_color_hex(strtol(hex.c_str() + 1, NULL, 16));
+            }
+            return lv_color_hex(0x808080);
+      # Détails — header
+      - lvgl.label.update:
+          id: lbl_detail_header
+          text: !lambda 'return id(filament_type_sens).state.c_str();'
+      # Détails — valeurs
+      - lvgl.label.update:
+          id: lbl_detail_type
+          text: !lambda 'return id(filament_type_sens).state.c_str();'
+      - lvgl.label.update:
+          id: lbl_detail_color
+          text: !lambda 'return id(filament_color_name_sens).state.c_str();'
+      - lvgl.label.update:
+          id: lbl_detail_hotend
+          text: !lambda |-
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%.0f - %.0f°C",
+              id(min_hotend_temp_sens).state, id(max_hotend_temp_sens).state);
+            return std::string(buf).c_str();
+      - lvgl.label.update:
+          id: lbl_detail_bed
+          text: !lambda |-
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%.0f°C", id(bed_temp_sens).state);
+            return std::string(buf).c_str();
+      - lvgl.label.update:
+          id: lbl_detail_diameter
+          text: !lambda |-
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%.2f mm", id(filament_diameter_sens).state);
+            return std::string(buf).c_str();
+      - lvgl.label.update:
+          id: lbl_detail_drying
+          text: !lambda |-
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%.0f°C / %.0fh",
+              id(drying_temp_sens).state, id(drying_time_sens).state);
+            return std::string(buf).c_str();
+      - lvgl.label.update:
+          id: lbl_detail_weight
+          text: !lambda |-
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%.0f g", id(spool_weight_sens).state);
+            return std::string(buf).c_str();
+      # Afficher page filament
+      - lvgl.page.show: page_filament
+  on_bambu_error:
+    then:
+      - lvgl.page.show: page_idle
+      - lvgl.label.update:
+          id: error_label
+          text: "Erreur de lecture"
+      - delay: 3s
+      - lvgl.label.update:
+          id: error_label
+          text: ""
