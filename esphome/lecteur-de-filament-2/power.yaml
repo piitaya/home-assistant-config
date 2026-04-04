@@ -1,17 +1,29 @@
+# Power management — basé sur PWR_Key.c de la demo Waveshare
+# GPIO6 = bouton power (INPUT, LOW = pressé)
+# GPIO7 = power latch (OUTPUT, HIGH = alimenté)
+# GPIO8 = batterie ADC (diviseur 1:3)
+
 esphome:
   on_boot:
     priority: 900
     then:
       - lambda: |-
-          // Force GPIO7 HIGH le plus tôt possible pour maintenir le power latch
+          gpio_reset_pin(GPIO_NUM_6);
+          gpio_set_direction(GPIO_NUM_6, GPIO_MODE_INPUT);
           gpio_reset_pin(GPIO_NUM_7);
           gpio_set_direction(GPIO_NUM_7, GPIO_MODE_OUTPUT);
+          gpio_set_level(GPIO_NUM_7, 0);
+          vTaskDelay(pdMS_TO_TICKS(100));
+          if (!gpio_get_level(GPIO_NUM_6)) {
+            id(pwr_state) = 1;
+          } else {
+            id(pwr_state) = 2;
+          }
           gpio_set_level(GPIO_NUM_7, 1);
 
 lvgl:
   top_layer:
     widgets:
-      # Icône batterie en haut à droite
       - obj:
           id: battery_border
           x: 205
@@ -41,7 +53,6 @@ lvgl:
                 bg_opa: COVER
                 border_width: 0
                 scrollbar_mode: "OFF"
-      # Borne positive
       - obj:
           x: 232
           y: 10
@@ -66,30 +77,19 @@ interval:
   - interval: 50ms
     then:
       - lambda: |-
-          bool pressed = !gpio_get_level(GPIO_NUM_6);  // LOW = pressé
-          switch (id(pwr_state)) {
-            case 0:  // Init : déterminer le mode de boot
-              if (pressed) {
-                id(pwr_state) = 1;  // Boot batterie : attendre relâchement
-              } else {
-                id(pwr_state) = 2;  // Boot USB : prêt immédiatement
+          if (!id(pwr_state)) return;
+          if (!gpio_get_level(GPIO_NUM_6)) {
+            if (id(pwr_state) == 2) {
+              id(pwr_long_press) += 1;
+              if (id(pwr_long_press) >= 20) {
+                gpio_set_level(GPIO_NUM_7, 0);
               }
-              break;
-            case 1:  // Attente relâchement après boot batterie
-              if (!pressed) {
-                id(pwr_state) = 2;
-              }
-              break;
-            case 2:  // Prêt : détecter appui long
-              if (pressed) {
-                id(pwr_long_press) += 1;
-                if (id(pwr_long_press) >= 20) {  // 20 × 50ms = 1s
-                  gpio_set_level(GPIO_NUM_7, 0);  // Shutdown
-                }
-              } else {
-                id(pwr_long_press) = 0;
-              }
-              break;
+            }
+          } else {
+            if (id(pwr_state) == 1) {
+              id(pwr_state) = 2;
+            }
+            id(pwr_long_press) = 0;
           }
 
 sensor:
@@ -110,18 +110,14 @@ sensor:
     on_value:
       then:
         - lambda: |-
-            // Courbe LiPo : 4.2V=100%, 3.7V=50%, 3.0V=0%
             float v = x;
             int pct;
             if (v >= 4.2) pct = 100;
             else if (v <= 3.0) pct = 0;
             else if (v >= 3.7) pct = (int)(50.0 + (v - 3.7) * 100.0);
             else pct = (int)((v - 3.0) * 71.4);
-            // Arrondir à 10%
             pct = (pct / 10) * 10;
-            // Publish to HA sensor
             id(battery_percentage).publish_state(pct);
-            // Update LVGL battery icon
             int w = (pct * 20) / 100;
             if (w < 2) w = 2;
             lv_obj_set_width(id(battery_fill), w);
