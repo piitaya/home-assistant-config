@@ -53,3 +53,5 @@ themes/mushroom/
 
 # Untracked/sensitive packages subfolder
 packages/untracked_packages/
+
+untracked/

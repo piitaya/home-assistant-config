@@ -18,12 +18,13 @@ ota:
 
 packages:
   wifi: !include common/wifi.yaml
-  board: !include lecteur_de_filament_2/board.yaml
-  display: !include lecteur_de_filament_2/display.yaml
-  fonts: !include lecteur_de_filament_2/fonts.yaml
-  nfc: !include lecteur_de_filament_2/nfc.yaml
-  styles: !include lecteur_de_filament_2/styles.yaml
-  page_idle: !include lecteur_de_filament_2/page_idle.yaml
-  page_filament: !include lecteur_de_filament_2/page_filament.yaml
-  page_details: !include lecteur_de_filament_2/page_details.yaml
-  triggers: !include lecteur_de_filament_2/triggers.yaml
+  board: !include lecteur-de-filament-2/board.yaml
+  power: !include lecteur-de-filament-2/power.yaml
+  display: !include lecteur-de-filament-2/display.yaml
+  fonts: !include lecteur-de-filament-2/fonts.yaml
+  nfc: !include lecteur-de-filament-2/nfc.yaml
+  styles: !include lecteur-de-filament-2/styles.yaml
+  page_idle: !include lecteur-de-filament-2/page_idle.yaml
+  page_filament: !include lecteur-de-filament-2/page_filament.yaml
+  page_details: !include lecteur-de-filament-2/page_details.yaml
+  triggers: !include lecteur-de-filament-2/triggers.yaml

@@ -2,7 +2,6 @@ spi:
   - id: display_spi
     clk_pin: GPIO40
     mosi_pin: GPIO45
-    miso_pin: GPIO46
 
 i2c:
   - id: touch_i2c
@@ -39,6 +38,7 @@ output:
 light:
   - platform: monochromatic
     output: backlight_output
-    name: "Backlight"
+    name: "Luminosité"
     id: backlight
     restore_mode: ALWAYS_ON
+    entity_category: config

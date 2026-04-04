@@ -1,40 +1,42 @@
 # NFC → UI triggers
+
+globals:
+  - id: parsed_color
+    type: uint32_t
+    initial_value: "0x808080"
+  - id: color_lum
+    type: float
+    initial_value: "0.5"
+
 bambu_nfc:
   on_bambu_success:
     then:
+      # Parser la couleur une seule fois
+      - lambda: |-
+          auto hex = id(filament_color_sens).state;
+          if (hex.length() >= 7) {
+            id(parsed_color) = strtol(hex.c_str() + 1, NULL, 16);
+          } else {
+            id(parsed_color) = 0x808080;
+          }
+          uint32_t c = id(parsed_color);
+          id(color_lum) = (0.299f * ((c >> 16) & 0xFF) + 0.587f * ((c >> 8) & 0xFF) + 0.114f * (c & 0xFF)) / 255.0f;
       # Couleur bandeau
       - lvgl.widget.update:
           id: color_banner
-          bg_color: !lambda |-
-            auto hex = id(filament_color_sens).state;
-            if (hex.length() >= 7) {
-              uint32_t color = strtol(hex.c_str() + 1, NULL, 16);
-              return lv_color_hex(color);
-            }
-            return lv_color_hex(0x808080);
+          bg_color: !lambda 'return lv_color_hex(id(parsed_color));'
       # Cercle assombri
       - lvgl.widget.update:
           id: color_circle
           bg_color: !lambda |-
-            auto hex = id(filament_color_sens).state;
-            if (hex.length() >= 7) {
-              uint32_t c = strtol(hex.c_str() + 1, NULL, 16);
-              uint8_t r = ((c >> 16) & 0xFF) * 2 / 3;
-              uint8_t g = ((c >> 8) & 0xFF) * 2 / 3;
-              uint8_t b = (c & 0xFF) * 2 / 3;
-              return lv_color_make(r, g, b);
-            }
-            return lv_color_hex(0x606060);
+            uint32_t c = id(parsed_color);
+            return lv_color_make(((c >> 16) & 0xFF) * 2 / 3, ((c >> 8) & 0xFF) * 2 / 3, (c & 0xFF) * 2 / 3);
           border_color: !lambda |-
-            auto hex = id(filament_color_sens).state;
-            if (hex.length() >= 7) {
-              uint32_t c = strtol(hex.c_str() + 1, NULL, 16);
-              uint8_t r = std::min(255, (int)(((c >> 16) & 0xFF) * 1.2));
-              uint8_t g = std::min(255, (int)(((c >> 8) & 0xFF) * 1.2));
-              uint8_t b = std::min(255, (int)((c & 0xFF) * 1.2));
-              return lv_color_make(r, g, b);
-            }
-            return lv_color_hex(0x909090);
+            uint32_t c = id(parsed_color);
+            return lv_color_make(
+              std::min(255, (int)(((c >> 16) & 0xFF) * 1.2)),
+              std::min(255, (int)(((c >> 8) & 0xFF) * 1.2)),
+              std::min(255, (int)((c & 0xFF) * 1.2)));
       # Type espacé + contraste auto
       - lvgl.label.update:
           id: lbl_type_spaced
@@ -46,35 +48,16 @@ bambu_nfc:
               spaced += toupper(type[i]);
             }
             return spaced.c_str();
-          text_color: !lambda |-
-            auto hex = id(filament_color_sens).state;
-            if (hex.length() >= 7) {
-              uint32_t c = strtol(hex.c_str() + 1, NULL, 16);
-              float lum = (0.299f * ((c >> 16) & 0xFF) + 0.587f * ((c >> 8) & 0xFF) + 0.114f * (c & 0xFF)) / 255.0f;
-              return lv_color_hex(lum > 0.5f ? 0x000000 : 0xFFFFFF);
-            }
-            return lv_color_hex(0xFFFFFF);
+          text_color: !lambda 'return lv_color_hex(id(color_lum) > 0.5f ? 0x000000 : 0xFFFFFF);'
       # Nom couleur + contraste auto
       - lvgl.label.update:
           id: lbl_color_name
           text: !lambda 'return id(filament_color_name_sens).state.c_str();'
-          text_color: !lambda |-
-            auto hex = id(filament_color_sens).state;
-            if (hex.length() >= 7) {
-              uint32_t c = strtol(hex.c_str() + 1, NULL, 16);
-              float lum = (0.299f * ((c >> 16) & 0xFF) + 0.587f * ((c >> 8) & 0xFF) + 0.114f * (c & 0xFF)) / 255.0f;
-              return lv_color_hex(lum > 0.5f ? 0x000000 : 0xFFFFFF);
-            }
-            return lv_color_hex(0xFFFFFF);
+          text_color: !lambda 'return lv_color_hex(id(color_lum) > 0.5f ? 0x000000 : 0xFFFFFF);'
       # Détails — cercle
       - lvgl.widget.update:
           id: detail_circle
-          bg_color: !lambda |-
-            auto hex = id(filament_color_sens).state;
-            if (hex.length() >= 7) {
-              return lv_color_hex(strtol(hex.c_str() + 1, NULL, 16));
-            }
-            return lv_color_hex(0x808080);
+          bg_color: !lambda 'return lv_color_hex(id(parsed_color));'
       # Détails — header
       - lvgl.label.update:
           id: lbl_detail_header

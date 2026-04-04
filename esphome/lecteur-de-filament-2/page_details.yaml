@@ -1,9 +1,7 @@
 lvgl:
   pages:
     - id: page_details
-      bg_color: 0x111111
-      bg_opa: COVER
-      scrollbar_mode: "OFF"
+      styles: style_page
       widgets:
         # Header (fond légèrement plus clair)
         - obj:

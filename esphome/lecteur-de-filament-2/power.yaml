@@ -1,0 +1,140 @@
+esphome:
+  on_boot:
+    priority: 900
+    then:
+      - lambda: |-
+          // Force GPIO7 HIGH le plus tôt possible pour maintenir le power latch
+          gpio_reset_pin(GPIO_NUM_7);
+          gpio_set_direction(GPIO_NUM_7, GPIO_MODE_OUTPUT);
+          gpio_set_level(GPIO_NUM_7, 1);
+
+lvgl:
+  top_layer:
+    widgets:
+      # Icône batterie en haut à droite
+      - obj:
+          id: battery_border
+          x: 205
+          y: 6
+          width: 26
+          height: 14
+          radius: 3
+          bg_color: 0x111111
+          bg_opa: COVER
+          border_width: 2
+          border_color: 0x888888
+          scrollbar_mode: "OFF"
+          clickable: false
+          pad_left: 1
+          pad_top: 1
+          pad_right: 1
+          pad_bottom: 1
+          widgets:
+            - obj:
+                id: battery_fill
+                x: 0
+                y: 0
+                width: 20
+                height: 8
+                radius: 1
+                bg_color: 0x00AE42
+                bg_opa: COVER
+                border_width: 0
+                scrollbar_mode: "OFF"
+      # Borne positive
+      - obj:
+          x: 232
+          y: 10
+          width: 3
+          height: 6
+          radius: 1
+          bg_color: 0x888888
+          bg_opa: COVER
+          border_width: 0
+          scrollbar_mode: "OFF"
+          clickable: false
+
+globals:
+  - id: pwr_state
+    type: uint8_t
+    initial_value: "0"
+  - id: pwr_long_press
+    type: uint16_t
+    initial_value: "0"
+
+interval:
+  - interval: 50ms
+    then:
+      - lambda: |-
+          bool pressed = !gpio_get_level(GPIO_NUM_6);  // LOW = pressé
+          switch (id(pwr_state)) {
+            case 0:  // Init : déterminer le mode de boot
+              if (pressed) {
+                id(pwr_state) = 1;  // Boot batterie : attendre relâchement
+              } else {
+                id(pwr_state) = 2;  // Boot USB : prêt immédiatement
+              }
+              break;
+            case 1:  // Attente relâchement après boot batterie
+              if (!pressed) {
+                id(pwr_state) = 2;
+              }
+              break;
+            case 2:  // Prêt : détecter appui long
+              if (pressed) {
+                id(pwr_long_press) += 1;
+                if (id(pwr_long_press) >= 20) {  // 20 × 50ms = 1s
+                  gpio_set_level(GPIO_NUM_7, 0);  // Shutdown
+                }
+              } else {
+                id(pwr_long_press) = 0;
+              }
+              break;
+          }
+
+sensor:
+  - platform: adc
+    pin: GPIO8
+    id: battery_voltage
+    name: "Tension batterie"
+    unit_of_measurement: "V"
+    entity_category: diagnostic
+    update_interval: 10s
+    attenuation: 12db
+    filters:
+      - multiply: 3.0
+      - sliding_window_moving_average:
+          window_size: 3
+          send_every: 1
+          send_first_at: 1
+    on_value:
+      then:
+        - lambda: |-
+            // Courbe LiPo : 4.2V=100%, 3.7V=50%, 3.0V=0%
+            float v = x;
+            int pct;
+            if (v >= 4.2) pct = 100;
+            else if (v <= 3.0) pct = 0;
+            else if (v >= 3.7) pct = (int)(50.0 + (v - 3.7) * 100.0);
+            else pct = (int)((v - 3.0) * 71.4);
+            // Arrondir à 10%
+            pct = (pct / 10) * 10;
+            // Publish to HA sensor
+            id(battery_percentage).publish_state(pct);
+            // Update LVGL battery icon
+            int w = (pct * 20) / 100;
+            if (w < 2) w = 2;
+            lv_obj_set_width(id(battery_fill), w);
+            uint32_t color;
+            if (pct > 50) color = 0x00AE42;
+            else if (pct > 20) color = 0xFFA500;
+            else color = 0xFF4444;
+            lv_obj_set_style_bg_color(id(battery_fill), lv_color_hex(color), 0);
+  - platform: template
+    id: battery_percentage
+    name: "Batterie"
+    unit_of_measurement: "%"
+    device_class: battery
+    state_class: measurement
+    entity_category: diagnostic
+    accuracy_decimals: 0
