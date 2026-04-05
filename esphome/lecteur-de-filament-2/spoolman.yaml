@@ -12,6 +12,36 @@ text:
     initial_value: ""
     mode: text
 
+esphome:
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          if (id(spoolman_enabled).state) {
+            lv_label_set_text(id(lbl_sync_icon), "\U000F04E6");
+            lv_obj_set_style_text_color(id(lbl_sync_icon), lv_color_hex(0x00AE42), 0);
+          }
+
+switch:
+  - platform: template
+    id: spoolman_enabled
+    name: "Spoolman sync"
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    on_turn_on:
+      then:
+        - lvgl.label.update:
+            id: lbl_sync_icon
+            text: "\U000F04E6"
+            text_color: 0x00AE42
+    on_turn_off:
+      then:
+        - lvgl.label.update:
+            id: lbl_sync_icon
+            text: "\U000F04E8"
+            text_color: 0x555555
+
 globals:
   - id: sm_vendor_id
     type: int
@@ -74,6 +104,7 @@ script:
       - if:
           condition:
             lambda: |-
+              if (!id(spoolman_enabled).state) return false;
               auto url = id(spoolman_url).state;
               return !url.empty() && url.find("http") == 0;
           then:
