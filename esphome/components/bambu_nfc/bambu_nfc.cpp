@@ -380,6 +380,7 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
     material_id.erase(material_id.find_last_not_of(std::string("\0 ", 2)) + 1);
     ESP_LOGD(TAG, "Tray info: variant=%s material_id=%s", variant.c_str(), material_id.c_str());
     publish_text(tray_info_idx_sensor_, material_id);
+    publish_text(variant_id_sensor_, variant);
   } else {
     std::string tray_info = trim_string(b1);
     ESP_LOGD(TAG, "Tray info idx: %s", tray_info.c_str());

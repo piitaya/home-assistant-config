@@ -38,6 +38,7 @@ class BambuNfc : public pn532::PN532,
   void set_filament_color_name_sensor(text_sensor::TextSensor *s) { filament_color_name_sensor_ = s; }
   void set_tray_uid_sensor(text_sensor::TextSensor *s) { tray_uid_sensor_ = s; }
   void set_tray_info_idx_sensor(text_sensor::TextSensor *s) { tray_info_idx_sensor_ = s; }
+  void set_variant_id_sensor(text_sensor::TextSensor *s) { variant_id_sensor_ = s; }
   void set_production_date_sensor(text_sensor::TextSensor *s) { production_date_sensor_ = s; }
   void set_last_scan_date_sensor(text_sensor::TextSensor *s) { last_scan_date_sensor_ = s; }
 
@@ -70,6 +71,7 @@ class BambuNfc : public pn532::PN532,
   text_sensor::TextSensor *filament_color_name_sensor_{nullptr};
   text_sensor::TextSensor *tray_uid_sensor_{nullptr};
   text_sensor::TextSensor *tray_info_idx_sensor_{nullptr};
+  text_sensor::TextSensor *variant_id_sensor_{nullptr};
   text_sensor::TextSensor *production_date_sensor_{nullptr};
   text_sensor::TextSensor *last_scan_date_sensor_{nullptr};
 

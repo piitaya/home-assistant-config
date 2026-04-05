@@ -25,6 +25,9 @@ bambu_nfc:
     name: "Nom couleur"
   tray_info_idx:
     name: "Code filament"
+  variant_id:
+    id: variant_id_sens
+    name: "Variant ID"
   tray_uid:
     id: tray_uid_sens
     name: "Tray UID"

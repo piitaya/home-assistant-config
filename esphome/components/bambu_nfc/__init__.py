@@ -25,6 +25,7 @@ CONF_SPOOL_WIDTH = "spool_width"
 CONF_FILAMENT_LENGTH = "filament_length"
 CONF_MATERIAL_DENSITY = "material_density"
 CONF_FILAMENT_COLOR_NAME = "filament_color_name"
+CONF_VARIANT_ID = "variant_id"
 CONF_RESET = "reset"
 CONF_ON_BAMBU_SUCCESS = "on_bambu_success"
 CONF_ON_BAMBU_ERROR = "on_bambu_error"
@@ -45,6 +46,7 @@ TEXT_SENSORS = [
     (CONF_PRODUCTION_DATE, "set_production_date_sensor", {"icon": "mdi:calendar"}),
     (CONF_LAST_SCAN_DATE, "set_last_scan_date_sensor", {"icon": "mdi:nfc-tap", "device_class": "timestamp"}),
     (CONF_FILAMENT_COLOR_NAME, "set_filament_color_name_sensor", {"icon": "mdi:format-color-fill"}),
+    (CONF_VARIANT_ID, "set_variant_id_sensor", {"icon": "mdi:tag"}),
 ]
 
 SENSORS = [
