@@ -162,7 +162,7 @@ script:
                             lv_label_set_text(id(lbl_remaining), "Archivée");
                             lv_obj_set_style_text_color(id(lbl_remaining),
                               lv_color_hex(id(color_lum) > 0.5f ? 0x000000 : 0xFFFFFF), 0);
-                            lv_label_set_text(id(lbl_detail_remaining), "Archivée");
+                            lv_label_set_text(id(lbl_detail_remaining), "-");
                             ESP_LOGI("spoolman", "Bobine %s trouvée — archivée", tray.c_str());
                           } else {
                             size_t rw_pos = search.rfind("\"remaining_weight\":");
@@ -334,10 +334,10 @@ script:
                               then:
                                 - lambda: |-
                                     if (response->status_code == 200 || response->status_code == 201) {
-                                      lv_label_set_text(id(lbl_remaining), "Nouveau");
+                                      lv_label_set_text(id(lbl_remaining), "Nouvelle");
                                       lv_obj_set_style_text_color(id(lbl_remaining),
                                         lv_color_hex(id(color_lum) > 0.5f ? 0x000000 : 0xFFFFFF), 0);
-                                      lv_label_set_text(id(lbl_detail_remaining), "Nouveau");
+                                      lv_label_set_text(id(lbl_detail_remaining), "-");
                                       ESP_LOGI("spoolman", "Bobine créée: %s (%s)",
                                         id(sm_color_name).c_str(),
                                         id(sm_material).c_str());
