@@ -62,6 +62,7 @@ bambu_nfc:
     id: filament_length_sens
     name: "Longueur filament"
   material_density:
+    id: material_density_sens
     name: "Densité matériau"
   reset:
     name: "Reset filament"

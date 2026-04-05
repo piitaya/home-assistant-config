@@ -51,6 +51,16 @@ lvgl:
                   text_color: 0xFFFFFF
                   text_font: font_large
                   text_align: CENTER
+              # Poids restant Spoolman
+              - label:
+                  id: lbl_remaining
+                  align: CENTER
+                  y: 80
+                  width: 220
+                  text: ""
+                  text_color: 0xFFFFFF
+                  text_font: font_small
+                  text_align: CENTER
         # Bouton Détails
         - obj:
             x: 16

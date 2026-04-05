@@ -11,6 +11,13 @@ globals:
 bambu_nfc:
   on_bambu_success:
     then:
+      # Reset poids restant
+      - lvgl.label.update:
+          id: lbl_remaining
+          text: ""
+      - lvgl.label.update:
+          id: lbl_detail_remaining
+          text: ""
       # Parser la couleur une seule fois
       - lambda: |-
           auto hex = id(filament_color_sens).state;
@@ -70,6 +77,9 @@ bambu_nfc:
           id: lbl_detail_color
           text: !lambda 'return id(filament_color_name_sens).state.c_str();'
       - lvgl.label.update:
+          id: lbl_detail_hex
+          text: !lambda 'return id(filament_color_sens).state.c_str();'
+      - lvgl.label.update:
           id: lbl_detail_hotend
           text: !lambda |-
             char buf[32];
@@ -101,8 +111,16 @@ bambu_nfc:
             char buf[16];
             snprintf(buf, sizeof(buf), "%.0f g", id(spool_weight_sens).state);
             return std::string(buf).c_str();
+      - lvgl.label.update:
+          id: lbl_detail_tray_uid
+          text: !lambda |-
+            auto uid = id(tray_uid_sens).state;
+            if (uid.length() > 12) return (uid.substr(0, 6) + "..." + uid.substr(uid.length() - 6)).c_str();
+            return uid.c_str();
       # Afficher page filament
       - lvgl.page.show: page_filament
+      # Sync Spoolman
+      - script.execute: spoolman_sync
   on_bambu_error:
     then:
       - lvgl.page.show: page_idle
