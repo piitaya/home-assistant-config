@@ -129,9 +129,16 @@ script:
                 ESP_LOGI("spoolman", "Tag: %s | %s | %s", id(sm_tray_uid).c_str(), id(sm_material).c_str(), id(sm_color_name).c_str());
             - delay: 500ms
 
-            # 1. Chercher le tag dans TOUS les spools
+            # 1. Chercher le tag dans les spools du même material
             - http_request.get:
-                url: !lambda 'return id(spoolman_url).state + "/api/v1/spool";'
+                url: !lambda |-
+                  std::string material = id(sm_material);
+                  std::string encoded;
+                  for (char c : material) {
+                    if (c == ' ') encoded += "%20";
+                    else encoded += c;
+                  }
+                  return id(spoolman_url).state + "/api/v1/spool?filament.material=" + encoded;
                 capture_response: true
                 max_response_buffer_size: 524288
                 on_response:
