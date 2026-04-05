@@ -138,7 +138,7 @@ script:
                     if (c == ' ') encoded += "%20";
                     else encoded += c;
                   }
-                  return id(spoolman_url).state + "/api/v1/spool?filament.material=" + encoded;
+                  return id(spoolman_url).state + "/api/v1/spool?filament.material=" + encoded + "&allow_archived=true";
                 capture_response: true
                 max_response_buffer_size: 524288
                 on_response:
@@ -154,23 +154,35 @@ script:
                         if (tray_pos != std::string::npos) {
                           id(sm_spool_found) = true;
                           std::string search = body.substr(0, tray_pos);
-                          size_t rw_pos = search.rfind("\"remaining_weight\":");
-                          if (rw_pos != std::string::npos) {
-                            float rw = atof(search.c_str() + rw_pos + 19);
-                            id(sm_remaining_weight).publish_state(rw);
-                            char buf[16];
-                            snprintf(buf, sizeof(buf), "%.0f g", rw);
-                            lv_label_set_text(id(lbl_remaining), buf);
+                          // Vérifier si archivée
+                          size_t arch_pos = search.rfind("\"archived\":");
+                          bool archived = (arch_pos != std::string::npos &&
+                            search.substr(arch_pos + 11, 4) == "true");
+                          if (archived) {
+                            lv_label_set_text(id(lbl_remaining), "Archivée");
                             lv_obj_set_style_text_color(id(lbl_remaining),
                               lv_color_hex(id(color_lum) > 0.5f ? 0x000000 : 0xFFFFFF), 0);
-                            lv_label_set_text(id(lbl_detail_remaining), buf);
-                            ESP_LOGI("spoolman", "Bobine %s trouvée — restant: %.0fg", tray.c_str(), rw);
+                            lv_label_set_text(id(lbl_detail_remaining), "Archivée");
+                            ESP_LOGI("spoolman", "Bobine %s trouvée — archivée", tray.c_str());
                           } else {
-                            lv_label_set_text(id(lbl_remaining), "Inconnu");
-                            lv_obj_set_style_text_color(id(lbl_remaining),
-                              lv_color_hex(id(color_lum) > 0.5f ? 0x000000 : 0xFFFFFF), 0);
-                            lv_label_set_text(id(lbl_detail_remaining), "Inconnu");
-                            ESP_LOGI("spoolman", "Bobine %s trouvée", tray.c_str());
+                            size_t rw_pos = search.rfind("\"remaining_weight\":");
+                            if (rw_pos != std::string::npos) {
+                              float rw = atof(search.c_str() + rw_pos + 19);
+                              id(sm_remaining_weight).publish_state(rw);
+                              char buf[16];
+                              snprintf(buf, sizeof(buf), "%.0f g", rw);
+                              lv_label_set_text(id(lbl_remaining), buf);
+                              lv_obj_set_style_text_color(id(lbl_remaining),
+                                lv_color_hex(id(color_lum) > 0.5f ? 0x000000 : 0xFFFFFF), 0);
+                              lv_label_set_text(id(lbl_detail_remaining), buf);
+                              ESP_LOGI("spoolman", "Bobine %s trouvée — restant: %.0fg", tray.c_str(), rw);
+                            } else {
+                              lv_label_set_text(id(lbl_remaining), "Inconnu");
+                              lv_obj_set_style_text_color(id(lbl_remaining),
+                                lv_color_hex(id(color_lum) > 0.5f ? 0x000000 : 0xFFFFFF), 0);
+                              lv_label_set_text(id(lbl_detail_remaining), "Inconnu");
+                              ESP_LOGI("spoolman", "Bobine %s trouvée", tray.c_str());
+                            }
                           }
                         } else {
                           id(sm_remaining_weight).publish_state(NAN);
