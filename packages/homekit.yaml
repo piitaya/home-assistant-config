@@ -19,7 +19,7 @@ homekit:
         - cover.living_room_garden_shutter
         - cover.study_shutter
         - cover.toilets_shutter
-        - fan.cooker_hood
+        - fan.hotte
         - fan.pedestal_fan
         - lawn_mower.yuka_mini
         - light.ariane_bedroom_bedside_lamp
@@ -37,7 +37,7 @@ homekit:
         - light.study_hue_play
         - light.outdoor_light
         - light.garage_light
-        - light.cooker_hood_light
+        - light.lumiere_de_la_hotte
         - light.sapin_de_noel
         - light.kitchen_light_string
         - light.pergola_spa_led
