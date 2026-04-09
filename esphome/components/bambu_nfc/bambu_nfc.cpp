@@ -167,20 +167,25 @@ void BambuNfcResetButton::press_action() {
 
 void BambuNfc::clear_sensors() {
   text_sensor::TextSensor *text_sensors[] = {
-      filament_type_sensor_, filament_color_sensor_, filament_color_name_sensor_,
-      tray_uid_sensor_, tray_info_idx_sensor_, production_date_sensor_, last_scan_date_sensor_};
+      filament_type_sensor_, filament_type_simple_sensor_,
+      filament_color_sensor_, secondary_color_sensor_,
+      tag_uid_sensor_, tray_uid_sensor_, material_id_sensor_, variant_id_sensor_,
+      production_date_sensor_, last_scan_date_sensor_};
   for (auto *s : text_sensors)
     if (s) s->publish_state("unknown");
 
   sensor::Sensor *num_sensors[] = {
-      min_temp_sensor_, max_temp_sensor_, bed_temp_sensor_, spool_weight_sensor_,
-      filament_diameter_sensor_, drying_temp_sensor_, drying_time_sensor_,
-      nozzle_diameter_sensor_, spool_width_sensor_, filament_length_sensor_,
-      material_density_sensor_};
+      min_temp_sensor_, max_temp_sensor_, bed_temp_sensor_, bed_temp_type_sensor_,
+      spool_weight_sensor_, filament_diameter_sensor_, color_alpha_sensor_, color_count_sensor_,
+      drying_temp_sensor_, drying_time_sensor_,
+      nozzle_diameter_sensor_, spool_width_sensor_, filament_length_sensor_};
   for (auto *s : num_sensors)
     if (s) s->publish_state(NAN);
 
-  this->current_uid_ = {};
+  // Note: do not reset current_uid_ here. The reset button is for clearing
+  // the displayed data; if a tag is still on the reader we don't want to
+  // immediately re-trigger a read on the next loop iteration. The UID is
+  // cleared naturally when the tag is removed from the field.
   ESP_LOGD(TAG, "Sensors cleared");
 }
 
@@ -234,9 +239,6 @@ void BambuNfc::loop() {
 
   nfc::NfcTagUid nfcid(read.begin() + 6, read.begin() + 6 + nfcid_length);
 
-  for (auto *bin_sens : this->binary_sensors_)
-    bin_sens->process(nfcid);
-
   if (nfcid.size() == this->current_uid_.size()) {
     bool same_uid = true;
     for (size_t i = 0; i < nfcid.size(); i++)
@@ -254,19 +256,14 @@ void BambuNfc::loop() {
     // Read Bambu data and fire appropriate trigger
     bool success = this->read_bambu_data_(nfcid);
     if (success) {
-      for (auto *trigger : this->success_triggers_)
+      for (auto *trigger : this->on_tag_success_triggers_)
         trigger->trigger();
     } else {
       // Clear UID so the tag can be retried on next poll
       this->current_uid_ = {};
-      for (auto *trigger : this->error_triggers_)
+      for (auto *trigger : this->on_tag_error_triggers_)
         trigger->trigger();
     }
-
-    // Fire standard on_tag triggers
-    auto tag = make_unique<nfc::NfcTag>(nfcid, nfc::MIFARE_CLASSIC);
-    for (auto *trigger : this->triggers_ontag_)
-      trigger->process(tag);
   }
 
   this->read_mode();
@@ -325,7 +322,8 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
   ESP_LOGD(TAG, "Bambu keys derived, reading tag data...");
 
   // ---- Phase 1: Read all blocks into local storage ----
-  std::vector<uint8_t> b1, b2, b4, b5, b6, b8, b9, b10, b12, b14;
+  std::vector<uint8_t> b1, b2, b4, b5, b6, b8, b9, b10, b12, b14, b16;
+  bool has_b16 = false;
 
   // Sector 0 (keys[0..5]): blocks 1, 2
   if (!this->auth_mifare_classic_block_(uid, 1, nfc::MIFARE_CMD_AUTH_A, &keys[0])) {
@@ -364,58 +362,60 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
     ESP_LOGE(TAG, "Auth failed sector 3");
     return false;
   }
-  if (!this->read_mifare_classic_block_(12, b12) || !this->read_mifare_classic_block_(14, b14)) {
+  if (!this->read_mifare_classic_block_(12, b12) ||
+      !this->read_mifare_classic_block_(14, b14)) {
     ESP_LOGE(TAG, "Read failed sector 3");
     return false;
+  }
+
+  // Sector 4 (keys[24..29]): block 16 — secondary color (optional, multi-color spools)
+  // Failure here is non-fatal: most spools are single-color and may not have this sector formatted.
+  if (this->auth_mifare_classic_block_(uid, 16, nfc::MIFARE_CMD_AUTH_A, &keys[24])) {
+    if (this->read_mifare_classic_block_(16, b16)) {
+      has_b16 = true;
+    } else {
+      ESP_LOGW(TAG, "Read failed block 16 (sector 4) — skipping secondary color");
+    }
+  } else {
+    ESP_LOGD(TAG, "Sector 4 not available — single-color spool");
   }
 
   // ---- Phase 2: All reads OK — parse and publish atomically ----
   ESP_LOGD(TAG, "All sectors read successfully, publishing...");
 
-  // Block 1: Tray Info Index — variant (8B) + material ID (8B)
-  if (b1.size() >= 16) {
-    std::string variant(b1.begin(), b1.begin() + 8);
-    variant.erase(variant.find_last_not_of(std::string("\0 ", 2)) + 1);
-    std::string material_id(b1.begin() + 8, b1.begin() + 16);
-    material_id.erase(material_id.find_last_not_of(std::string("\0 ", 2)) + 1);
-    ESP_LOGD(TAG, "Tray info: variant=%s material_id=%s", variant.c_str(), material_id.c_str());
-    publish_text(tray_info_idx_sensor_, material_id);
-    publish_text(variant_id_sensor_, variant);
-  } else {
-    std::string tray_info = trim_string(b1);
-    ESP_LOGD(TAG, "Tray info idx: %s", tray_info.c_str());
-    publish_text(tray_info_idx_sensor_, tray_info);
-  }
+  // Tag UID (4-byte MIFARE Classic card UID, distinct from tray_uid in block 9)
+  std::vector<uint8_t> uid_vec(uid.begin(), uid.end());
+  std::string tag_uid_hex = format_hex(uid_vec, uid_vec.size());
+  ESP_LOGD(TAG, "Tag UID: %s", tag_uid_hex.c_str());
+  publish_text(tag_uid_sensor_, tag_uid_hex);
 
-  // Block 2: Filament type
-  ESP_LOGD(TAG, "Filament type: %s", trim_string(b2).c_str());
+  // Block 1: variant ID (8B) + material ID (8B)
+  std::vector<uint8_t> variant_bytes(b1.begin(), b1.begin() + 8);
+  std::vector<uint8_t> material_id_bytes(b1.begin() + 8, b1.begin() + 16);
+  std::string variant = trim_string(variant_bytes);
+  std::string material_id = trim_string(material_id_bytes);
+  ESP_LOGD(TAG, "Tray info: variant=%s material_id=%s", variant.c_str(), material_id.c_str());
+  publish_text(variant_id_sensor_, variant);
+  publish_text(material_id_sensor_, material_id);
+
+  // Block 2: Filament type (simple/legacy form, e.g. "PLA")
+  std::string simple_type = trim_string(b2);
+  ESP_LOGD(TAG, "Filament type (simple): %s", simple_type.c_str());
+  publish_text(filament_type_simple_sensor_, simple_type);
 
   // Block 4: Detailed filament type
   std::string detailed_type = trim_string(b4);
   ESP_LOGD(TAG, "Detailed type: %s", detailed_type.c_str());
   publish_text(filament_type_sensor_, detailed_type);
 
-  // Material density
-  float density = find_bambu_density(detailed_type.c_str());
-  ESP_LOGD(TAG, "Material density: %.2f g/cm3", density);
-  publish_num(material_density_sensor_, density);
 
-  // Block 5: Color (4B) + Weight (2B) + pad (2B) + Diameter (4B)
+  // Block 5: Color RGBA (4B) + Weight (2B) + pad (2B) + Diameter (4B)
   if (b5.size() >= 12) {
     char color_hex[8];
     snprintf(color_hex, sizeof(color_hex), "#%02X%02X%02X", b5[0], b5[1], b5[2]);
-    ESP_LOGD(TAG, "Color: %s", color_hex);
+    ESP_LOGD(TAG, "Color: %s (alpha=%d)", color_hex, b5[3]);
     publish_text(filament_color_sensor_, std::string(color_hex));
-
-    // Color name lookup (strip # from hex for lookup)
-    const char *color_name = find_bambu_color_name(detailed_type.c_str(), color_hex + 1);
-    if (color_name) {
-      ESP_LOGD(TAG, "Color name: %s", color_name);
-      publish_text(filament_color_name_sensor_, std::string(color_name));
-    } else {
-      ESP_LOGD(TAG, "No color match for %s / %s", detailed_type.c_str(), color_hex + 1);
-      publish_text(filament_color_name_sensor_, std::string(color_hex));
-    }
+    publish_num(color_alpha_sensor_, b5[3]);
 
     uint16_t weight = read_uint16_le(b5, 4);
     ESP_LOGD(TAG, "Spool weight: %d g", weight);
@@ -426,19 +426,21 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
     publish_num(filament_diameter_sensor_, diameter);
   }
 
-  // Block 6: Drying temp/time + Bed temp + Hotend min/max
+  // Block 6: Drying temp/time + Bed temp type + Bed temp + Hotend min/max
   if (b6.size() >= 12) {
     uint16_t drying_temp = read_uint16_le(b6, 0);
     uint16_t drying_time = read_uint16_le(b6, 2);
+    uint16_t bed_temp_type = read_uint16_le(b6, 4);
     uint16_t bed_temp = read_uint16_le(b6, 6);
     uint16_t max_temp = read_uint16_le(b6, 8);
     uint16_t min_temp = read_uint16_le(b6, 10);
 
-    ESP_LOGD(TAG, "Drying: %d°C/%dh, Bed: %d°C, Hotend: %d-%d°C",
-             drying_temp, drying_time, bed_temp, min_temp, max_temp);
+    ESP_LOGD(TAG, "Drying: %d°C/%dh, Bed type: %d, Bed: %d°C, Hotend: %d-%d°C",
+             drying_temp, drying_time, bed_temp_type, bed_temp, min_temp, max_temp);
 
     publish_num(drying_temp_sensor_, drying_temp);
     publish_num(drying_time_sensor_, drying_time);
+    publish_num(bed_temp_type_sensor_, bed_temp_type);
     publish_num(bed_temp_sensor_, bed_temp);
     publish_num(max_temp_sensor_, max_temp);
     publish_num(min_temp_sensor_, min_temp);
@@ -477,6 +479,27 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
     uint16_t length = read_uint16_le(b14, 4);
     ESP_LOGD(TAG, "Filament length: %d m", length);
     publish_num(filament_length_sensor_, length);
+  }
+
+  // Block 16: Format ID (2B) + Color count (2B) + Secondary color ABGR (4B)
+  // Format identifier at offset 0: 0x0000 = empty/single, 0x0002 = multi-color data
+  if (has_b16 && b16.size() >= 8) {
+    uint16_t format_id = read_uint16_le(b16, 0);
+    uint16_t color_count = read_uint16_le(b16, 2);
+    if (format_id != 0x0000) {
+      char sec_color[8];
+      snprintf(sec_color, sizeof(sec_color), "#%02X%02X%02X", b16[7], b16[6], b16[5]);
+      ESP_LOGD(TAG, "Color count: %d, secondary: %s (format=0x%04X)",
+               color_count, sec_color, format_id);
+      publish_text(secondary_color_sensor_, std::string(sec_color));
+      publish_num(color_count_sensor_, color_count);
+    } else {
+      publish_text(secondary_color_sensor_, "");
+      publish_num(color_count_sensor_, 1);
+    }
+  } else {
+    publish_text(secondary_color_sensor_, "");
+    publish_num(color_count_sensor_, 1);
   }
 
   // Last scan timestamp

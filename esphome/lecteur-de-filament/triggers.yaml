@@ -9,7 +9,7 @@ globals:
     initial_value: "0.5"
 
 bambu_nfc:
-  on_bambu_success:
+  on_tag_success:
     then:
       # Reset poids restant
       - lvgl.label.update:
@@ -18,6 +18,10 @@ bambu_nfc:
       - lvgl.label.update:
           id: lbl_detail_remaining
           text: ""
+      # Résoudre color_name via variant_id
+      - lambda: |-
+          using namespace filaments;
+          id(filament_color_name_sens).publish_state(color_name_for(id(variant_id_sens).state.c_str()));
       # Parser la couleur une seule fois
       - lambda: |-
           auto hex = id(filament_color_sens).state;
@@ -121,7 +125,7 @@ bambu_nfc:
       - lvgl.page.show: page_filament
       # Sync Spoolman
       - script.execute: spoolman_sync
-  on_bambu_error:
+  on_tag_error:
     then:
       - lvgl.page.show: page_idle
       - lvgl.label.update:

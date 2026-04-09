@@ -2,18 +2,39 @@ import esphome.codegen as cg
 from esphome import automation
 from esphome.components import spi, pn532, text_sensor, sensor, button
 import esphome.config_validation as cv
-from esphome.const import CONF_ID, CONF_TRIGGER_ID
+from esphome.const import (
+    CONF_ID,
+    CONF_TRIGGER_ID,
+    DEVICE_CLASS_DISTANCE,
+    DEVICE_CLASS_DURATION,
+    DEVICE_CLASS_TEMPERATURE,
+    DEVICE_CLASS_TIMESTAMP,
+    DEVICE_CLASS_WEIGHT,
+    UNIT_CELSIUS,
+    UNIT_HOUR,
+    UNIT_METER,
+    UNIT_MILLIMETER,
+)
+
+# Not in esphome.const
+UNIT_GRAM = "g"
 
 AUTO_LOAD = ["pn532", "text_sensor", "sensor", "button"]
 DEPENDENCIES = ["spi"]
 
 CONF_FILAMENT_TYPE = "filament_type"
+CONF_FILAMENT_TYPE_SIMPLE = "filament_type_simple"
 CONF_FILAMENT_COLOR = "filament_color"
+CONF_SECONDARY_COLOR = "secondary_color"
+CONF_COLOR_ALPHA = "color_alpha"
+CONF_COLOR_COUNT = "color_count"
 CONF_MIN_HOTEND_TEMP = "min_hotend_temp"
 CONF_MAX_HOTEND_TEMP = "max_hotend_temp"
 CONF_BED_TEMP = "bed_temp"
+CONF_BED_TEMP_TYPE = "bed_temp_type"
+CONF_TAG_UID = "tag_uid"
 CONF_TRAY_UID = "tray_uid"
-CONF_TRAY_INFO_IDX = "tray_info_idx"
+CONF_MATERIAL_ID = "material_id"
 CONF_PRODUCTION_DATE = "production_date"
 CONF_LAST_SCAN_DATE = "last_scan_date"
 CONF_SPOOL_WEIGHT = "spool_weight"
@@ -23,54 +44,56 @@ CONF_DRYING_TIME = "drying_time"
 CONF_NOZZLE_DIAMETER = "nozzle_diameter"
 CONF_SPOOL_WIDTH = "spool_width"
 CONF_FILAMENT_LENGTH = "filament_length"
-CONF_MATERIAL_DENSITY = "material_density"
-CONF_FILAMENT_COLOR_NAME = "filament_color_name"
 CONF_VARIANT_ID = "variant_id"
 CONF_RESET = "reset"
-CONF_ON_BAMBU_SUCCESS = "on_bambu_success"
-CONF_ON_BAMBU_ERROR = "on_bambu_error"
+CONF_ON_TAG_SUCCESS = "on_tag_success"
+CONF_ON_TAG_ERROR = "on_tag_error"
 
 bambu_nfc_ns = cg.esphome_ns.namespace("bambu_nfc")
 BambuNfc = bambu_nfc_ns.class_("BambuNfc", pn532.PN532, spi.SPIDevice)
 BambuNfcResetButton = bambu_nfc_ns.class_(
     "BambuNfcResetButton", button.Button, cg.Parented.template(BambuNfc)
 )
-BambuSuccessTrigger = bambu_nfc_ns.class_("BambuSuccessTrigger", automation.Trigger.template())
-BambuErrorTrigger = bambu_nfc_ns.class_("BambuErrorTrigger", automation.Trigger.template())
+BambuNfcOnTagSuccessTrigger = bambu_nfc_ns.class_("BambuNfcOnTagSuccessTrigger", automation.Trigger.template())
+BambuNfcOnTagErrorTrigger = bambu_nfc_ns.class_("BambuNfcOnTagErrorTrigger", automation.Trigger.template())
 
 TEXT_SENSORS = [
     (CONF_FILAMENT_TYPE, "set_filament_type_sensor", {"icon": "mdi:tag-text"}),
+    (CONF_FILAMENT_TYPE_SIMPLE, "set_filament_type_simple_sensor", {"icon": "mdi:tag-text-outline"}),
     (CONF_FILAMENT_COLOR, "set_filament_color_sensor", {"icon": "mdi:palette"}),
+    (CONF_SECONDARY_COLOR, "set_secondary_color_sensor", {"icon": "mdi:palette-swatch"}),
+    (CONF_TAG_UID, "set_tag_uid_sensor", {"icon": "mdi:nfc-variant"}),
     (CONF_TRAY_UID, "set_tray_uid_sensor", {"icon": "mdi:identifier"}),
-    (CONF_TRAY_INFO_IDX, "set_tray_info_idx_sensor", {"icon": "mdi:barcode"}),
+    (CONF_MATERIAL_ID, "set_material_id_sensor", {"icon": "mdi:barcode"}),
     (CONF_PRODUCTION_DATE, "set_production_date_sensor", {"icon": "mdi:calendar"}),
-    (CONF_LAST_SCAN_DATE, "set_last_scan_date_sensor", {"icon": "mdi:nfc-tap", "device_class": "timestamp"}),
-    (CONF_FILAMENT_COLOR_NAME, "set_filament_color_name_sensor", {"icon": "mdi:format-color-fill"}),
+    (CONF_LAST_SCAN_DATE, "set_last_scan_date_sensor", {"icon": "mdi:nfc-tap", "device_class": DEVICE_CLASS_TIMESTAMP}),
     (CONF_VARIANT_ID, "set_variant_id_sensor", {"icon": "mdi:tag"}),
 ]
 
 SENSORS = [
-    (CONF_MIN_HOTEND_TEMP, "set_min_temp_sensor", {"unit_of_measurement": "°C", "accuracy_decimals": 0, "device_class": "temperature", "icon": "mdi:thermometer-low"}),
-    (CONF_MAX_HOTEND_TEMP, "set_max_temp_sensor", {"unit_of_measurement": "°C", "accuracy_decimals": 0, "device_class": "temperature", "icon": "mdi:thermometer-high"}),
-    (CONF_BED_TEMP, "set_bed_temp_sensor", {"unit_of_measurement": "°C", "accuracy_decimals": 0, "device_class": "temperature", "icon": "mdi:heat-wave"}),
-    (CONF_SPOOL_WEIGHT, "set_spool_weight_sensor", {"unit_of_measurement": "g", "accuracy_decimals": 0, "device_class": "weight", "icon": "mdi:weight-gram"}),
-    (CONF_FILAMENT_DIAMETER, "set_filament_diameter_sensor", {"unit_of_measurement": "mm", "accuracy_decimals": 2, "device_class": "distance", "icon": "mdi:diameter-variant"}),
-    (CONF_DRYING_TEMP, "set_drying_temp_sensor", {"unit_of_measurement": "°C", "accuracy_decimals": 0, "device_class": "temperature", "icon": "mdi:fan"}),
-    (CONF_DRYING_TIME, "set_drying_time_sensor", {"unit_of_measurement": "h", "accuracy_decimals": 0, "device_class": "duration", "icon": "mdi:timer-outline"}),
-    (CONF_NOZZLE_DIAMETER, "set_nozzle_diameter_sensor", {"unit_of_measurement": "mm", "accuracy_decimals": 2, "device_class": "distance", "icon": "mdi:printer-3d-nozzle"}),
-    (CONF_SPOOL_WIDTH, "set_spool_width_sensor", {"unit_of_measurement": "mm", "accuracy_decimals": 1, "device_class": "distance", "icon": "mdi:ruler"}),
-    (CONF_FILAMENT_LENGTH, "set_filament_length_sensor", {"unit_of_measurement": "m", "accuracy_decimals": 0, "device_class": "distance", "icon": "mdi:ruler"}),
-    (CONF_MATERIAL_DENSITY, "set_material_density_sensor", {"unit_of_measurement": "g/cm³", "accuracy_decimals": 2, "icon": "mdi:cube-outline"}),
+    (CONF_MIN_HOTEND_TEMP, "set_min_temp_sensor", {"unit_of_measurement": UNIT_CELSIUS, "accuracy_decimals": 0, "device_class": DEVICE_CLASS_TEMPERATURE, "icon": "mdi:thermometer-low"}),
+    (CONF_MAX_HOTEND_TEMP, "set_max_temp_sensor", {"unit_of_measurement": UNIT_CELSIUS, "accuracy_decimals": 0, "device_class": DEVICE_CLASS_TEMPERATURE, "icon": "mdi:thermometer-high"}),
+    (CONF_BED_TEMP, "set_bed_temp_sensor", {"unit_of_measurement": UNIT_CELSIUS, "accuracy_decimals": 0, "device_class": DEVICE_CLASS_TEMPERATURE, "icon": "mdi:heat-wave"}),
+    (CONF_BED_TEMP_TYPE, "set_bed_temp_type_sensor", {"accuracy_decimals": 0, "icon": "mdi:layers"}),
+    (CONF_SPOOL_WEIGHT, "set_spool_weight_sensor", {"unit_of_measurement": UNIT_GRAM, "accuracy_decimals": 0, "device_class": DEVICE_CLASS_WEIGHT, "icon": "mdi:weight-gram"}),
+    (CONF_FILAMENT_DIAMETER, "set_filament_diameter_sensor", {"unit_of_measurement": UNIT_MILLIMETER, "accuracy_decimals": 2, "device_class": DEVICE_CLASS_DISTANCE, "icon": "mdi:diameter-variant"}),
+    (CONF_COLOR_ALPHA, "set_color_alpha_sensor", {"accuracy_decimals": 0, "icon": "mdi:opacity"}),
+    (CONF_COLOR_COUNT, "set_color_count_sensor", {"accuracy_decimals": 0, "icon": "mdi:palette-swatch-variant"}),
+    (CONF_DRYING_TEMP, "set_drying_temp_sensor", {"unit_of_measurement": UNIT_CELSIUS, "accuracy_decimals": 0, "device_class": DEVICE_CLASS_TEMPERATURE, "icon": "mdi:fan"}),
+    (CONF_DRYING_TIME, "set_drying_time_sensor", {"unit_of_measurement": UNIT_HOUR, "accuracy_decimals": 0, "device_class": DEVICE_CLASS_DURATION, "icon": "mdi:timer-outline"}),
+    (CONF_NOZZLE_DIAMETER, "set_nozzle_diameter_sensor", {"unit_of_measurement": UNIT_MILLIMETER, "accuracy_decimals": 2, "device_class": DEVICE_CLASS_DISTANCE, "icon": "mdi:printer-3d-nozzle"}),
+    (CONF_SPOOL_WIDTH, "set_spool_width_sensor", {"unit_of_measurement": UNIT_MILLIMETER, "accuracy_decimals": 1, "device_class": DEVICE_CLASS_DISTANCE, "icon": "mdi:ruler"}),
+    (CONF_FILAMENT_LENGTH, "set_filament_length_sensor", {"unit_of_measurement": UNIT_METER, "accuracy_decimals": 0, "device_class": DEVICE_CLASS_DISTANCE, "icon": "mdi:ruler"}),
 ]
 
 schema_dict = {
     cv.GenerateID(): cv.declare_id(BambuNfc),
     cv.Optional(CONF_RESET): button.button_schema(BambuNfcResetButton),
-    cv.Optional(CONF_ON_BAMBU_SUCCESS): automation.validate_automation(
-        {cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(BambuSuccessTrigger)}
+    cv.Optional(CONF_ON_TAG_SUCCESS): automation.validate_automation(
+        {cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(BambuNfcOnTagSuccessTrigger)}
     ),
-    cv.Optional(CONF_ON_BAMBU_ERROR): automation.validate_automation(
-        {cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(BambuErrorTrigger)}
+    cv.Optional(CONF_ON_TAG_ERROR): automation.validate_automation(
+        {cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(BambuNfcOnTagErrorTrigger)}
     ),
 }
 
@@ -104,12 +127,12 @@ async def to_code(config):
         btn = await button.new_button(config[CONF_RESET])
         await cg.register_parented(btn, var)
 
-    for conf in config.get(CONF_ON_BAMBU_SUCCESS, []):
+    for conf in config.get(CONF_ON_TAG_SUCCESS, []):
         trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID])
-        cg.add(var.register_bambu_success_trigger(trigger))
+        cg.add(var.register_on_tag_success_trigger(trigger))
         await automation.build_automation(trigger, [], conf)
 
-    for conf in config.get(CONF_ON_BAMBU_ERROR, []):
+    for conf in config.get(CONF_ON_TAG_ERROR, []):
         trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID])
-        cg.add(var.register_bambu_error_trigger(trigger))
+        cg.add(var.register_on_tag_error_trigger(trigger))
         await automation.build_automation(trigger, [], conf)

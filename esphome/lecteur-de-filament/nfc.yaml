@@ -17,17 +17,24 @@ bambu_nfc:
   filament_type:
     id: filament_type_sens
     name: "Type de filament"
+  filament_type_simple:
+    name: "Type de filament (court)"
   filament_color:
     id: filament_color_sens
     name: "Couleur du filament"
-  filament_color_name:
-    id: filament_color_name_sens
-    name: "Nom couleur"
-  tray_info_idx:
-    name: "Code filament"
+  secondary_color:
+    name: "Couleur secondaire"
+  color_alpha:
+    name: "Alpha couleur"
+  color_count:
+    name: "Nombre de couleurs"
+  material_id:
+    name: "Material ID"
   variant_id:
     id: variant_id_sens
     name: "Variant ID"
+  tag_uid:
+    name: "Tag UID"
   tray_uid:
     id: tray_uid_sens
     name: "Tray UID"
@@ -45,6 +52,8 @@ bambu_nfc:
   bed_temp:
     id: bed_temp_sens
     name: "Temp plateau"
+  bed_temp_type:
+    name: "Type plateau"
   spool_weight:
     id: spool_weight_sens
     name: "Poids bobine"
@@ -64,8 +73,17 @@ bambu_nfc:
   filament_length:
     id: filament_length_sens
     name: "Longueur filament"
-  material_density:
-    id: material_density_sens
-    name: "Densité matériau"
   reset:
     name: "Reset filament"
+
+esphome:
+  includes:
+    - lecteur-de-filament/filaments.h
+    - lecteur-de-filament/spoolman_catalog.h
+    - lecteur-de-filament/spoolman_helpers.h
+
+text_sensor:
+  - platform: template
+    id: filament_color_name_sens
+    name: "Nom couleur"
+    icon: mdi:format-color-fill
