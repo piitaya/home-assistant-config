@@ -79,8 +79,6 @@ bambu_nfc:
 esphome:
   includes:
     - lecteur-de-filament/filaments.h
-    - lecteur-de-filament/spoolman_catalog.h
-    - lecteur-de-filament/spoolman_helpers.h
 
 text_sensor:
   - platform: template

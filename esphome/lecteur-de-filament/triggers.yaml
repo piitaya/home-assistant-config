@@ -124,7 +124,7 @@ bambu_nfc:
       # Afficher page filament
       - lvgl.page.show: page_filament
       # Sync Spoolman
-      - script.execute: spoolman_sync
+      - script.execute: bss_sync
   on_tag_error:
     then:
       - lvgl.page.show: page_idle

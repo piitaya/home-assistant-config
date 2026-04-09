@@ -14,7 +14,7 @@ lvgl:
             scrollbar_mode: "OFF"
             on_click:
               then:
-                - switch.toggle: spoolman_enabled
+                - switch.toggle: bss_enabled
             widgets:
               - label:
                   id: lbl_sync_icon

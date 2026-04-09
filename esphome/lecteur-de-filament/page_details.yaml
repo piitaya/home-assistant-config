@@ -231,7 +231,7 @@ lvgl:
                   width: 208
                   height: 1
                   styles: style_separator
-              # Restant (Spoolman)
+              # Restant
               - obj:
                   width: 208
                   height: 38
