@@ -3,25 +3,6 @@ lvgl:
     - id: page_idle
       styles: style_page
       widgets:
-        # Toggle Spoolman sync
-        - obj:
-            x: 4
-            y: 4
-            width: 36
-            height: 36
-            bg_opa: TRANSP
-            border_width: 0
-            scrollbar_mode: "OFF"
-            on_click:
-              then:
-                - switch.toggle: bss_enabled
-            widgets:
-              - label:
-                  id: lbl_sync_icon
-                  align: CENTER
-                  text: "\U000F04E8"
-                  text_color: 0x555555
-                  text_font: font_large
         - arc:
             id: arc_large
             align: CENTER

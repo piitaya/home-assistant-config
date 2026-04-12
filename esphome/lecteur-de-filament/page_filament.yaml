@@ -61,8 +61,9 @@ lvgl:
                   text_color: 0xFFFFFF
                   text_font: font_small
                   text_align: CENTER
-        # Bouton Détails
+        # Bouton Détails (pleine largeur, sans BSS)
         - obj:
+            id: btn_details_full
             x: 16
             y: 212
             width: 208
@@ -80,6 +81,68 @@ lvgl:
               - label:
                   align: RIGHT_MID
                   text: "\U000F0142"
+                  text_color: 0x888888
+                  text_font: font_small
+        # Bouton Détails (petit, avec BSS)
+        - obj:
+            id: btn_details_small
+            x: 16
+            y: 212
+            width: 100
+            height: 42
+            styles: style_btn_dark
+            hidden: true
+            on_press:
+              then:
+                - lvgl.page.show: page_details
+            widgets:
+              - label:
+                  align: LEFT_MID
+                  text: "Détails"
+                  text_color: 0xFFFFFF
+                  text_font: font_small
+              - label:
+                  align: RIGHT_MID
+                  text: "\U000F0142"
+                  text_color: 0x888888
+                  text_font: font_small
+        # Bouton Ajouter
+        - obj:
+            id: btn_add
+            x: 124
+            y: 212
+            width: 100
+            height: 42
+            styles: style_btn_dark
+            hidden: true
+            on_press:
+              then:
+                - script.execute: bss_put
+            widgets:
+              - label:
+                  align: LEFT_MID
+                  text: "Ajouter"
+                  text_color: 0xFFFFFF
+                  text_font: font_small
+              - label:
+                  align: RIGHT_MID
+                  text: "\U000F0415"
+                  text_color: 0x888888
+                  text_font: font_small
+        # Bouton Enregistrée (disabled)
+        - obj:
+            id: btn_registered
+            x: 124
+            y: 212
+            width: 100
+            height: 42
+            styles: style_btn_dark
+            hidden: true
+            clickable: false
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "Enregistrée"
                   text_color: 0x888888
                   text_font: font_small
         # Bouton Nouveau scan

@@ -11,13 +11,25 @@ globals:
 bambu_nfc:
   on_tag_success:
     then:
-      # Reset poids restant
+      # Reset poids restant + masquer bouton sync
       - lvgl.label.update:
           id: lbl_remaining
           text: ""
       - lvgl.label.update:
           id: lbl_detail_remaining
           text: ""
+      - lvgl.widget.update:
+          id: btn_details_full
+          hidden: false
+      - lvgl.widget.update:
+          id: btn_details_small
+          hidden: true
+      - lvgl.widget.update:
+          id: btn_add
+          hidden: true
+      - lvgl.widget.update:
+          id: btn_registered
+          hidden: true
       # Résoudre color_name via variant_id
       - lambda: |-
           using namespace filaments;

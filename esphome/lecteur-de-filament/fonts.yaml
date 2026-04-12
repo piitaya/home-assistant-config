@@ -30,7 +30,7 @@ font:
       - file: "gfonts://Roboto"
         glyphs: "°éèêëàâäùûüôöîïçøØ"
       - file: "https://github.com/Templarian/MaterialDesign-Webfont/raw/master/fonts/materialdesignicons-webfont.ttf"
-        glyphs: ["\U000F0142", "\U000F04E6", "\U000F04E8"]
+        glyphs: ["\U000F0142", "\U000F0415", "\U000F04E6", "\U000F04E8"]
   - file: "gfonts://Roboto"
     id: font_tiny
     size: 10

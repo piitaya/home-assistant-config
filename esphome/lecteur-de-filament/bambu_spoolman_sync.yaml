@@ -12,41 +12,6 @@ text:
     initial_value: ""
     mode: text
 
-esphome:
-  on_boot:
-    priority: -100
-    then:
-      - lambda: |-
-          if (id(bss_enabled).state) {
-            lv_label_set_text(id(lbl_sync_icon), "\U000F04E6");
-            lv_obj_set_style_text_color(id(lbl_sync_icon), lv_color_hex(0x00AE42), 0);
-          }
-
-switch:
-  - platform: template
-    id: bss_enabled
-    name: "Bambu Spoolman Sync"
-    entity_category: config
-    optimistic: true
-    restore_mode: RESTORE_DEFAULT_OFF
-    on_turn_on:
-      then:
-        - lvgl.label.update:
-            id: lbl_sync_icon
-            text: "\U000F04E6"
-            text_color: 0x00AE42
-    on_turn_off:
-      then:
-        - lvgl.label.update:
-            id: lbl_sync_icon
-            text: "\U000F04E8"
-            text_color: 0x555555
-
-globals:
-  - id: bss_synced
-    type: bool
-    initial_value: "false"
-
 script:
   - id: bss_sync
     mode: restart
@@ -54,12 +19,10 @@ script:
       - if:
           condition:
             lambda: |-
-              if (!id(bss_enabled).state) return false;
               auto url = id(bss_url).state;
               return url.rfind("http://", 0) == 0 || url.rfind("https://", 0) == 0;
           then:
             - lambda: |-
-                id(bss_synced) = false;
                 ESP_LOGI("bss", "Scan: tag=%s | %s | %s",
                   id(tray_uid_sens).state.c_str(),
                   id(filament_type_sens).state.c_str(),
@@ -78,6 +41,12 @@ script:
                   then:
                     - lambda: |-
                         if (response->status_code == 200) {
+                          lv_obj_add_flag(id(btn_details_full), LV_OBJ_FLAG_HIDDEN);
+                          lv_obj_clear_flag(id(btn_details_small), LV_OBJ_FLAG_HIDDEN);
+                          lv_obj_add_flag(id(btn_add), LV_OBJ_FLAG_HIDDEN);
+                          lv_obj_clear_flag(id(btn_registered), LV_OBJ_FLAG_HIDDEN);
+
+                          uint32_t fg = id(color_lum) > 0.5f ? 0x000000 : 0xFFFFFF;
                           std::string key = "\"remain\":";
                           size_t pos = body.find(key);
                           if (pos != std::string::npos) {
@@ -88,55 +57,57 @@ script:
                               float grams = id(spool_weight_sens).state * remain / 100.0f;
                               char buf[16];
                               snprintf(buf, sizeof(buf), "%.0f g", grams);
-                              uint32_t fg = id(color_lum) > 0.5f ? 0x000000 : 0xFFFFFF;
                               lv_label_set_text(id(lbl_remaining), buf);
                               lv_obj_set_style_text_color(id(lbl_remaining), lv_color_hex(fg), 0);
                               lv_label_set_text(id(lbl_detail_remaining), buf);
                               ESP_LOGI("bss", "Bobine trouvée — restant: %.0f%% (%.0fg)", remain, grams);
                             }
                           }
+                          ESP_LOGI("bss", "Bobine trouvée");
                         } else if (response->status_code == 404) {
+                          lv_obj_add_flag(id(btn_details_full), LV_OBJ_FLAG_HIDDEN);
+                          lv_obj_clear_flag(id(btn_details_small), LV_OBJ_FLAG_HIDDEN);
+                          lv_obj_clear_flag(id(btn_add), LV_OBJ_FLAG_HIDDEN);
+                          lv_obj_add_flag(id(btn_registered), LV_OBJ_FLAG_HIDDEN);
                           ESP_LOGI("bss", "Bobine inconnue");
                         } else {
                           ESP_LOGW("bss", "GET spool failed: %d", response->status_code);
                         }
 
-            # 2. PUT spool — always register/update
-            - lambda: |-
-                ESP_LOGI("bss", "PUT %s/api/spools — uid=%s variant_id=%s material=%s color_hex=%s weight=%.0f temp_min=%.0f temp_max=%.0f",
-                  id(bss_url).state.c_str(),
-                  id(tray_uid_sens).state.c_str(),
-                  id(variant_id_sens).state.c_str(),
-                  id(filament_type_sens).state.c_str(),
-                  id(filament_color_sens).state.c_str(),
-                  id(spool_weight_sens).state,
-                  id(min_hotend_temp_sens).state,
-                  id(max_hotend_temp_sens).state);
-            - http_request.send:
-                method: PUT
-                url: !lambda 'return id(bss_url).state + "/api/spools";'
-                request_headers:
-                  Content-Type: application/json
-                json: |-
-                  root["uid"] = id(tray_uid_sens).state;
-                  root["variant_id"] = id(variant_id_sens).state;
-                  root["material"] = id(filament_type_sens).state;
-                  root["product"] = id(filament_type_detailed_sens).state;
-                  std::string color = id(filament_color_sens).state;
-                  if (!color.empty() && color[0] == '#') color = color.substr(1);
-                  root["color_hex"] = color;
-                  root["weight"] = id(spool_weight_sens).state;
-                  root["temp_min"] = id(min_hotend_temp_sens).state;
-                  root["temp_max"] = id(max_hotend_temp_sens).state;
-                capture_response: true
-                max_response_buffer_size: 1024
-                on_response:
-                  then:
-                    - lambda: |-
-                        if (response->status_code == 200) {
-                          ESP_LOGI("bss", "Bobine enregistrée: %s (%s)",
-                            id(filament_color_name_sens).state.c_str(),
-                            id(filament_type_sens).state.c_str());
-                        } else {
-                          ESP_LOGW("bss", "POST spool failed: %d — %s", response->status_code, body.c_str());
-                        }
+  - id: bss_put
+    mode: single
+    then:
+      - lambda: |-
+          ESP_LOGI("bss", "PUT %s/api/spools",
+            id(bss_url).state.c_str());
+      - http_request.send:
+          method: PUT
+          url: !lambda 'return id(bss_url).state + "/api/spools";'
+          request_headers:
+            Content-Type: application/json
+          json: |-
+            root["uid"] = id(tray_uid_sens).state;
+            root["variant_id"] = id(variant_id_sens).state;
+            root["material"] = id(filament_type_sens).state;
+            root["product"] = id(filament_type_detailed_sens).state;
+            std::string color = id(filament_color_sens).state;
+            if (!color.empty() && color[0] == '#') color = color.substr(1);
+            root["color_hex"] = color;
+            root["weight"] = id(spool_weight_sens).state;
+            root["temp_min"] = id(min_hotend_temp_sens).state;
+            root["temp_max"] = id(max_hotend_temp_sens).state;
+          capture_response: true
+          max_response_buffer_size: 1024
+          on_response:
+            then:
+              - lambda: |-
+                  if (response->status_code == 200) {
+                    lv_obj_add_flag(id(btn_add), LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(id(btn_registered), LV_OBJ_FLAG_HIDDEN);
+                    // btn_details_small already visible
+                    ESP_LOGI("bss", "Bobine enregistrée: %s (%s)",
+                      id(filament_color_name_sens).state.c_str(),
+                      id(filament_type_sens).state.c_str());
+                  } else {
+                    ESP_LOGW("bss", "PUT spool failed: %d — %s", response->status_code, body.c_str());
+                  }
