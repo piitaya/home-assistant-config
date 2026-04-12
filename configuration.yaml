@@ -46,5 +46,3 @@ logger:
   filters:
     aioecowitt.server:
       - "Unhandled sensor type srain_piezo value .*"
-
-zha_toolkit:
