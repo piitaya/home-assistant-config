@@ -23,7 +23,7 @@ AUTO_LOAD = ["pn532", "text_sensor", "sensor", "button"]
 DEPENDENCIES = ["spi"]
 
 CONF_FILAMENT_TYPE = "filament_type"
-CONF_FILAMENT_TYPE_SIMPLE = "filament_type_simple"
+CONF_FILAMENT_TYPE_DETAILED = "filament_type_detailed"
 CONF_FILAMENT_COLOR = "filament_color"
 CONF_SECONDARY_COLOR = "secondary_color"
 CONF_COLOR_ALPHA = "color_alpha"
@@ -59,7 +59,7 @@ BambuNfcOnTagErrorTrigger = bambu_nfc_ns.class_("BambuNfcOnTagErrorTrigger", aut
 
 TEXT_SENSORS = [
     (CONF_FILAMENT_TYPE, "set_filament_type_sensor", {"icon": "mdi:tag-text"}),
-    (CONF_FILAMENT_TYPE_SIMPLE, "set_filament_type_simple_sensor", {"icon": "mdi:tag-text-outline"}),
+    (CONF_FILAMENT_TYPE_DETAILED, "set_filament_type_detailed_sensor", {"icon": "mdi:tag-text-outline"}),
     (CONF_FILAMENT_COLOR, "set_filament_color_sensor", {"icon": "mdi:palette"}),
     (CONF_SECONDARY_COLOR, "set_secondary_color_sensor", {"icon": "mdi:palette-swatch"}),
     (CONF_TAG_UID, "set_tag_uid_sensor", {"icon": "mdi:nfc-variant"}),

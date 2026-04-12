@@ -17,8 +17,9 @@ bambu_nfc:
   filament_type:
     id: filament_type_sens
     name: "Type de filament"
-  filament_type_simple:
-    name: "Type de filament (court)"
+  filament_type_detailed:
+    id: filament_type_detailed_sens
+    name: "Type de filament (détaillé)"
   filament_color:
     id: filament_color_sens
     name: "Couleur du filament"

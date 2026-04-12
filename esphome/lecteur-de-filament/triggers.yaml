@@ -52,7 +52,7 @@ bambu_nfc:
       - lvgl.label.update:
           id: lbl_type_spaced
           text: !lambda |-
-            auto type = id(filament_type_sens).state;
+            auto type = id(filament_type_detailed_sens).state;
             std::string spaced;
             for (size_t i = 0; i < type.length(); i++) {
               if (i > 0) spaced += ' ';
@@ -72,11 +72,11 @@ bambu_nfc:
       # Détails — header
       - lvgl.label.update:
           id: lbl_detail_header
-          text: !lambda 'return id(filament_type_sens).state.c_str();'
+          text: !lambda 'return id(filament_type_detailed_sens).state.c_str();'
       # Détails — valeurs
       - lvgl.label.update:
           id: lbl_detail_type
-          text: !lambda 'return id(filament_type_sens).state.c_str();'
+          text: !lambda 'return id(filament_type_detailed_sens).state.c_str();'
       - lvgl.label.update:
           id: lbl_detail_color
           text: !lambda 'return id(filament_color_name_sens).state.c_str();'

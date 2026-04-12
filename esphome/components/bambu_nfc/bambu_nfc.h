@@ -32,7 +32,7 @@ class BambuNfc : public pn532::PN532,
   void clear_sensors();
 
   void set_filament_type_sensor(text_sensor::TextSensor *s) { filament_type_sensor_ = s; }
-  void set_filament_type_simple_sensor(text_sensor::TextSensor *s) { filament_type_simple_sensor_ = s; }
+  void set_filament_type_detailed_sensor(text_sensor::TextSensor *s) { filament_type_detailed_sensor_ = s; }
   void set_filament_color_sensor(text_sensor::TextSensor *s) { filament_color_sensor_ = s; }
   void set_secondary_color_sensor(text_sensor::TextSensor *s) { secondary_color_sensor_ = s; }
   void set_tag_uid_sensor(text_sensor::TextSensor *s) { tag_uid_sensor_ = s; }
@@ -69,7 +69,7 @@ class BambuNfc : public pn532::PN532,
   bool derive_bambu_keys_(const uint8_t *uid, size_t uid_len, uint8_t *keys_out);
 
   text_sensor::TextSensor *filament_type_sensor_{nullptr};
-  text_sensor::TextSensor *filament_type_simple_sensor_{nullptr};
+  text_sensor::TextSensor *filament_type_detailed_sensor_{nullptr};
   text_sensor::TextSensor *filament_color_sensor_{nullptr};
   text_sensor::TextSensor *secondary_color_sensor_{nullptr};
   text_sensor::TextSensor *tag_uid_sensor_{nullptr};

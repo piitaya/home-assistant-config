@@ -167,7 +167,7 @@ void BambuNfcResetButton::press_action() {
 
 void BambuNfc::clear_sensors() {
   text_sensor::TextSensor *text_sensors[] = {
-      filament_type_sensor_, filament_type_simple_sensor_,
+      filament_type_sensor_, filament_type_detailed_sensor_,
       filament_color_sensor_, secondary_color_sensor_,
       tag_uid_sensor_, tray_uid_sensor_, material_id_sensor_, variant_id_sensor_,
       production_date_sensor_, last_scan_date_sensor_};
@@ -398,15 +398,15 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
   publish_text(variant_id_sensor_, variant);
   publish_text(material_id_sensor_, material_id);
 
-  // Block 2: Filament type (simple/legacy form, e.g. "PLA")
+  // Block 2: Filament type (e.g. "PLA")
   std::string simple_type = trim_string(b2);
-  ESP_LOGD(TAG, "Filament type (simple): %s", simple_type.c_str());
-  publish_text(filament_type_simple_sensor_, simple_type);
+  ESP_LOGD(TAG, "Filament type: %s", simple_type.c_str());
+  publish_text(filament_type_sensor_, simple_type);
 
-  // Block 4: Detailed filament type
+  // Block 4: Detailed filament type (e.g. "PLA Matte")
   std::string detailed_type = trim_string(b4);
-  ESP_LOGD(TAG, "Detailed type: %s", detailed_type.c_str());
-  publish_text(filament_type_sensor_, detailed_type);
+  ESP_LOGD(TAG, "Filament type detailed: %s", detailed_type.c_str());
+  publish_text(filament_type_detailed_sensor_, detailed_type);
 
 
   // Block 5: Color RGBA (4B) + Weight (2B) + pad (2B) + Diameter (4B)

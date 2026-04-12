@@ -65,15 +65,63 @@ script:
                   id(filament_type_sens).state.c_str(),
                   id(filament_color_name_sens).state.c_str());
 
-            # 1. Scan — check if spool already exists
-            - http_request.post:
-                url: !lambda 'return id(bss_url).state + "/api/spools/scan";'
+            # 1. GET spool by tag — check if already known
+            - lambda: |-
+                ESP_LOGI("bss", "GET %s/api/spools/%s",
+                  id(bss_url).state.c_str(),
+                  id(tray_uid_sens).state.c_str());
+            - http_request.get:
+                url: !lambda 'return id(bss_url).state + "/api/spools/" + id(tray_uid_sens).state;'
+                capture_response: true
+                max_response_buffer_size: 4096
+                on_response:
+                  then:
+                    - lambda: |-
+                        if (response->status_code == 200) {
+                          std::string key = "\"remain\":";
+                          size_t pos = body.find(key);
+                          if (pos != std::string::npos) {
+                            pos += key.size();
+                            while (pos < body.size() && body[pos] == ' ') pos++;
+                            if (pos < body.size() && body[pos] != 'n') {
+                              float remain = std::strtof(body.c_str() + pos, nullptr);
+                              float grams = id(spool_weight_sens).state * remain / 100.0f;
+                              char buf[16];
+                              snprintf(buf, sizeof(buf), "%.0f g", grams);
+                              uint32_t fg = id(color_lum) > 0.5f ? 0x000000 : 0xFFFFFF;
+                              lv_label_set_text(id(lbl_remaining), buf);
+                              lv_obj_set_style_text_color(id(lbl_remaining), lv_color_hex(fg), 0);
+                              lv_label_set_text(id(lbl_detail_remaining), buf);
+                              ESP_LOGI("bss", "Bobine trouvée — restant: %.0f%% (%.0fg)", remain, grams);
+                            }
+                          }
+                        } else if (response->status_code == 404) {
+                          ESP_LOGI("bss", "Bobine inconnue");
+                        } else {
+                          ESP_LOGW("bss", "GET spool failed: %d", response->status_code);
+                        }
+
+            # 2. PUT spool — always register/update
+            - lambda: |-
+                ESP_LOGI("bss", "PUT %s/api/spools — uid=%s variant_id=%s material=%s color_hex=%s weight=%.0f temp_min=%.0f temp_max=%.0f",
+                  id(bss_url).state.c_str(),
+                  id(tray_uid_sens).state.c_str(),
+                  id(variant_id_sens).state.c_str(),
+                  id(filament_type_sens).state.c_str(),
+                  id(filament_color_sens).state.c_str(),
+                  id(spool_weight_sens).state,
+                  id(min_hotend_temp_sens).state,
+                  id(max_hotend_temp_sens).state);
+            - http_request.send:
+                method: PUT
+                url: !lambda 'return id(bss_url).state + "/api/spools";'
                 request_headers:
                   Content-Type: application/json
                 json: |-
                   root["uid"] = id(tray_uid_sens).state;
                   root["variant_id"] = id(variant_id_sens).state;
                   root["material"] = id(filament_type_sens).state;
+                  root["product"] = id(filament_type_detailed_sens).state;
                   std::string color = id(filament_color_sens).state;
                   if (!color.empty() && color[0] == '#') color = color.substr(1);
                   root["color_hex"] = color;
@@ -81,99 +129,14 @@ script:
                   root["temp_min"] = id(min_hotend_temp_sens).state;
                   root["temp_max"] = id(max_hotend_temp_sens).state;
                 capture_response: true
-                max_response_buffer_size: 4096
+                max_response_buffer_size: 1024
                 on_response:
                   then:
                     - lambda: |-
-                        if (response->status_code != 200) {
-                          ESP_LOGW("bss", "Scan failed: %d", response->status_code);
-                          return;
+                        if (response->status_code == 200) {
+                          ESP_LOGI("bss", "Bobine enregistrée: %s (%s)",
+                            id(filament_color_name_sens).state.c_str(),
+                            id(filament_type_sens).state.c_str());
+                        } else {
+                          ESP_LOGW("bss", "POST spool failed: %d — %s", response->status_code, body.c_str());
                         }
-
-                        bool synced = body.find("\"synced\":true") != std::string::npos;
-                        id(bss_synced) = synced;
-                        if (!synced) {
-                          ESP_LOGI("bss", "Bobine non synchronisée");
-                          return;
-                        }
-
-                        auto set_label = [](lv_obj_t *m, lv_obj_t *d, const char *t, float lum) {
-                          uint32_t fg = lum > 0.5f ? 0x000000 : 0xFFFFFF;
-                          lv_label_set_text(m, t);
-                          lv_obj_set_style_text_color(m, lv_color_hex(fg), 0);
-                          lv_label_set_text(d, t);
-                        };
-
-                        if (body.find("\"archived\":true") != std::string::npos) {
-                          set_label(id(lbl_remaining), id(lbl_detail_remaining), "Archivée", id(color_lum));
-                          ESP_LOGI("bss", "Bobine archivée");
-                          return;
-                        }
-
-                        std::string key = "\"remain\":";
-                        size_t pos = body.find(key);
-                        if (pos != std::string::npos) {
-                          pos += key.size();
-                          while (pos < body.size() && body[pos] == ' ') pos++;
-                          if (pos < body.size() && body[pos] != 'n') {
-                            float remain = std::strtof(body.c_str() + pos, nullptr);
-                            float grams = id(spool_weight_sens).state * remain / 100.0f;
-                            char buf[16];
-                            snprintf(buf, sizeof(buf), "%.0f g", grams);
-                            set_label(id(lbl_remaining), id(lbl_detail_remaining), buf, id(color_lum));
-                            ESP_LOGI("bss", "Bobine trouvée — restant: %.0f%% (%.0fg)", remain, grams);
-                            return;
-                          }
-                        }
-                        set_label(id(lbl_remaining), id(lbl_detail_remaining), "Inconnu", id(color_lum));
-                        ESP_LOGI("bss", "Bobine trouvée");
-
-            # 2. If not synced — create spool
-            - if:
-                condition:
-                  lambda: 'return !id(bss_synced);'
-                then:
-                  - lambda: |-
-                      std::string color = id(filament_color_sens).state;
-                      if (!color.empty() && color[0] == '#') color = color.substr(1);
-                      ESP_LOGI("bss", "Sync payload: uid=%s variant_id=%s material=%s color_hex=%s weight=%.0f temp_min=%.0f temp_max=%.0f",
-                        id(tray_uid_sens).state.c_str(),
-                        id(variant_id_sens).state.c_str(),
-                        id(filament_type_sens).state.c_str(),
-                        color.c_str(),
-                        id(spool_weight_sens).state,
-                        id(min_hotend_temp_sens).state,
-                        id(max_hotend_temp_sens).state);
-                  - http_request.post:
-                      url: !lambda 'return id(bss_url).state + "/api/spools/sync";'
-                      request_headers:
-                        Content-Type: application/json
-                      json: |-
-                        root["uid"] = id(tray_uid_sens).state;
-                        root["variant_id"] = id(variant_id_sens).state;
-                        root["material"] = id(filament_type_sens).state;
-                        std::string color = id(filament_color_sens).state;
-                        if (!color.empty() && color[0] == '#') color = color.substr(1);
-                        root["color_hex"] = color;
-                        root["weight"] = id(spool_weight_sens).state;
-                        root["temp_min"] = id(min_hotend_temp_sens).state;
-                        root["temp_max"] = id(max_hotend_temp_sens).state;
-                      capture_response: true
-                      max_response_buffer_size: 1024
-                      on_response:
-                        then:
-                          - lambda: |-
-                              auto set_label = [](lv_obj_t *m, lv_obj_t *d, const char *t, float lum) {
-                                uint32_t fg = lum > 0.5f ? 0x000000 : 0xFFFFFF;
-                                lv_label_set_text(m, t);
-                                lv_obj_set_style_text_color(m, lv_color_hex(fg), 0);
-                                lv_label_set_text(d, t);
-                              };
-                              if (response->status_code == 200) {
-                                set_label(id(lbl_remaining), id(lbl_detail_remaining), "Nouvelle", id(color_lum));
-                                ESP_LOGI("bss", "Bobine créée: %s (%s)",
-                                  id(filament_color_name_sens).state.c_str(),
-                                  id(filament_type_sens).state.c_str());
-                              } else {
-                                ESP_LOGW("bss", "Sync failed: %d — %s", response->status_code, body.c_str());
-                              }
