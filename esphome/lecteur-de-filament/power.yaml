@@ -24,6 +24,13 @@ esphome:
 lvgl:
   top_layer:
     widgets:
+      - label:
+          id: lbl_wifi_icon
+          x: 182
+          y: 5
+          text: "\U000F05AA"
+          text_color: 0x888888
+          text_font: font_medium
       - obj:
           id: battery_border
           x: 205

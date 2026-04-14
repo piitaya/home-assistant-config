@@ -11,6 +11,32 @@ text:
     restore_value: true
     initial_value: ""
     mode: text
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: 'return !id(tray_uid_sens).state.empty() && id(tray_uid_sens).state != "unknown";'
+            then:
+              - script.execute: bss_sync
+
+wifi:
+  on_connect:
+    then:
+      - lvgl.label.update:
+          id: lbl_wifi_icon
+          text: "\U000F05A9"
+          text_color: 0x888888
+      - if:
+          condition:
+            lambda: 'return !id(tray_uid_sens).state.empty() && id(tray_uid_sens).state != "unknown";'
+          then:
+            - script.execute: bss_sync
+  on_disconnect:
+    then:
+      - lvgl.label.update:
+          id: lbl_wifi_icon
+          text: "\U000F05AA"
+          text_color: 0x888888
 
 script:
   - id: bss_sync
@@ -19,6 +45,7 @@ script:
       - if:
           condition:
             lambda: |-
+              if (!wifi::global_wifi_component->is_connected()) return false;
               auto url = id(bss_url).state;
               return url.rfind("http://", 0) == 0 || url.rfind("https://", 0) == 0;
           then:
