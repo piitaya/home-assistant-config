@@ -16,9 +16,9 @@ touchscreen:
     reset_pin: GPIO2
 
 display:
-  - platform: ili9xxx
+  - platform: mipi_spi
     id: my_display
-    model: st7789v
+    model: ST7789V
     dimensions:
       width: 240
       height: 320
@@ -26,6 +26,8 @@ display:
     dc_pin: GPIO41
     reset_pin: GPIO39
     spi_id: display_spi
+    data_rate: 80MHz
+    buffer_size: 100%
     invert_colors: true
     auto_clear_enabled: false
     update_interval: never

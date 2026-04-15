@@ -105,11 +105,10 @@ script:
     mode: single
     then:
       - lambda: |-
-          ESP_LOGI("bss", "PUT %s/api/spools",
+          ESP_LOGI("bss", "POST %s/api/spools/scan",
             id(bss_url).state.c_str());
-      - http_request.send:
-          method: PUT
-          url: !lambda 'return id(bss_url).state + "/api/spools";'
+      - http_request.post:
+          url: !lambda 'return id(bss_url).state + "/api/spools/scan";'
           request_headers:
             Content-Type: application/json
           json: |-
@@ -128,7 +127,7 @@ script:
           on_response:
             then:
               - lambda: |-
-                  if (response->status_code == 200) {
+                  if (response->status_code == 200 || response->status_code == 201) {
                     lv_obj_add_flag(id(btn_add), LV_OBJ_FLAG_HIDDEN);
                     lv_obj_clear_flag(id(btn_registered), LV_OBJ_FLAG_HIDDEN);
                     // btn_details_small already visible
@@ -136,5 +135,5 @@ script:
                       id(filament_color_name_sens).state.c_str(),
                       id(filament_type_sens).state.c_str());
                   } else {
-                    ESP_LOGW("bss", "PUT spool failed: %d — %s", response->status_code, body.c_str());
+                    ESP_LOGW("bss", "POST scan failed: %d — %s", response->status_code, body.c_str());
                   }
