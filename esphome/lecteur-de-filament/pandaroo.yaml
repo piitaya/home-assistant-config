@@ -46,7 +46,8 @@ script:
           condition:
             lambda: |-
               if (!wifi::global_wifi_component->is_connected()) return false;
-              auto url = id(pandaroo_url).state;
+              auto &url = id(pandaroo_url).state;
+              if (!url.empty() && url.back() == '/') url.pop_back();
               return url.rfind("http://", 0) == 0 || url.rfind("https://", 0) == 0;
           then:
             - lambda: |-
