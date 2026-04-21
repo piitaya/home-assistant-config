@@ -23,7 +23,7 @@ packages:
   display: !include lecteur-de-filament/display.yaml
   fonts: !include lecteur-de-filament/fonts.yaml
   nfc: !include lecteur-de-filament/nfc.yaml
-  bss: !include lecteur-de-filament/bambu_spoolman_sync.yaml
+  pandaroo: !include lecteur-de-filament/pandaroo.yaml
   styles: !include lecteur-de-filament/styles.yaml
   page_idle: !include lecteur-de-filament/page_idle.yaml
   page_filament: !include lecteur-de-filament/page_filament.yaml

@@ -117,7 +117,7 @@ lvgl:
             hidden: true
             on_press:
               then:
-                - script.execute: bss_put
+                - script.execute: pandaroo_put
             widgets:
               - label:
                   align: LEFT_MID
