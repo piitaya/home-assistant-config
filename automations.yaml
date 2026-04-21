@@ -3310,6 +3310,7 @@
       - action: fan.turn_on
         target:
           entity_id: fan.purificateur_d_air
+        data: {}
       - if:
         - condition: or
           conditions:
@@ -3330,7 +3331,7 @@
           target:
             entity_id: fan.purificateur_d_air
           data:
-            preset_mode: low
+            preset_mode: medium
     default:
     - action: fan.turn_off
       target:
@@ -3393,7 +3394,7 @@
     - if:
       - condition: time
         after: 09:00:00
-        before: '22:00:00'
+        before: '19:00:00'
       then:
       - action: light.turn_on
         metadata: {}
