@@ -1332,11 +1332,11 @@
           entity_id: script.notifier_des_fenetres_ouvertes_a_l_etage
       duration:
         hours: 0
-        minutes: 5
+        minutes: 15
         seconds: 0
       reminder:
         hours: 0
-        minutes: 5
+        minutes: 10
         seconds: 0
 - id: '1729280811736'
   alias: Notification onduleur
@@ -1541,11 +1541,11 @@
           entity_id: script.notifier_fenetres_du_rez_de_chaussee_ouvertes
       duration:
         hours: 0
-        minutes: 5
+        minutes: 15
         seconds: 0
       reminder:
         hours: 0
-        minutes: 5
+        minutes: 10
         seconds: 0
 - id: '1735479436866'
   alias: Délestage Tesla Model Y
