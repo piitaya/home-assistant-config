@@ -120,6 +120,13 @@ script:
             std::string color = id(filament_color_sens).state;
             if (!color.empty() && color[0] == '#') color = color.substr(1);
             root["color_hex"] = color;
+            JsonArray color_hexes = root.createNestedArray("color_hexes");
+            color_hexes.add(color);
+            std::string sec = id(secondary_color_sens).state;
+            if (!sec.empty()) {
+              if (sec[0] == '#') sec = sec.substr(1);
+              color_hexes.add(sec);
+            }
             root["weight"] = id(spool_weight_sens).state;
             root["temp_min"] = id(min_hotend_temp_sens).state;
             root["temp_max"] = id(max_hotend_temp_sens).state;

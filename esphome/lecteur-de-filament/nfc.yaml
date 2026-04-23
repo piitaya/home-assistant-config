@@ -24,6 +24,7 @@ bambu_nfc:
     id: filament_color_sens
     name: "Couleur du filament"
   secondary_color:
+    id: secondary_color_sens
     name: "Couleur secondaire"
   color_alpha:
     name: "Alpha couleur"
