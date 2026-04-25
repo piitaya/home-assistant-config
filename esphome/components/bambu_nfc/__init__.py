@@ -26,7 +26,6 @@ CONF_FILAMENT_TYPE = "filament_type"
 CONF_FILAMENT_TYPE_DETAILED = "filament_type_detailed"
 CONF_FILAMENT_COLOR = "filament_color"
 CONF_SECONDARY_COLOR = "secondary_color"
-CONF_COLOR_ALPHA = "color_alpha"
 CONF_COLOR_COUNT = "color_count"
 CONF_MIN_HOTEND_TEMP = "min_hotend_temp"
 CONF_MAX_HOTEND_TEMP = "max_hotend_temp"
@@ -77,7 +76,6 @@ SENSORS = [
     (CONF_BED_TEMP_TYPE, "set_bed_temp_type_sensor", {"accuracy_decimals": 0, "icon": "mdi:layers"}),
     (CONF_SPOOL_WEIGHT, "set_spool_weight_sensor", {"unit_of_measurement": UNIT_GRAM, "accuracy_decimals": 0, "device_class": DEVICE_CLASS_WEIGHT, "icon": "mdi:weight-gram"}),
     (CONF_FILAMENT_DIAMETER, "set_filament_diameter_sensor", {"unit_of_measurement": UNIT_MILLIMETER, "accuracy_decimals": 2, "device_class": DEVICE_CLASS_DISTANCE, "icon": "mdi:diameter-variant"}),
-    (CONF_COLOR_ALPHA, "set_color_alpha_sensor", {"accuracy_decimals": 0, "icon": "mdi:opacity"}),
     (CONF_COLOR_COUNT, "set_color_count_sensor", {"accuracy_decimals": 0, "icon": "mdi:palette-swatch-variant"}),
     (CONF_DRYING_TEMP, "set_drying_temp_sensor", {"unit_of_measurement": UNIT_CELSIUS, "accuracy_decimals": 0, "device_class": DEVICE_CLASS_TEMPERATURE, "icon": "mdi:fan"}),
     (CONF_DRYING_TIME, "set_drying_time_sensor", {"unit_of_measurement": UNIT_HOUR, "accuracy_decimals": 0, "device_class": DEVICE_CLASS_DURATION, "icon": "mdi:timer-outline"}),

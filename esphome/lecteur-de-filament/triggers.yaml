@@ -38,7 +38,7 @@ bambu_nfc:
       - lambda: |-
           auto hex = id(filament_color_sens).state;
           if (hex.length() >= 7) {
-            id(parsed_color) = strtol(hex.c_str() + 1, NULL, 16);
+            id(parsed_color) = strtoul(hex.substr(1, 6).c_str(), NULL, 16);
           } else {
             id(parsed_color) = 0x808080;
           }

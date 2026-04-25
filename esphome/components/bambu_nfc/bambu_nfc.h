@@ -48,7 +48,6 @@ class BambuNfc : public pn532::PN532,
   void set_bed_temp_type_sensor(sensor::Sensor *s) { bed_temp_type_sensor_ = s; }
   void set_spool_weight_sensor(sensor::Sensor *s) { spool_weight_sensor_ = s; }
   void set_filament_diameter_sensor(sensor::Sensor *s) { filament_diameter_sensor_ = s; }
-  void set_color_alpha_sensor(sensor::Sensor *s) { color_alpha_sensor_ = s; }
   void set_color_count_sensor(sensor::Sensor *s) { color_count_sensor_ = s; }
   void set_drying_temp_sensor(sensor::Sensor *s) { drying_temp_sensor_ = s; }
   void set_drying_time_sensor(sensor::Sensor *s) { drying_time_sensor_ = s; }
@@ -85,7 +84,6 @@ class BambuNfc : public pn532::PN532,
   sensor::Sensor *bed_temp_type_sensor_{nullptr};
   sensor::Sensor *spool_weight_sensor_{nullptr};
   sensor::Sensor *filament_diameter_sensor_{nullptr};
-  sensor::Sensor *color_alpha_sensor_{nullptr};
   sensor::Sensor *color_count_sensor_{nullptr};
   sensor::Sensor *drying_temp_sensor_{nullptr};
   sensor::Sensor *drying_time_sensor_{nullptr};

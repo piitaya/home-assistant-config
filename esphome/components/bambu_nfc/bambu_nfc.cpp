@@ -176,7 +176,7 @@ void BambuNfc::clear_sensors() {
 
   sensor::Sensor *num_sensors[] = {
       min_temp_sensor_, max_temp_sensor_, bed_temp_sensor_, bed_temp_type_sensor_,
-      spool_weight_sensor_, filament_diameter_sensor_, color_alpha_sensor_, color_count_sensor_,
+      spool_weight_sensor_, filament_diameter_sensor_, color_count_sensor_,
       drying_temp_sensor_, drying_time_sensor_,
       nozzle_diameter_sensor_, spool_width_sensor_, filament_length_sensor_};
   for (auto *s : num_sensors)
@@ -411,11 +411,10 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
 
   // Block 5: Color RGBA (4B) + Weight (2B) + pad (2B) + Diameter (4B)
   if (b5.size() >= 12) {
-    char color_hex[8];
-    snprintf(color_hex, sizeof(color_hex), "#%02X%02X%02X", b5[0], b5[1], b5[2]);
-    ESP_LOGD(TAG, "Color: %s (alpha=%d)", color_hex, b5[3]);
+    char color_hex[10];
+    snprintf(color_hex, sizeof(color_hex), "#%02X%02X%02X%02X", b5[0], b5[1], b5[2], b5[3]);
+    ESP_LOGD(TAG, "Color: %s", color_hex);
     publish_text(filament_color_sensor_, std::string(color_hex));
-    publish_num(color_alpha_sensor_, b5[3]);
 
     uint16_t weight = read_uint16_le(b5, 4);
     ESP_LOGD(TAG, "Spool weight: %d g", weight);
@@ -486,9 +485,9 @@ bool BambuNfc::read_bambu_data_(nfc::NfcTagUid &uid) {
   if (has_b16 && b16.size() >= 8) {
     uint16_t format_id = read_uint16_le(b16, 0);
     uint16_t color_count = read_uint16_le(b16, 2);
-    if (format_id != 0x0000) {
-      char sec_color[8];
-      snprintf(sec_color, sizeof(sec_color), "#%02X%02X%02X", b16[7], b16[6], b16[5]);
+    if (format_id != 0x0000 && color_count > 1) {
+      char sec_color[10];
+      snprintf(sec_color, sizeof(sec_color), "#%02X%02X%02X%02X", b16[7], b16[6], b16[5], b16[4]);
       ESP_LOGD(TAG, "Color count: %d, secondary: %s (format=0x%04X)",
                color_count, sec_color, format_id);
       publish_text(secondary_color_sensor_, std::string(sec_color));

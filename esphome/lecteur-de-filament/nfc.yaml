@@ -26,8 +26,6 @@ bambu_nfc:
   secondary_color:
     id: secondary_color_sens
     name: "Couleur secondaire"
-  color_alpha:
-    name: "Alpha couleur"
   color_count:
     name: "Nombre de couleurs"
   material_id:
