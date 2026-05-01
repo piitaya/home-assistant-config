@@ -3342,15 +3342,14 @@
   description: Gestion de l'éclairage dans la salle de bain en fonction de la présence
     et de l'état des appareils.
   triggers:
-  - trigger: state
-    entity_id:
+  - entity_id:
     - binary_sensor.capteur_de_presence_salle_de_bain_du_haut_occupation
     from:
     - 'off'
     to:
     - 'on'
-  - trigger: state
-    entity_id:
+    platform: state
+  - entity_id:
     - binary_sensor.capteur_de_presence_salle_de_bain_du_haut_occupation
     from:
     - 'on'
@@ -3360,8 +3359,8 @@
       hours: 0
       minutes: 2
       seconds: 0
-  - trigger: state
-    entity_id:
+    platform: state
+  - entity_id:
     - binary_sensor.seche_serviettes_etage_boost
     from:
     - 'on'
@@ -3371,6 +3370,7 @@
       hours: 0
       minutes: 2
       seconds: 0
+    platform: state
   conditions: []
   actions:
   - if:
@@ -3385,23 +3385,38 @@
         state:
         - 'on'
     then:
-    - action: light.turn_on
-      metadata: {}
-      data:
-        brightness_pct: 100
-      target:
-        entity_id: light.spot_lavabo_etage
-    - if:
-      - condition: time
-        after: 09:00:00
-        before: '19:00:00'
-      then:
+    - choose:
+      - conditions:
+        - condition: time
+          after: 09:00:00
+          before: '19:00:00'
+        sequence:
+        - action: light.turn_on
+          metadata: {}
+          data:
+            brightness_pct: 100
+          target:
+            entity_id:
+            - light.spot_lavabo_etage
+            - light.spots_salle_de_bain_etage
+      - conditions:
+        - condition: time
+          after: '19:00:00'
+          before: '23:00:00'
+        sequence:
+        - action: light.turn_on
+          metadata: {}
+          data:
+            brightness_pct: 100
+          target:
+            entity_id: light.spot_lavabo_etage
+      default:
       - action: light.turn_on
         metadata: {}
         data:
-          brightness_pct: 100
+          brightness_pct: 44
         target:
-          entity_id: light.spots_salle_de_bain_etage
+          entity_id: light.spot_lavabo_etage
     else:
     - action: light.turn_off
       metadata: {}
