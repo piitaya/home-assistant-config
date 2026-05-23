@@ -478,3 +478,21 @@ bulletin_meteo_quotidien:
   alias: Bulletin Météo Quotidien
   description: Génère un mini bulletin météo pour afficher sur le dashboard en haut,
     en utilisant les prévisions horaires.
+notifier_erreur_machine_a_cafe:
+  alias: Notifier - Erreur machine à café
+  use_blueprint:
+    path: jlo/power_notification_creator.yaml
+    input:
+      target: send_to_all
+      zones:
+      - zone.home
+      discard_when: []
+      default_tag: '7055206b-b25f-4c16-9501-324d04ab11a0 '
+      persons: []
+      notification_data_advanced: {}
+      default_message: La machine a café est en erreur
+      default_importance: false
+      default_title: Erreur machine à café
+  description: Ce script génère une notification en cas d'erreur détectée sur la machine
+    à café.
+  icon: mdi:coffee-maker

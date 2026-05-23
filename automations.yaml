@@ -1000,7 +1000,7 @@
   conditions:
   - condition: time
     after: '15:00:00'
-    before: '22:00:00'
+    before: '22:30:00'
   - condition: state
     entity_id: binary_sensor.home_presence
     state: 'on'
@@ -1949,6 +1949,10 @@
     entity_id:
     - sensor.yuka_mini_batterie
     above: sensor.yuka_mini_batterie_pour_finir
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
   - trigger: homeassistant
     event: start
   conditions:
@@ -3425,4 +3429,24 @@
         entity_id:
         - light.spot_lavabo_etage
         - light.spots_salle_de_bain_etage
+  mode: single
+- id: '1779539928873'
+  alias: Machine à café - Erreur
+  description: Cela notifie lorsqu'une erreur est détectée avec la machine à café.
+  triggers:
+  - entity_id:
+    - sensor.machine_a_cafe_erreur
+    not_from:
+    - unknown
+    - unavailable
+    not_to:
+    - none
+    - unavailable
+    - unknown
+    trigger: state
+  conditions: []
+  actions:
+  - action: script.notifier_erreur_machine_a_cafe
+    data:
+      user_message: '{{ state_translated("sensor.machine_a_cafe_erreur") }}'
   mode: single
