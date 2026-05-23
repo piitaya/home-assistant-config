@@ -4,4 +4,5 @@
 /.esphome/
 /secrets.yaml
 /archive/
-.device-builder.json
+.device-builder.json*
+.device-builder-peer-link-key.bin
