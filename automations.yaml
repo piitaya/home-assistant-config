@@ -3450,3 +3450,40 @@
     data:
       user_message: '{{ state_translated("sensor.machine_a_cafe_erreur") }}'
   mode: single
+- id: '1779624558224'
+  alias: Lecture musicale - Activation par bouton
+  description: Cette automatisation joue une piste musicale spécifique et règle le
+    volume d'un haut-parleur connecté après qu'un bouton de télécommande soit pressé.
+  triggers:
+  - device_id: d5144e963bf5cb4306e752d6442cfbf6
+    domain: bthome
+    type: button
+    subtype: press
+    trigger: device
+  conditions: []
+  actions:
+  - action: media_player.play_media
+    metadata: {}
+    target:
+      device_id: 84a6efe79ac97bbad33d3be5fa61cffb
+    data:
+      media:
+        media_content_id: 6hekZ+00
+        media_content_type: music
+        metadata:
+          title: Ghibli piano
+          thumbnail: https://card-content.yotoplay.com/1Gvt9hgU7KfQ0loyegt24aiGQmN2z6-MEgW4CYuCdmao~/GAvCuUCyEJhyYiZ6fJFfIBHkyblyHBvTlhsz4UantDM
+          media_class: music
+          children_media_class:
+          navigateIds:
+          - {}
+          - media_content_type: music
+            media_content_id: 6hekZ
+          browse_entity_id: media_player.yoto_player
+  - action: media_player.volume_set
+    metadata: {}
+    target:
+      device_id: 84a6efe79ac97bbad33d3be5fa61cffb
+    data:
+      volume_level: 0.125
+  mode: single
