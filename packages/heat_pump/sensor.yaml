@@ -1,31 +1,336 @@
 mqtt:
   sensor:
-    - unique_id: 68f52d6c-f837-46b5-a2ce-32fc9e4a770e
-      name: Etat du circuit de chauffage 1
-      state_topic: bsb-lan/0/32/8000
+    # ====== TEMPÉRATURES EXTÉRIEURES (cat 35) ======
+    - unique_id: bsb-8700
+      name: T° extérieure
+      state_topic: bsb-lan/0/35/8700
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
       device:
         identifiers: "atlantic_heat_pump"
         name: Pompe à chaleur
         configuration_url: "http://bsb-lan.local/"
         manufacturer: "Atlantic"
         model: Alfea Extensa Duo AI
+
+    - unique_id: bsb-8703
+      name: T° extérieure atténuée
+      state_topic: bsb-lan/0/35/8703
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    # ====== ÉTATS GÉNÉRAUX (cat 32) ======
+    - unique_id: 68f52d6c-f837-46b5-a2ce-32fc9e4a770e
+      name: Etat du circuit de chauffage 1
+      state_topic: bsb-lan/0/32/8000
+      device:
+        identifiers: "atlantic_heat_pump"
+
     - unique_id: ce64f55a-03c7-4d8c-9291-13aaefbdcb5e
       name: Etat du circuit de chauffage 2
       state_topic: bsb-lan/0/32/8001
       device:
         identifiers: "atlantic_heat_pump"
-    - unique_id: cd903ca5-74f1-4577-b9c1-47ba65c4129b
-      name: Etat du circuit de rafraîchissement 2
-      state_topic: bsb-lan/0/32/8025
-      device:
-        identifiers: "atlantic_heat_pump"
+
     - unique_id: d9a8c0f8-f461-4c56-b90a-398cd9e19baf
       name: Etat de l'ECS
       state_topic: bsb-lan/0/32/8003
       device:
         identifiers: "atlantic_heat_pump"
+
     - unique_id: 4894f805-6b38-4369-a988-a976f9109e9c
       name: Etat pompe à chaleur
       state_topic: bsb-lan/0/32/8006
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: cd903ca5-74f1-4577-b9c1-47ba65c4129b
+      name: Etat du circuit de rafraîchissement 2
+      state_topic: bsb-lan/0/32/8025
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    # ====== ERREURS (cat 29) ======
+    - unique_id: bsb-6700
+      name: Erreur active
+      state_topic: bsb-lan/0/29/6700
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-6708
+      name: Message erreur PAC
+      state_topic: bsb-lan/0/29/6708
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    # ====== PAC - DIAGNOSTIC GÉNÉRATEUR (cat 34) ======
+    - unique_id: bsb-8400
+      name: Etat compresseur
+      state_topic: bsb-lan/0/34/8400
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8410
+      name: T° retour PAC
+      state_topic: bsb-lan/0/34/8410
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8412
+      name: T° départ PAC
+      state_topic: bsb-lan/0/34/8412
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8413
+      name: Modulation compresseur
+      state_topic: bsb-lan/0/34/8413
+      unit_of_measurement: "%"
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8454
+      name: Durée blocage PAC
+      state_topic: bsb-lan/0/34/8454
+      unit_of_measurement: "h"
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8450
+      name: Heures compresseur
+      state_topic: bsb-lan/0/34/8450
+      unit_of_measurement: "h"
+      state_class: total_increasing
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8451
+      name: Démarrages compresseur
+      state_topic: bsb-lan/0/34/8451
+      state_class: total_increasing
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8456
+      name: Heures résistance électrique
+      state_topic: bsb-lan/0/34/8456
+      unit_of_measurement: "h"
+      state_class: total_increasing
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    # ====== CIRCUIT CHAUFFAGE 1 / Étage (cat 11 config + 35 diag) ======
+    - unique_id: bsb-700
+      name: Mode CC1
+      state_topic: bsb-lan/0/11/700
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-710
+      name: Consigne confort CC1
+      state_topic: bsb-lan/0/11/710
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8730
+      name: Etat pompe CC1
+      state_topic: bsb-lan/0/35/8730
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8740
+      name: T° ambiante CC1
+      state_topic: bsb-lan/0/35/8740
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8741
+      name: Consigne ambiance CC1
+      state_topic: bsb-lan/0/35/8741
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8743
+      name: T° départ CC1
+      state_topic: bsb-lan/0/35/8743
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    # ====== CIRCUIT CHAUFFAGE 2 / RdC (cat 13 config + 35 diag) ======
+    - unique_id: bsb-1000
+      name: Mode CC2
+      state_topic: bsb-lan/0/13/1000
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-1010
+      name: Consigne confort CC2
+      state_topic: bsb-lan/0/13/1010
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8760
+      name: Etat pompe CC2
+      state_topic: bsb-lan/0/35/8760
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8770
+      name: T° ambiante CC2
+      state_topic: bsb-lan/0/35/8770
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8771
+      name: Consigne ambiance CC2
+      state_topic: bsb-lan/0/35/8771
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8772
+      name: T° modèle ambiance CC2
+      state_topic: bsb-lan/0/35/8772
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8779
+      name: Besoin chaud CC2
+      state_topic: bsb-lan/0/35/8779
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    # ====== CIRCUIT RAFRAÎCHISSEMENT 2 / RdC (cat 14 config + 35 diag) ======
+    - unique_id: bsb-1201
+      name: Mode CR2
+      state_topic: bsb-lan/0/14/1201
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8781
+      name: Etat pompe raf 2
+      state_topic: bsb-lan/0/35/8781
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8786
+      name: T° départ raf 2
+      state_topic: bsb-lan/0/35/8786
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8787
+      name: Consigne départ raf 2
+      state_topic: bsb-lan/0/35/8787
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8957
+      name: Consigne froid départ ligne
+      state_topic: bsb-lan/0/35/8957
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    # ====== ECS (cat 16 config + 35 diag) ======
+    - unique_id: bsb-1600
+      name: Mode ECS
+      state_topic: bsb-lan/0/16/1600
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8820
+      name: Etat pompe ECS
+      state_topic: bsb-lan/0/35/8820
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8821
+      name: Etat résistance électrique ECS
+      state_topic: bsb-lan/0/35/8821
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    - unique_id: bsb-8830
+      name: T° ECS
+      state_topic: bsb-lan/0/35/8830
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
+      device:
+        identifiers: "atlantic_heat_pump"
+
+    # ====== ÉNERGIE / COMPTEURS (cat 20) ======
+    - unique_id: bsb-3113
+      name: Énergie totale PAC
+      state_topic: bsb-lan/0/20/3113
+      unit_of_measurement: "kWh"
+      device_class: energy
+      state_class: total_increasing
+      value_template: "{{ value.split(' ')[0] if '---' not in value else none }}"
       device:
         identifiers: "atlantic_heat_pump"
