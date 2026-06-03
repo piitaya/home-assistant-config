@@ -1,0 +1,7 @@
+rest_command:
+  portainer_restart_container:
+    url: "http://10.0.1.10:9000/api/endpoints/2/docker/containers/{{ container }}/restart"
+    method: POST
+    headers:
+      X-API-Key: !secret portainer_api_key
+    timeout: 30
