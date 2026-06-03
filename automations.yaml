@@ -3465,7 +3465,7 @@
       device_id: 84a6efe79ac97bbad33d3be5fa61cffb
     data:
       media:
-        media_content_id: 6hekZ+00
+        media_content_id: yoto://card/6hekZ/00/01
         media_content_type: music
         metadata:
           title: Ghibli piano
@@ -3475,12 +3475,12 @@
           navigateIds:
           - {}
           - media_content_type: music
-            media_content_id: 6hekZ
+            media_content_id: yoto://card/6hekZ
           browse_entity_id: media_player.yoto_player
   - action: media_player.volume_set
     metadata: {}
     target:
       device_id: 84a6efe79ac97bbad33d3be5fa61cffb
     data:
-      volume_level: 0.125
+      volume_level: 0.1875
   mode: single
