@@ -2077,13 +2077,14 @@
     du matin.
   triggers:
   - trigger: time
-    at: 04:00:00
+    at: 03:00:00
   conditions: []
   actions:
-  - type: turn_off
-    device_id: 8d68265785bdfc999228b5d74312c7e2
-    entity_id: 1048d8833e961cd678a93f16bc5130fc
-    domain: switch
+  - action: switch.turn_off
+    metadata: {}
+    target:
+      entity_id: switch.shelly_plug_s
+    data: {}
   mode: single
 - id: '1754896387902'
   alias: Sonnette - Notifications
