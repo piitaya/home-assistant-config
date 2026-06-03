@@ -2442,50 +2442,56 @@
   alias: Lumière automatique Cuisine
   description: ''
   triggers:
-  - trigger: state
-    entity_id:
-    - binary_sensor.capteur_de_presence_cuisine_occupation
-    from:
-    - 'off'
-    to:
-    - 'on'
-  - trigger: state
-    entity_id:
-    - binary_sensor.capteur_de_presence_cuisine_occupation
-    from:
-    - 'on'
-    to:
-    - 'off'
-    for:
-      hours: 0
-      minutes: 3
-      seconds: 0
+  - trigger: occupancy.detected
+    target:
+      area_id: kitchen
+    options:
+      behavior: each
+  - trigger: occupancy.cleared
+    target:
+      area_id: kitchen
+    options:
+      for:
+        hours: 0
+        minutes: 3
+        seconds: 0
+      behavior: all
   conditions: []
   actions:
   - if:
-    - condition: state
-      entity_id: binary_sensor.capteur_de_presence_cuisine_occupation
-      state:
-      - 'on'
-    then:
-    - condition: numeric_state
-      entity_id: sensor.capteur_de_presence_cuisine_eclairement
-      below: 100
-    - action: light.turn_on
-      metadata: {}
+    - condition: occupancy.is_detected
       target:
-        entity_id:
-        - light.kitchen_worktop_ceiling_light
-        - light.kitchen_ceiling_light
-      data: {}
+        area_id: kitchen
+      options:
+        behavior: any
+    then:
+    - if:
+      - condition: illuminance.is_value
+        target:
+          device_id: 1b8a469e5c006f9f54044af3d7037387
+        options:
+          threshold:
+            type: below
+            value:
+              active_choice: number
+              number: 100
+          behavior: any
+      then:
+      - action: light.turn_on
+        metadata: {}
+        target:
+          device_id:
+          - e9c024005008a6f5908c9e63ceea0755
+          - 9bbd959dd019d9020300a37a4d9fc610
+        data: {}
     else:
     - action: light.turn_off
       metadata: {}
-      target:
-        entity_id:
-        - light.kitchen_worktop_ceiling_light
-        - light.kitchen_ceiling_light
       data: {}
+      target:
+        device_id:
+        - 9bbd959dd019d9020300a37a4d9fc610
+        - e9c024005008a6f5908c9e63ceea0755
   mode: single
 - id: '1764360990078'
   alias: Lumière Chambre d'Ariane - Allumage
@@ -2493,9 +2499,10 @@
   triggers:
   - trigger: light.turned_on
     target:
-      entity_id: light.ariane_bedroom_ceiling_light
+      entity_id:
+      - light.ariane_bedroom_ceiling_light
     options:
-      behavior: any
+      behavior: each
   conditions: []
   actions:
   - action: notify.mobile_app_iphone_de_paul
@@ -3253,9 +3260,10 @@
   triggers:
   - trigger: occupancy.detected
     target:
-      entity_id: binary_sensor.study_presence_sensor_presence
+      entity_id:
+      - binary_sensor.study_presence_sensor_presence
     options:
-      behavior: any
+      behavior: each
     enabled: true
   conditions: []
   actions:
