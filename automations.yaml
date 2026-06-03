@@ -1595,16 +1595,16 @@
   alias: Internet
   description: ''
   triggers:
-  - trigger: state
-    entity_id:
+  - entity_id:
     - binary_sensor.internet
     from: 'on'
     to: 'off'
-  - trigger: state
-    entity_id:
+    platform: state
+  - entity_id:
     - binary_sensor.internet
     from: 'off'
     to: 'on'
+    platform: state
   conditions: []
   actions:
   - if:
@@ -1622,21 +1622,17 @@
         minutes: 1
         seconds: 0
         milliseconds: 0
-    - action: button.press
-      metadata: {}
-      target:
-        entity_id: button.gluetun_restart_container
-      data: {}
+    - action: rest_command.portainer_restart_container
+      data:
+        container: gluetun
     - delay:
         hours: 0
         minutes: 1
         seconds: 0
         milliseconds: 0
-    - action: button.press
-      metadata: {}
-      target:
-        entity_id: button.qbittorrent_restart_container
-      data: {}
+    - action: rest_command.portainer_restart_container
+      data:
+        container: qbittorrent
     else:
     - action: notify.mobile_app_iphone_de_paul
       metadata: {}
