@@ -1,6 +1,6 @@
 - id: '1665214752087'
-  alias: Poubelles - Passage
-  description: ''
+  alias: Poubelles - Détection passage éboueurs
+  description: Réinitialise l'état « poubelles sorties » au passage des éboueurs.
   triggers:
   - trigger: state
     entity_id:
@@ -18,8 +18,8 @@
     action: input_boolean.turn_off
   mode: single
 - id: '1665214777980'
-  alias: Poubelles - Rappel
-  description: ''
+  alias: Poubelles - Rappel de sortie
+  description: Rappelle de sortir les poubelles le soir (20 h / 23 h).
   triggers:
   - at: '20:00'
     alias: À 20:00
@@ -84,8 +84,8 @@
     alias: Envoyer un message à Marina si elle est à la maison
   mode: single
 - id: '1665214797596'
-  alias: Poubelles - Sortie
-  description: ''
+  alias: Poubelles - Marquage sorties
+  description: Marque les poubelles comme sorties via une action de notification.
   triggers:
   - event_type: mobile_app_notification_action
     event_data:
@@ -100,8 +100,8 @@
     action: script.garbage_take_out
   mode: single
 - id: '1665215615201'
-  alias: Pilule - Prise
-  description: Enregistre la date de la prise de la pilule
+  alias: Pilule - Enregistrement de la prise
+  description: Enregistre la date de prise de la pilule via un bouton/action.
   triggers:
   - device_id: 2d2ec71c9d37745b99468aba1a0ae516
     domain: zha
@@ -133,8 +133,8 @@
     action: input_datetime.set_datetime
   mode: single
 - id: '1665215646308'
-  alias: Pilule - Rappel
-  description: Envoyer un rappel pour la pilule jusqu'à ce qu'elle soit prise.
+  alias: Pilule - Rappel de prise
+  description: Rappelle toutes les 10 min de prendre la pilule jusqu'à la prise.
   triggers:
   - alias: Toutes les 30 minutes
     minutes: /10
@@ -176,8 +176,8 @@
     action: notify.mobile_app_iphone_de_marina
   mode: single
 - id: '1665216853678'
-  alias: Armement de l'alarme
-  description: Met l'alarme en mode absent si plus personne n'est à la maison.
+  alias: Alarme - Armement au départ
+  description: Met l'alarme en mode absent quand plus personne n'est à la maison.
   triggers:
   - event: start
     trigger: homeassistant
@@ -206,8 +206,8 @@
     action: alarm_control_panel.alarm_arm_away
   mode: single
 - id: '1665216870012'
-  alias: Désarmement de l'alarme
-  description: Met l'alarme en mode présent si quelqu'un rentre à la maison.
+  alias: Alarme - Retour à la maison
+  description: Met l'alarme en mode présent quand quelqu'un rentre.
   triggers:
   - event: start
     trigger: homeassistant
@@ -237,7 +237,7 @@
   mode: single
 - id: '1665588582897'
   alias: Volet Buanderie - Télécommande
-  description: Contrôle du volet de la buanderie avec la télécommande.
+  description: Ouvre, ferme ou stoppe le volet de la buanderie via la télécommande ZHA.
   triggers:
   - device_id: 75b18d9e893fc853ade15e69377a6906
     domain: zha
@@ -293,8 +293,8 @@
     default: []
   mode: restart
 - id: '1666680559161'
-  alias: Lumière extérieure - Rentre Maison
-  description: Allume la lumière extérieure quand quelqu'un rentre à la maison
+  alias: Lumière extérieure - Allumage à l'arrivée
+  description: Allume la lumière extérieure 10 min à l'arrivée la nuit.
   triggers:
   - entity_id: person.paul
     zone: zone.home
@@ -337,9 +337,9 @@
     action: light.turn_off
   mode: single
 - id: '1666725343502'
-  alias: TV - Lumière Cinéma
-  description: Ajuste les lumières du salon lors du visionnage d'un film ou d'une
-    série
+  alias: Lumière Salon - Mode cinéma
+  description: Ajuste les lumières du salon au lancement et à l'arrêt d'un film/série
+    (Plex).
   triggers:
   - entity_id:
     - media_player.plex_apple_tv
@@ -405,8 +405,8 @@
     default: []
   mode: single
 - id: '1667026554816'
-  alias: Lumière extérieure - Quitte maison
-  description: Éteins la lumière quand tout le monde part de la maison
+  alias: Lumière extérieure - Extinction au départ
+  description: Éteint la lumière extérieure quand tout le monde part.
   triggers:
   - entity_id: person.paul
     zone: zone.home
@@ -433,8 +433,8 @@
     action: light.turn_off
   mode: single
 - id: '1671025138801'
-  alias: Notification thermostats trop chauds
-  description: ''
+  alias: Thermostats - Notification surchauffe
+  description: Notifie Paul et Marina quand un thermostat dépasse 23 °C en chauffe.
   triggers:
   - alias: Quand la température du thermostat du rez-de-chaussée dépasse 23°C
     entity_id:
@@ -466,7 +466,7 @@
   mode: single
 - id: '1671531189627'
   alias: Volet Chambre d'amis - Mode invité
-  description: ''
+  description: Ajuste la protection RF du volet de la chambre d'amis selon le mode invité.
   triggers:
   - entity_id:
     - cover.guest_room_shutter
@@ -505,10 +505,8 @@
       action: select.select_option
   mode: single
 - id: '1683749684693'
-  alias: Filtration Automatique - Spa
-  description: Active et désactive automatiquement la filtration du spa à des heures
-    spécifiques, garantissant une eau toujours propre et fraîche. La filtration commence
-    à 21h02 et s'arrête à 5h02.
+  alias: Spa - Filtration automatique
+  description: Démarre et arrête la filtration du spa à heures fixes (21h02 / 05h02).
   triggers:
   - at: '21:02:00'
     id: start
@@ -538,8 +536,8 @@
     default: []
   mode: restart
 - id: '1684017273421'
-  alias: Chauffage programmé du spa
-  description: ''
+  alias: Spa - Chauffage programmé
+  description: Met le thermostat du spa en mode chauffe à 05 h.
   triggers:
   - at: 05:00:00
     trigger: time
@@ -553,8 +551,8 @@
     action: climate.set_hvac_mode
   mode: single
 - id: '1685859197705'
-  alias: Sauvegarde quotidienne
-  description: ''
+  alias: Système - Sauvegarde quotidienne
+  description: Lance une sauvegarde complète chaque nuit à 03 h 15.
   triggers:
   - at: 03:15:00
     trigger: time
@@ -588,8 +586,8 @@
     action: hassio.backup_partial
   mode: single
 - id: '1688142384244'
-  alias: Lumière automatique Garage
-  description: ''
+  alias: Éclairage automatique - Garage
+  description: Allume ou éteint la lumière du garage selon la présence et la luminosité.
   triggers:
   - entity_id:
     - binary_sensor.garage_occupancy
@@ -645,8 +643,8 @@
       action: light.turn_off
   mode: single
 - id: '1689065135829'
-  alias: Protection du soleil - Volet Bureau
-  description: ''
+  alias: Protection solaire - Bureau
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
@@ -655,8 +653,8 @@
       custom_conditions: []
       opening_sensor: binary_sensor.study_window_sensor_opening
 - id: '1689070030509'
-  alias: Protection du soleil - Volet Chambre
-  description: ''
+  alias: Protection solaire - Chambre
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
@@ -665,8 +663,8 @@
       opening_sensor: binary_sensor.bedroom_window_sensor_opening
       custom_conditions: []
 - id: '1689071619165'
-  alias: Protection du soleil - Volet Buanderie
-  description: ''
+  alias: Protection solaire - Buanderie
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
@@ -674,8 +672,8 @@
       facade: binary_sensor.cemetary_facade_exposed
       position_unexposed: 100
 - id: '1689075253364'
-  alias: Protection du soleil - Volet Cuisine
-  description: ''
+  alias: Protection solaire - Cuisine
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
@@ -683,32 +681,32 @@
       position_exposed: 25
       facade: binary_sensor.cemetary_facade_exposed
 - id: '1689079813108'
-  alias: Protection du soleil - Volet Salon Droit
-  description: ''
+  alias: Protection solaire - Salon Droit
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
       shutter: cover.living_room_front_right_shutter
       facade: binary_sensor.front_facade_exposed
 - id: '1689079890600'
-  alias: Protection du soleil - Volet Salon Gauche
-  description: ''
+  alias: Protection solaire - Salon Gauche
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
       shutter: cover.living_room_front_left_shutter
       facade: binary_sensor.front_facade_exposed
 - id: '1689079946593'
-  alias: Protection du soleil - Volet Toilettes
-  description: ''
+  alias: Protection solaire - Toilettes
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
       shutter: cover.toilets_shutter
       facade: binary_sensor.front_facade_exposed
 - id: '1689085967545'
-  alias: Protection du soleil - Volet Salon Cimetière
-  description: ''
+  alias: Protection solaire - Salon Cimetière
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
@@ -716,8 +714,8 @@
       position_exposed: 30
       facade: binary_sensor.cemetary_facade_exposed
 - id: '1689086116343'
-  alias: Protection du soleil - Volet Salle de bain
-  description: ''
+  alias: Protection solaire - Salle de bain
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
@@ -726,8 +724,8 @@
       custom_conditions: []
       opening_sensor: binary_sensor.bathroom_window_sensor_opening
 - id: '1689086189034'
-  alias: Protection du soleil - Volet Palier
-  description: ''
+  alias: Protection solaire - Palier
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
@@ -736,8 +734,8 @@
       facade: binary_sensor.front_facade_exposed
       opening_sensor: binary_sensor.landing_window_sensor_opening
 - id: '1689086502720'
-  alias: Protection du soleil - Volet Chambre d'Ariane
-  description: ''
+  alias: Protection solaire - Chambre d'Ariane
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
@@ -746,8 +744,8 @@
       position_exposed: 20
       opening_sensor: binary_sensor.ariane_bedroom_window_sensor_opening
 - id: '1689086745942'
-  alias: Protection du soleil - Volet Chambre d'amis
-  description: ''
+  alias: Protection solaire - Chambre d'amis
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
@@ -759,8 +757,8 @@
         state: 'off'
       opening_sensor: binary_sensor.guest_room_window_sensor_opening
 - id: '1689087962070'
-  alias: Protection du soleil - Volet Salon Jardin
-  description: ''
+  alias: Protection solaire - Salon Jardin
+  description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
@@ -769,8 +767,8 @@
       additionnal_protection: cover.pergola
       facade: binary_sensor.garden_facade_exposed
 - id: '1689940894428'
-  alias: Simulation Présence
-  description: ''
+  alias: Simulation de présence - Programmation
+  description: Simule une présence (lumières/volets) selon des horaires programmés.
   triggers:
   - at: 08:04:00
     id: ouvrir volets
@@ -881,8 +879,8 @@
         action: cover.close_cover
   mode: single
 - id: '1689942382007'
-  alias: Simulation Présence - Rentre Maison
-  description: ''
+  alias: Simulation de présence - Arrêt à l'arrivée
+  description: Désactive la simulation de présence et notifie à l'arrivée.
   triggers:
   - entity_id: person.paul
     zone: zone.home
@@ -932,8 +930,9 @@
     enabled: true
   mode: single
 - id: '1691702230568'
-  alias: Impression 3D terminée
-  description: ''
+  alias: Imprimante 3D - Fin d'impression
+  description: À la fin ou l'échec d'une impression, éteint la lumière de l'imprimante
+    après 30 s.
   triggers:
   - alias: Lorsque l'impression est terminée
     entity_id:
@@ -962,8 +961,8 @@
     action: light.turn_off
   mode: single
 - id: '1700251414197'
-  alias: Mode chat - Désactivation
-  description: ''
+  alias: Mode chat - Désactivation automatique
+  description: Désactive le mode chat quand la lumière du garage s'allume en journée.
   triggers:
   - entity_id:
     - light.garage_light
@@ -986,8 +985,8 @@
     action: input_boolean.turn_off
   mode: single
 - id: '1705180879834'
-  alias: Volets entrouvert pour le chat
-  description: ''
+  alias: Mode chat - Entrouverture des volets
+  description: Entrouvre les volets du rez-de-chaussée fermés l'après-midi pour le chat.
   triggers:
   - entity_id:
     - cover.ground_floor_shutters
@@ -1010,9 +1009,8 @@
     action: script.set_cover_for_cat
   mode: single
 - id: '1706445548005'
-  alias: Projecteur extérieur - Lumière automatique
-  description: Allumer ou éteindre le projecteur extérieur en fonction des mouvements
-    et du moment de la journée.
+  alias: Projecteur extérieur - Automatique
+  description: Allume le projecteur extérieur sur mouvement la nuit.
   triggers:
   - entity_id:
     - binary_sensor.outdoor_motion_sensor_motion
@@ -1064,8 +1062,9 @@
       action: light.turn_off
   mode: single
 - id: '1713547918574'
-  alias: Zwave - Mise à jour de la position des volets
-  description: Mettre à jour position volets quand la consommation devient nulle.
+  alias: Volets - Mise à jour position Z-Wave
+  description: Rafraîchit la position Z-Wave d'un volet quand sa consommation tombe
+    à zéro.
   triggers:
   - alias: Si la consommation d'un des volets devient nulle
     below: '0.1'
@@ -1117,9 +1116,8 @@
   mode: parallel
   max: 15
 - id: '1716148460626'
-  alias: Verrouillage porte arrière
-  description: Verrouiller automatiquement la porte arrière durant la nuit ou quand
-    personne n'est à la maison.
+  alias: Serrure arrière - Verrouillage automatique
+  description: Verrouille la porte arrière la nuit ou quand la maison est vide.
   triggers:
   - entity_id:
     - binary_sensor.home_presence
@@ -1163,8 +1161,8 @@
       entity_id: lock.porte_arriere
   mode: single
 - id: '1716838642271'
-  alias: Notification frigo
-  description: ''
+  alias: Frigo Cuisine - Notification porte ouverte
+  description: Notifie quand la porte du frigo de la cuisine reste ouverte (blueprint).
   use_blueprint:
     path: piitaya/opening_action.yaml
     input:
@@ -1184,8 +1182,8 @@
         minutes: 5
         seconds: 0
 - id: '1716838725208'
-  alias: Notification frigo du garage
-  description: ''
+  alias: Frigo Garage - Notification porte ouverte
+  description: Notifie quand la porte du frigo du garage reste ouverte (blueprint).
   use_blueprint:
     path: piitaya/opening_action.yaml
     input:
@@ -1205,8 +1203,8 @@
         minutes: 5
         seconds: 0
 - id: '1716838791160'
-  alias: Notification congélateur
-  description: ''
+  alias: Congélateur - Notification porte ouverte
+  description: Notifie quand la porte du congélateur reste ouverte (blueprint).
   use_blueprint:
     path: piitaya/opening_action.yaml
     input:
@@ -1226,9 +1224,8 @@
         minutes: 5
         seconds: 0
 - id: '1718390683621'
-  alias: Verrouillage porte d'entrée
-  description: Verrouiller automatiquement la porte d'entrée durant la nuit ou quand
-    personne n'est à la maison.
+  alias: Serrure entrée - Verrouillage automatique
+  description: Verrouille la porte d'entrée la nuit ou quand la maison est vide.
   triggers:
   - entity_id:
     - binary_sensor.home_presence
@@ -1289,9 +1286,8 @@
       entity_id: lock.porte_dentree
   mode: restart
 - id: '1720796386287'
-  alias: Notification porte d'entrée déverrouillée
-  description: Envoie une notification si la porte d'entrée a été déverrouillée quand
-    personne n'est à la maison.
+  alias: Serrure entrée - Notification si non verrouillée
+  description: Notifie Paul si la porte est déverrouillée alors que la maison est vide.
   triggers:
   - entity_id:
     - lock.porte_dentree
@@ -1309,8 +1305,8 @@
     action: notify.mobile_app_iphone_de_paul
   mode: single
 - id: '1729243257556'
-  alias: Notification fenêtres de l'étage ouvertes
-  description: ''
+  alias: Fenêtres étage - Notification ouverture
+  description: Notifie quand des fenêtres de l'étage restent ouvertes (blueprint).
   use_blueprint:
     path: piitaya/opening_action.yaml
     input:
@@ -1339,8 +1335,8 @@
         minutes: 10
         seconds: 0
 - id: '1729280811736'
-  alias: Notification onduleur
-  description: ''
+  alias: Onduleur - Notification secteur/batterie
+  description: Notifie Paul lors d'un basculement secteur/batterie de l'onduleur.
   triggers:
   - trigger: state
     entity_id:
@@ -1364,8 +1360,8 @@
         message: L'onduleur fonctionne sur batterie
   mode: single
 - id: '1729756031647'
-  alias: Surveillance appareils Matter indisponibles
-  description: ''
+  alias: Matter - Surveillance appareils indisponibles
+  description: Notifie Paul quand une serrure Matter reste indisponible plus de 30 min.
   triggers:
   - trigger: state
     entity_id:
@@ -1410,8 +1406,8 @@
   mode: parallel
   max: 10
 - id: '1734096011930'
-  alias: Extinction des assistants vocaux
-  description: ''
+  alias: Assistants vocaux - Coupure du micro (absence)
+  description: Coupe le micro des assistants vocaux quand la maison est vide.
   triggers:
   - entity_id:
     - binary_sensor.home_presence
@@ -1435,8 +1431,8 @@
       - switch.voice_minion_mute
   mode: single
 - id: '1734096059159'
-  alias: Allumage des assistants vocaux
-  description: ''
+  alias: Assistants vocaux - Activation du micro (présence)
+  description: Réactive le micro des assistants vocaux quand une présence est détectée.
   triggers:
   - entity_id:
     - binary_sensor.home_presence
@@ -1460,8 +1456,8 @@
       - switch.voice_minion_mute
   mode: single
 - id: '1734895688539'
-  alias: Mode chat - indicateur lumineux
-  description: ''
+  alias: Mode chat - Indicateur lumineux
+  description: Affiche un anneau LED rouge ou vert selon l'état du mode chat.
   triggers:
   - trigger: state
     entity_id:
@@ -1499,8 +1495,8 @@
         entity_id: light.voice_black_led_ring
   mode: single
 - id: '1734896118812'
-  alias: Mode chat - bouton
-  description: ''
+  alias: Mode chat - Bascule par bouton
+  description: Bascule le mode chat du garage sur double-appui du bouton vocal.
   triggers:
   - trigger: state
     entity_id:
@@ -1518,8 +1514,8 @@
       entity_id: input_boolean.cat_garage_mode
   mode: single
 - id: '1735296885870'
-  alias: Notification fenêtres du rez-de-chaussée ouvertes
-  description: ''
+  alias: Fenêtres rez-de-chaussée - Notification ouverture
+  description: Notifie quand des fenêtres du rez-de-chaussée restent ouvertes (blueprint).
   use_blueprint:
     path: piitaya/opening_action.yaml
     input:
@@ -1548,9 +1544,8 @@
         minutes: 10
         seconds: 0
 - id: '1735479436866'
-  alias: Délestage Tesla Model Y
-  description: Adapte la vitesse de charge de la Tesla en fonction de la puissance
-    disponible à la maison.
+  alias: Tesla Model Y - Délestage de charge
+  description: Adapte le courant de charge de la Tesla selon la puissance disponible.
   triggers:
   - trigger: state
     entity_id:
@@ -1592,8 +1587,8 @@
     alias: Régler le courant de charge
   mode: single
 - id: '1739625788690'
-  alias: Internet
-  description: ''
+  alias: Réseau - Surveillance connexion Internet
+  description: Notifie et redémarre les conteneurs lors d'une coupure/reprise d'Internet.
   triggers:
   - entity_id:
     - binary_sensor.internet
@@ -1641,8 +1636,8 @@
         title: Internet
   mode: restart
 - id: '1739638264619'
-  alias: Lumière automatique Buanderie
-  description: ''
+  alias: Éclairage automatique - Buanderie
+  description: Allume ou éteint la lumière de la buanderie selon la présence et la luminosité.
   triggers:
   - entity_id:
     - binary_sensor.capteur_de_presence_buanderie_occupancy
@@ -1699,8 +1694,8 @@
       action: light.turn_off
   mode: single
 - id: '1741020692355'
-  alias: Notification début de réunion
-  description: ''
+  alias: Réunion - Rappel lumineux au bureau
+  description: Fait clignoter la lumière du bureau 1 min avant une réunion.
   triggers:
   - trigger: calendar
     entity_id: calendar.meetings
@@ -1719,8 +1714,8 @@
       entity_id: light.study_hue_play
   mode: single
 - id: '1741801882779'
-  alias: Tentative de connexion
-  description: ''
+  alias: Home Assistant - Tentative de connexion échouée
+  description: Relaie à Paul les alertes de tentative de connexion échouée à Home Assistant.
   triggers:
   - update_type:
     - added
@@ -1733,8 +1728,8 @@
       title: '{{ trigger.notification.title }}'
       message: '{{ trigger.notification.message }}'
 - id: '1741948054224'
-  alias: Dernière tonte automatique
-  description: Enregistrement la date de la dernière tonte automatique
+  alias: Tondeuse - Enregistrement dernière tonte
+  description: Enregistre la date de la dernière tonte automatique.
   triggers:
   - trigger: state
     entity_id:
@@ -1751,8 +1746,8 @@
       entity_id: input_datetime.last_automatic_lawn_mowing
   mode: single
 - id: '1742118801945'
-  alias: Nettoyage au départ
-  description: ''
+  alias: Aspirateur - Nettoyage au départ
+  description: Lance l'aspirateur quand la maison se vide, si programmé.
   triggers:
   - trigger: state
     entity_id:
@@ -1775,8 +1770,8 @@
       entity_id: input_boolean.nettoyage_au_depart_programme
   mode: single
 - id: '1743151479537'
-  alias: Extinction de toutes les lumières lors d'un départ
-  description: Éteint toutes les lumières si plus personne n'est à la maison.
+  alias: Lumière - Extinction au départ
+  description: Éteint toutes les lumières quand la maison se vide.
   triggers:
   - event: start
     trigger: homeassistant
@@ -1801,9 +1796,8 @@
       entity_id: light.all
   mode: single
 - id: '1743589923713'
-  alias: Télécommande Veilleuse
-  description: Cette automatisation permet d'allumer ou d'éteindre la veilleuse avec
-    un bouton de la télécommande à l'aide d'une pression courte.
+  alias: Veilleuse - Télécommande
+  description: Allume ou éteint la veilleuse via un bouton de télécommande ZHA.
   triggers:
   - device_id: 75b18d9e893fc853ade15e69377a6906
     domain: zha
@@ -1834,8 +1828,9 @@
       entity_id: light.veilleuse
   mode: single
 - id: '1744041128353'
-  alias: Notification fuite machine à café
-  description: ''
+  alias: Machine à café - Notification fuite
+  description: Lance un script de notification en cas de fuite détectée sous la machine
+    à café.
   triggers:
   - trigger: state
     entity_id:
@@ -1850,8 +1845,8 @@
       entity_id: script.notifier_fuite_machine_a_cafe
   mode: single
 - id: '1745069598915'
-  alias: Réglages des caméras avec l'alarme
-  description: ''
+  alias: Caméras - Réglage PIR selon l'alarme
+  description: Active ou désactive le PIR de la caméra du hall selon l'état de l'alarme.
   triggers:
   - trigger: state
     entity_id:
@@ -1877,10 +1872,8 @@
         entity_id: switch.hall_camera_pir
   mode: single
 - id: '1745594581850'
-  alias: Notification Machine à laver terminée
-  description: Cette automatisation envoie une notification lorsque la machine à laver
-    a terminé son cycle. Si le sèche-linge est en marche, elle attend qu'il termine
-    avant d'envoyer la notification.
+  alias: Machine à laver - Notification fin de cycle
+  description: Notifie en fin de cycle, en attendant le sèche-linge si nécessaire.
   triggers:
   - trigger: state
     entity_id:
@@ -1922,8 +1915,8 @@
       entity_id: alarm_control_panel.home_alarm
   mode: single
 - id: '1745846954773'
-  alias: Notification Remplissage du spa
-  description: ''
+  alias: Spa - Notification remplissage
+  description: Notifie quand le détecteur signale que le spa est rempli.
   triggers:
   - trigger: state
     entity_id:
@@ -1938,8 +1931,8 @@
       message: "Le remplissage du spa est terminée \U0001F4A7"
   mode: single
 - id: '1746713957987'
-  alias: Reprise de la tonte automatique
-  description: ''
+  alias: Tondeuse - Reprise de tonte
+  description: Reprend la tonte du robot quand la batterie est suffisante.
   triggers:
   - trigger: numeric_state
     entity_id:
@@ -1973,9 +1966,8 @@
       entity_id: lawn_mower.yuka_mini
   mode: single
 - id: '1747414008439'
-  alias: Déverrouillage porte d'entrée
-  description: Déverrouiller automatiquement la porte d'entrée quand quelqu'un rentre
-    à la maison.
+  alias: Serrure entrée - Déverrouillage à l'arrivée
+  description: Déverrouille la porte d'entrée quand quelqu'un rentre.
   triggers:
   - trigger: zone
     entity_id: person.paul
@@ -2008,8 +2000,8 @@
         entity_id: lock.porte_dentree
   mode: single
 - id: '1749815072987'
-  alias: Notification barrière escalier ouverte
-  description: ''
+  alias: Barrière escalier - Notification ouverture
+  description: Notifie quand la barrière de l'escalier reste ouverte plus de 30 min.
   triggers:
   - trigger: state
     entity_id:
@@ -2033,8 +2025,8 @@
       entity_id: script.notifier_barriere_escalier_ouverte
   mode: single
 - id: '1750155851123'
-  alias: Zwave - Mise à jour de la position des volets automatique
-  description: ''
+  alias: Volets - Mise à jour position Z-Wave (périodique)
+  description: Rafraîchit la position Z-Wave de tous les volets toutes les 5 min.
   triggers:
   - trigger: time_pattern
     minutes: /5
@@ -2058,23 +2050,9 @@
       - cover.living_room_garden_shutter
       - cover.toilets_shutter
   mode: single
-- id: '1751052542657'
-  alias: Tag test
-  description: ''
-  triggers:
-  - trigger: tag
-    tag_id: 9fb4c794-72e5-47b7-af11-292d3cf2fa46
-  conditions: []
-  actions:
-  - action: notify.mobile_app_iphone_de_paul
-    metadata: {}
-    data:
-      message: Tag
-  mode: single
 - id: '1751410702179'
-  alias: Désactivation prise anti moustique
-  description: Désactive automatiquement la prise anti moustique chaque jour à 4h
-    du matin.
+  alias: Prise anti-moustique - Extinction nocturne
+  description: Éteint la prise anti-moustique chaque jour à 03 h.
   triggers:
   - trigger: time
     at: 03:00:00
@@ -2083,13 +2061,14 @@
   - action: switch.turn_off
     metadata: {}
     target:
-      entity_id: switch.shelly_plug_s
+      entity_id:
+      - switch.chambre_anti_moutisques
     data: {}
   mode: single
 - id: '1754896387902'
-  alias: Sonnette - Notifications
-  description: Cette automatisation envoie une notification avec une vidéo lorsque
-    quelqu'un sonne à la porte, permettant d'identifier la personne à l'entrée.
+  alias: Sonnette - Notification avec analyse IA
+  description: Quand on sonne, génère une analyse IA de la caméra et envoie une notification
+    vidéo.
   triggers:
   - trigger: state
     entity_id:
@@ -2125,9 +2104,8 @@
             boolean:
     response_variable: result
 - id: '1754928418182'
-  alias: Lave-vaisselle - Recharger Home Connect
-  description: Recharger Home Connect quand le lave-vaisselle a terminé son cycle
-    car certains entités ne sont pas disponibles.
+  alias: Lave-vaisselle - Rechargement Home Connect
+  description: Recharge l'intégration Home Connect lors d'un changement d'état du lave-vaisselle.
   triggers:
   - trigger: state
     entity_id:
@@ -2159,9 +2137,8 @@
       device_id: f2c4e25244bbf79b4d726a5e2d181146
   mode: single
 - id: '1755283739368'
-  alias: Nettoyage nocturne
-  description: Cette automatisation active le nettoyage nocturne d'Alfred à 3h00 lorsque
-    l'option est activée. Elle éteint ensuite l'option de nettoyage nocturne.
+  alias: Aspirateur - Nettoyage nocturne
+  description: Lance le nettoyage nocturne d'Alfred à 03 h, si activé.
   triggers:
   - trigger: time
     at: 03:00:00
@@ -2183,9 +2160,9 @@
       - input_boolean.nettoyage_nocturne_programme
   mode: single
 - id: '1755353358256'
-  alias: Détection de fuite machine à laver - Notification
-  description: Cette automatisation détecte les fuites de la machine à laver et envoie
-    une notification immédiatement.
+  alias: Machine à laver - Notification fuite
+  description: Lance un script de notification en cas de fuite détectée sous la machine
+    à laver.
   triggers:
   - trigger: state
     entity_id:
@@ -2202,8 +2179,8 @@
   mode: single
 - id: '1755873518733'
   alias: Lave-vaisselle - Démarrage automatique
-  description: Cette automatisation démarre le programme sélectionné sur le lave-vaisselle
-    une fois la porte fermée et que l'appareil est prêt.
+  description: Lance le programme sélectionné quand la porte est fermée et l'appareil
+    prêt.
   triggers:
   - trigger: state
     entity_id:
@@ -2233,8 +2210,8 @@
       entity_id: select.lave_vaisselle_programme_actif
   mode: single
 - id: '1757927665330'
-  alias: Lumière Mini - Télécommande
-  description: Contrôle la lumière Key Light Mini avec une télécommande ZHA.
+  alias: Key Light Mini - Télécommande
+  description: Bascule la Key Light Mini via un bouton de télécommande ZHA.
   triggers:
   - device_id: 7f87241d94d2ec45cb03d8868b4d9678
     domain: zha
@@ -2255,8 +2232,8 @@
       entity_id: light.key_light_mini
   mode: single
 - id: '1758368214609'
-  alias: Pergola - Interrupteur
-  description: Ouvre ou ferme les lames de la pergola à l'aide de l'interrupteur
+  alias: Pergola - Commande des lames
+  description: Ouvre ou ferme les lames de la pergola via un bouton Hue.
   triggers:
   - device_id: a5d695c94e00c20f075a4cb8106f687c
     domain: hue
@@ -2286,9 +2263,8 @@
         - script.close_pergola_blades
   mode: single
 - id: '1758865695145'
-  alias: Renault Zoé - Chauffage Automatique
-  description: Cette automatisation active le chauffage de la Renault Zoé le matin,
-    en fonction de la présence à la maison et des jours sélectionnés.
+  alias: Renault Zoé - Préchauffage matinal
+  description: Démarre la climatisation de la Zoé le matin en semaine selon la présence.
   triggers:
   - trigger: time
     at: input_datetime.heure_de_chauffage_automatique_zoe
@@ -2325,8 +2301,8 @@
       entity_id: button.renault_zoe_demarrer_la_climatisation
   mode: single
 - id: '1760997768490'
-  alias: Mode chat Garage - Activation
-  description: Active le mode chat du garage tous les jours à minuit.
+  alias: Mode chat - Activation nocturne (garage)
+  description: Active le mode chat et éteint les lumières du garage à minuit.
   triggers:
   - trigger: time
     at: 00:00:00
@@ -2346,8 +2322,8 @@
       - light.laundry_ceiling_light
   mode: single
 - id: '1761597056940'
-  alias: Bambi - Recharger Bambu Lab
-  description: ''
+  alias: Imprimante 3D - Rechargement Bambu Lab
+  description: Recharge l'intégration Bambu Lab quand le flux caméra devient indisponible.
   triggers:
   - trigger: state
     entity_id:
@@ -2366,8 +2342,8 @@
       device_id: 0c724272c08dd4a5cc783bfa796874c1
   mode: single
 - id: '1762815063795'
-  alias: Volet Chambre d'Ariane - Extinction Veilleuse
-  description: ''
+  alias: Volet Chambre d'Ariane - Extinction veilleuse
+  description: Éteint la veilleuse quand le volet de la chambre d'Ariane s'ouvre.
   triggers:
   - trigger: state
     entity_id:
@@ -2386,10 +2362,8 @@
       entity_id: light.veilleuse
   mode: single
 - id: '1763456422814'
-  alias: Lumière automatique Bureau Paul
-  description: Contrôle la lumière du bureau de Paul selon sa présence. La lumière
-    s'allume pendant la semaine, de 8h30 à 18h, lorsque Paul est présent, et s'éteint
-    10 minutes après son départ.
+  alias: Éclairage automatique - Bureau
+  description: Contrôle la lumière du bureau selon la présence et les horaires de semaine.
   triggers:
   - trigger: state
     entity_id:
@@ -2439,8 +2413,8 @@
         entity_id: light.study_hue_play
   mode: single
 - id: '1764320303143'
-  alias: Lumière automatique Cuisine
-  description: ''
+  alias: Éclairage automatique - Cuisine
+  description: Allume ou éteint la lumière de la cuisine selon la présence et la luminosité.
   triggers:
   - trigger: occupancy.detected
     target:
@@ -2494,8 +2468,8 @@
         - e9c024005008a6f5908c9e63ceea0755
   mode: single
 - id: '1764360990078'
-  alias: Lumière Chambre d'Ariane - Allumage
-  description: ''
+  alias: Lumière Chambre d'Ariane - Notification allumage
+  description: Notifie Paul lorsque la lumière de la chambre d'Ariane est allumée.
   triggers:
   - trigger: light.turned_on
     target:
@@ -2511,9 +2485,8 @@
       message: Ariane a allumé la lumière !
   mode: single
 - id: '1764782414201'
-  alias: Veilleuse Palier - Lumière automatique
-  description: Allume ou éteint la veilleuse en fonction de l'occupation et de la
-    luminosité.
+  alias: Veilleuse Palier - Automatique
+  description: Allume ou éteint la veilleuse du palier selon l'occupation et la luminosité.
   triggers:
   - trigger: state
     entity_id:
@@ -2561,9 +2534,8 @@
       data: {}
   mode: single
 - id: '1765986483970'
-  alias: Météo - Bulletin Quotidien
-  description: Crée automatiquement un bulletin météo toutes les trois heures pour
-    informer des conditions météorologiques actuelles.
+  alias: Météo - Bulletin quotidien
+  description: Génère un bulletin météo toutes les trois heures.
   triggers:
   - trigger: time_pattern
     hours: /3
@@ -2574,11 +2546,9 @@
     data: {}
   mode: single
 - id: '1766341772596'
-  alias: Veilleuse - Activation
-  description: Cette automatisation allume la veilleuse avec différentes intensités
-    selon la luminosité actuelle. Si la veilleuse est éteinte, elle s'allume. Si elle
-    est déjà allumée avec une luminosité supérieure à 20, elle s'allume avec une faible
-    intensité. Sinon, elle s'allume avec une intensité modérée de 9%.
+  alias: Veilleuse - Activation par télécommande
+  description: Allume la veilleuse à différentes intensités selon la luminosité, via
+    télécommande.
   triggers:
   - device_id: 2d2ec71c9d37745b99468aba1a0ae516
     domain: zha
@@ -2620,8 +2590,8 @@
         brightness_pct: 9
   mode: single
 - id: '1766510552333'
-  alias: Renault Zoé - Chauffage ponctuel
-  description: ''
+  alias: Renault Zoé - Préchauffage ponctuel
+  description: Démarre la climatisation de la Zoé à une heure ponctuelle programmée.
   triggers:
   - trigger: time
     at: input_datetime.heure_de_chauffage_ponctuel_zoe
@@ -2671,9 +2641,7 @@
   mode: single
 - id: '1768489625689'
   alias: Lave-vaisselle - Indicateur de statut
-  description: 'Cette automatisation permet d''allumer une lumière à différents niveaux
-    de couleur en fonction de l''état du lave-vaisselle : bleu pendant l''exécution,
-    vert pour un départ différé, rouge en cas d''erreur et éteint par défaut.'
+  description: Allume une lumière colorée (bleu/vert/rouge) selon l'état du lave-vaisselle.
   triggers:
   - trigger: state
     entity_id:
@@ -2737,8 +2705,9 @@
       data: {}
   mode: single
 - id: '1768841982660'
-  alias: Stranger Things Flicker - Salon, Salle à manger & Cuisine
-  description: Each light flickers independently for maximum creepiness
+  alias: Lumières - Effet Stranger Things
+  description: Fait scintiller indépendamment les lumières du salon, de la salle à manger
+    et de la cuisine.
   triggers:
   - entity_id: input_boolean.mode_stranger_things
     to: 'on'
@@ -2988,9 +2957,8 @@
                 milliseconds: '{{ range(30, 160) | random }}'
   mode: restart
 - id: '1770058253221'
-  alias: Veilleuse - Maintien faible luminosité
-  description: S'assure que la veilleuse reste à une luminosité minimale lorsque le
-    mode nuit est activé.
+  alias: Veilleuse - Maintien faible luminosité (nuit)
+  description: Maintient la veilleuse à luminosité minimale pendant le mode nuit.
   triggers:
   - trigger: numeric_state
     entity_id:
@@ -3016,9 +2984,9 @@
     enabled: true
   mode: single
 - id: '1770227763602'
-  alias: Actions - Mode Nuit
-  description: Éteint les lumières, ferme certains volets et verrouiller la maison
-    lorsque le mode nuit est activé.
+  alias: Mode nuit - Extinction générale
+  description: À l'activation du mode nuit, éteint les lumières, ferme les volets et
+    verrouille.
   triggers:
   - trigger: state
     entity_id:
@@ -3078,9 +3046,8 @@
       data: {}
   mode: single
 - id: '1770227763603'
-  alias: Activation Mode Nuit - Présence au lit
-  description: Active le mode nuit quand Paul et Marina sont au lit après 21h, en
-    ignorant les personnes absentes
+  alias: Mode nuit - Activation par présence au lit
+  description: Active le mode nuit quand Paul et Marina sont au lit après 21 h.
   triggers:
   - alias: Quand quelqu'un se met au lit pendant 1 minute
     trigger: state
@@ -3144,9 +3111,8 @@
     alias: Activer le mode nuit
   mode: single
 - id: '1772211801175'
-  alias: Salle de bain du bas - Éclairage intelligent
-  description: Automatisation pour contrôler l'éclairage dans la salle de bain en
-    fonction des capteurs de présence et de l'état de certains appareils.
+  alias: Éclairage automatique - Salle de bain bas
+  description: Gère les spots de la salle de bain du bas selon la présence et les appareils.
   triggers:
   - trigger: state
     entity_id:
@@ -3217,9 +3183,8 @@
         - light.spots_salle_de_bain_rez_de_chaussee
   mode: single
 - id: '1773851670902'
-  alias: Chambre d'amis - Allumage automatique
-  description: Cette automatisation allume la lampe de chevet de la chambre d'amis
-    lorsque la porte est ouverte.
+  alias: Lumière Chambre d'amis - Allumage par porte
+  description: Allume la lampe de chevet quand la porte de la chambre d'amis s'ouvre.
   triggers:
   - type: opened
     device_id: fc66e38b6a83ba4ab01841dd1ee6da17
@@ -3254,9 +3219,9 @@
       data: {}
   mode: single
 - id: '1774114936057'
-  alias: Capteur qualité de l'air - Synchronisation à la détection
-  description: Synchronise l'heure de qualité de l'air lorsque la présence dans le
-    bureau est détectée.
+  alias: Qualité de l'air - Synchronisation présence bureau
+  description: Synchronise l'heure du capteur de qualité de l'air sur la présence au
+    bureau.
   triggers:
   - trigger: occupancy.detected
     target:
@@ -3274,9 +3239,9 @@
     data: {}
   mode: single
 - id: '1774787085935'
-  alias: Impression 3D - Purificateur
-  description: Active et ajuste le purificateur d'air en fonction du filament utilisé,
-    puis purge l'air après la fin de l'impression.
+  alias: Imprimante 3D - Purificateur d'air
+  description: Pendant l'impression, règle le purificateur selon le filament puis le
+    purge en fin de cycle.
   triggers:
   - trigger: state
     entity_id:
@@ -3347,9 +3312,8 @@
         entity_id: fan.purificateur_d_air
   mode: restart
 - id: '1775234866636'
-  alias: Salle de bain du haut - Eclairage intelligent
-  description: Gestion de l'éclairage dans la salle de bain en fonction de la présence
-    et de l'état des appareils.
+  alias: Éclairage automatique - Salle de bain haut
+  description: Gère les spots de la salle de bain du haut selon la présence et l'heure.
   triggers:
   - entity_id:
     - binary_sensor.capteur_de_presence_salle_de_bain_du_haut_occupation
@@ -3436,8 +3400,8 @@
         - light.spots_salle_de_bain_etage
   mode: single
 - id: '1779539928873'
-  alias: Machine à café - Erreur
-  description: Cela notifie lorsqu'une erreur est détectée avec la machine à café.
+  alias: Machine à café - Notification erreur
+  description: Notifie en cas d'erreur de la machine à café.
   triggers:
   - entity_id:
     - sensor.machine_a_cafe_erreur
@@ -3456,9 +3420,8 @@
       user_message: '{{ state_translated("sensor.machine_a_cafe_erreur") }}'
   mode: single
 - id: '1779624558224'
-  alias: Lecture musicale - Activation par bouton
-  description: Cette automatisation joue une piste musicale spécifique et règle le
-    volume d'un haut-parleur connecté après qu'un bouton de télécommande soit pressé.
+  alias: Musique - Lecture par bouton
+  description: Joue une piste et règle le volume après l'appui d'un bouton BTHome.
   triggers:
   - device_id: d5144e963bf5cb4306e752d6442cfbf6
     domain: bthome
