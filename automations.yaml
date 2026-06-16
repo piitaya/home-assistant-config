@@ -237,7 +237,8 @@
   mode: single
 - id: '1665588582897'
   alias: Volet Buanderie - Télécommande
-  description: Ouvre, ferme ou stoppe le volet de la buanderie via la télécommande ZHA.
+  description: Ouvre, ferme ou stoppe le volet de la buanderie via la télécommande
+    ZHA.
   triggers:
   - device_id: 75b18d9e893fc853ade15e69377a6906
     domain: zha
@@ -466,7 +467,8 @@
   mode: single
 - id: '1671531189627'
   alias: Volet Chambre d'amis - Mode invité
-  description: Ajuste la protection RF du volet de la chambre d'amis selon le mode invité.
+  description: Ajuste la protection RF du volet de la chambre d'amis selon le mode
+    invité.
   triggers:
   - entity_id:
     - cover.guest_room_shutter
@@ -986,7 +988,8 @@
   mode: single
 - id: '1705180879834'
   alias: Mode chat - Entrouverture des volets
-  description: Entrouvre les volets du rez-de-chaussée fermés l'après-midi pour le chat.
+  description: Entrouvre les volets du rez-de-chaussée fermés l'après-midi pour le
+    chat.
   triggers:
   - entity_id:
     - cover.ground_floor_shutters
@@ -1287,7 +1290,8 @@
   mode: restart
 - id: '1720796386287'
   alias: Serrure entrée - Notification si non verrouillée
-  description: Notifie Paul si la porte est déverrouillée alors que la maison est vide.
+  description: Notifie Paul si la porte est déverrouillée alors que la maison est
+    vide.
   triggers:
   - entity_id:
     - lock.porte_dentree
@@ -1361,7 +1365,8 @@
   mode: single
 - id: '1729756031647'
   alias: Matter - Surveillance appareils indisponibles
-  description: Notifie Paul quand une serrure Matter reste indisponible plus de 30 min.
+  description: Notifie Paul quand une serrure Matter reste indisponible plus de 30
+    min.
   triggers:
   - trigger: state
     entity_id:
@@ -1637,7 +1642,8 @@
   mode: restart
 - id: '1739638264619'
   alias: Éclairage automatique - Buanderie
-  description: Allume ou éteint la lumière de la buanderie selon la présence et la luminosité.
+  description: Allume ou éteint la lumière de la buanderie selon la présence et la
+    luminosité.
   triggers:
   - entity_id:
     - binary_sensor.capteur_de_presence_buanderie_occupancy
@@ -1715,7 +1721,8 @@
   mode: single
 - id: '1741801882779'
   alias: Home Assistant - Tentative de connexion échouée
-  description: Relaie à Paul les alertes de tentative de connexion échouée à Home Assistant.
+  description: Relaie à Paul les alertes de tentative de connexion échouée à Home
+    Assistant.
   triggers:
   - update_type:
     - added
@@ -2105,7 +2112,8 @@
     response_variable: result
 - id: '1754928418182'
   alias: Lave-vaisselle - Rechargement Home Connect
-  description: Recharge l'intégration Home Connect lors d'un changement d'état du lave-vaisselle.
+  description: Recharge l'intégration Home Connect lors d'un changement d'état du
+    lave-vaisselle.
   triggers:
   - trigger: state
     entity_id:
@@ -2363,7 +2371,8 @@
   mode: single
 - id: '1763456422814'
   alias: Éclairage automatique - Bureau
-  description: Contrôle la lumière du bureau selon la présence et les horaires de semaine.
+  description: Contrôle la lumière du bureau selon la présence et les horaires de
+    semaine.
   triggers:
   - trigger: state
     entity_id:
@@ -2706,8 +2715,8 @@
   mode: single
 - id: '1768841982660'
   alias: Lumières - Effet Stranger Things
-  description: Fait scintiller indépendamment les lumières du salon, de la salle à manger
-    et de la cuisine.
+  description: Fait scintiller indépendamment les lumières du salon, de la salle à
+    manger et de la cuisine.
   triggers:
   - entity_id: input_boolean.mode_stranger_things
     to: 'on'
@@ -2985,8 +2994,8 @@
   mode: single
 - id: '1770227763602'
   alias: Mode nuit - Extinction générale
-  description: À l'activation du mode nuit, éteint les lumières, ferme les volets et
-    verrouille.
+  description: À l'activation du mode nuit, éteint les lumières, ferme les volets
+    et verrouille.
   triggers:
   - trigger: state
     entity_id:
@@ -3112,7 +3121,8 @@
   mode: single
 - id: '1772211801175'
   alias: Éclairage automatique - Salle de bain bas
-  description: Gère les spots de la salle de bain du bas selon la présence et les appareils.
+  description: Gère les spots de la salle de bain du bas selon la présence et les
+    appareils.
   triggers:
   - trigger: state
     entity_id:
@@ -3220,8 +3230,8 @@
   mode: single
 - id: '1774114936057'
   alias: Qualité de l'air - Synchronisation présence bureau
-  description: Synchronise l'heure du capteur de qualité de l'air sur la présence au
-    bureau.
+  description: Synchronise l'heure du capteur de qualité de l'air sur la présence
+    au bureau.
   triggers:
   - trigger: occupancy.detected
     target:
@@ -3240,8 +3250,8 @@
   mode: single
 - id: '1774787085935'
   alias: Imprimante 3D - Purificateur d'air
-  description: Pendant l'impression, règle le purificateur selon le filament puis le
-    purge en fin de cycle.
+  description: Pendant l'impression, règle le purificateur selon le filament puis
+    le purge en fin de cycle.
   triggers:
   - trigger: state
     entity_id:
@@ -3321,7 +3331,7 @@
     - 'off'
     to:
     - 'on'
-    platform: state
+    trigger: state
   - entity_id:
     - binary_sensor.capteur_de_presence_salle_de_bain_du_haut_occupation
     from:
@@ -3332,7 +3342,7 @@
       hours: 0
       minutes: 2
       seconds: 0
-    platform: state
+    trigger: state
   - entity_id:
     - binary_sensor.seche_serviettes_etage_boost
     from:
@@ -3343,7 +3353,7 @@
       hours: 0
       minutes: 2
       seconds: 0
-    platform: state
+    trigger: state
   conditions: []
   actions:
   - if:
@@ -3375,7 +3385,7 @@
       - conditions:
         - condition: time
           after: '19:00:00'
-          before: '23:00:00'
+          before: '21:00:00'
         sequence:
         - action: light.turn_on
           metadata: {}
@@ -3454,4 +3464,19 @@
       device_id: 84a6efe79ac97bbad33d3be5fa61cffb
     data:
       volume_level: 0.1875
+  mode: single
+- id: '1781385179553'
+  alias: Prise anti-moustique - Extinction nocturne
+  description: Éteint la prise anti-moustique chaque jour à 03 h.
+  triggers:
+  - trigger: time
+    at: 03:00:00
+  conditions: []
+  actions:
+  - action: switch.turn_off
+    metadata: {}
+    target:
+      entity_id:
+      - switch.chambre_d_amis_anti_moustiques
+    data: {}
   mode: single
