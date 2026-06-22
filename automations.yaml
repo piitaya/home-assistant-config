@@ -3505,3 +3505,39 @@
       - switch.chambre_d_amis_anti_moustiques
     data: {}
   mode: single
+- id: '1781952420656'
+  alias: Cookeo - Hotte automatique
+  description: Active et désactive la hotte en fonction de l'état de dépressurisation
+    du Cookeo.
+  triggers:
+  - trigger: state
+    entity_id:
+    - sensor.cookeo_etat
+    to:
+    - depressurization
+  - trigger: state
+    entity_id:
+    - sensor.cookeo_etat
+    from:
+    - depressurization
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: sensor.cookeo_etat
+      state:
+      - depressurization
+    then:
+    - action: fan.set_percentage
+      metadata: {}
+      target:
+        entity_id: fan.hotte
+      data:
+        percentage: 100
+    else:
+    - action: fan.turn_off
+      metadata: {}
+      target:
+        entity_id: fan.hotte
+      data: {}
+  mode: single
