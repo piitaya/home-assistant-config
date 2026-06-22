@@ -1952,19 +1952,25 @@
   - trigger: homeassistant
     event: start
   conditions:
-  - condition: state
-    entity_id: lawn_mower.yuka_mini
-    state: paused
+  - condition: numeric_state
+    entity_id: sensor.yuka_mini_batterie
+    above: sensor.yuka_mini_batterie_pour_finir
   - condition: numeric_state
     entity_id: sensor.yuka_mini_progression
     above: 65
     below: 100
-  - condition: numeric_state
-    entity_id: sensor.yuka_mini_batterie
-    above: sensor.yuka_mini_batterie_pour_finir
-  - condition: state
-    entity_id: binary_sensor.yuka_mini_en_charge
-    state: 'on'
+  - condition: battery.is_charging
+    target:
+      entity_id: binary_sensor.yuka_mini_en_charge
+    options:
+      behavior: any
+      for: 00:00:00
+  - condition: lawn_mower.is_paused
+    target:
+      entity_id: lawn_mower.yuka_mini
+    options:
+      behavior: any
+      for: 00:00:00
   actions:
   - repeat:
       sequence:
@@ -1979,23 +1985,30 @@
       until:
       - condition: or
         conditions:
-        - condition: state
-          entity_id: lawn_mower.yuka_mini
-          state: mowing
+        - condition: lawn_mower.is_mowing
+          target:
+            entity_id: lawn_mower.yuka_mini
+          options:
+            behavior: any
+            for: 00:00:00
         - condition: template
           value_template: '{{ repeat.index >= 5 }}'
   - if:
     - condition: not
       conditions:
-      - condition: state
-        entity_id: lawn_mower.yuka_mini
-        state: mowing
+      - condition: lawn_mower.is_mowing
+        target:
+          entity_id: lawn_mower.yuka_mini
+        options:
+          behavior: any
+          for: 00:00:00
     then:
     - action: notify.mobile_app_iphone_de_paul
       metadata: {}
       data:
         title: Tondeuse
-        message: Impossible de reprendre la tonte après 5 essais (erreur Bluetooth ?).
+        message: Impossible de reprendre la tonte après 5 essais (erreur Bluetooth
+          ?).
   mode: single
 - id: '1747414008439'
   alias: Serrure entrée - Déverrouillage à l'arrivée
