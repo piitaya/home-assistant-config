@@ -650,7 +650,7 @@
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.study_shutter
+      shutter: cover.bureau_volet
       facade: binary_sensor.cemetary_facade_exposed
       custom_conditions: []
       opening_sensor: binary_sensor.study_window_sensor_opening
@@ -1082,7 +1082,7 @@
     - sensor.living_room_front_right_shutter_power
     - sensor.living_room_garden_shutter_power
     - sensor.laundry_shutter_power
-    - sensor.study_shutter_power
+    - sensor.bureau_spots_puissance
     - sensor.toilets_shutter_power
     - sensor.bathroom_shutter_power
     trigger: numeric_state
@@ -2082,7 +2082,7 @@
       refresh_all_values: false
       entity_id:
       - cover.laundry_shutter
-      - cover.study_shutter
+      - cover.bureau_volet
       - cover.bedroom_shutter
       - cover.guest_room_shutter
       - cover.ariane_bedroom_shutter
@@ -3553,4 +3553,18 @@
       target:
         entity_id: fan.hotte
       data: {}
+  mode: single
+- id: '1782509976364'
+  alias: Nouvelle automatisation
+  description: ''
+  triggers:
+  - trigger: time
+    at: '23:47:00'
+  conditions: []
+  actions:
+  - action: script.turn_on
+    metadata: {}
+    target:
+      entity_id: script.nouveau_script
+    data: {}
   mode: single

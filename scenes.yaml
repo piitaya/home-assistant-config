@@ -610,13 +610,13 @@
       friendly_name: Lampe de chevet Ariane
       supported_features: 44
       state: 'on'
-    light.study_ceiling_light:
+    light.bureau_spots:
       supported_color_modes:
       - brightness
       color_mode: brightness
       brightness: 255
       icon: hue:bulb-group-ceiling-round
-      friendly_name: 'Spots Bureau '
+      friendly_name: 'Spots '
       supported_features: 32
       state: 'on'
     cover.ariane_bedroom_shutter:
@@ -625,10 +625,10 @@
       friendly_name: 'Volet Chambre Ariane '
       supported_features: 15
       state: closed
-    cover.study_shutter:
+    cover.bureau_volet:
       current_position: 0
       device_class: shutter
-      friendly_name: 'Volet Bureau '
+      friendly_name: Volet
       supported_features: 15
       state: closed
     cover.bedroom_shutter:
@@ -652,11 +652,11 @@
   metadata:
     light.ariane_bedroom_bedside_lamp:
       entity_only: true
-    light.study_ceiling_light:
+    light.bureau_spots:
       entity_only: true
     cover.ariane_bedroom_shutter:
       entity_only: true
-    cover.study_shutter:
+    cover.bureau_volet:
       entity_only: true
     cover.bedroom_shutter:
       entity_only: true

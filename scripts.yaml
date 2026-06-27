@@ -231,19 +231,19 @@ coucher_sieste_ariane:
     entity_id: cover.ariane_bedroom_shutter
     state: open
   - parallel:
-    - service: cover.close_cover
-      metadata: {}
+    - metadata: {}
       data: {}
       target:
         floor_id: first_floor
-    - service: light.turn_on
-      metadata: {}
+      action: cover.close_cover
+    - metadata: {}
       data:
         brightness_pct: 100
       target:
         entity_id:
-        - light.study_ceiling_light
         - light.ariane_bedroom_bedside_lamp
+        - light.bureau_spots
+      action: light.turn_on
   description: ''
 regler_la_pergola_en_position_soleil:
   alias: Régler la pergola en position soleil
@@ -496,3 +496,12 @@ notifier_erreur_machine_a_cafe:
   description: Ce script génère une notification en cas d'erreur détectée sur la machine
     à café.
   icon: mdi:coffee-maker
+nouveau_script:
+  sequence:
+  - action: light.turn_on
+    metadata: {}
+    target:
+      entity_id: light.living_room_floor_lamp
+    data: {}
+  alias: Nouveau script
+  description: ''
