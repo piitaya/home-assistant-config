@@ -3299,11 +3299,29 @@
     - binary_sensor.panpan_fin_recente
     - binary_sensor.bambi_materiau_nocif
     - binary_sensor.panpan_materiau_nocif
+    - binary_sensor.capteur_porte_arriere
+    - cover.garage_door
   - trigger: homeassistant
     event: start
   conditions: []
   actions:
   - choose:
+    - conditions:
+      - condition: or
+        conditions:
+        - alias: Si la porte arrière du garage est ouverte
+          condition: state
+          entity_id: binary_sensor.capteur_porte_arriere
+          state: 'on'
+        - alias: Si la porte de garage est ouverte
+          condition: state
+          entity_id: cover.garage_door
+          state: open
+      sequence:
+      - alias: Couper le purificateur (inutile porte ouverte)
+        action: fan.turn_off
+        target:
+          entity_id: fan.purificateur_d_air
     - conditions:
       - condition: or
         conditions:
