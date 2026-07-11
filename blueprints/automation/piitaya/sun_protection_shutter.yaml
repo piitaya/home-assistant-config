@@ -165,12 +165,11 @@ conditions:
             state: "closed"
           - condition: template
             value_template: >
-              {% set eid = trigger.event.data.service_data.entity_id %}
-              {% set position = trigger.event.data.service_data.position | default(None) %}
+              {% set eid = trigger.event.data.service_data.entity_id | default([]) %}
               {{
                 trigger.event.context.id != this.context.id
                 and trigger.id == "open_cover"
-                and (eid == shutter_entity or (eid is iterable and shutter_entity in eid))
+                and shutter_entity in (expand(eid) | map(attribute='entity_id') | list)
               }}
 
 actions:
