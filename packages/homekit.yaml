@@ -17,7 +17,7 @@ homekit:
         - cover.living_room_front_left_shutter
         - cover.living_room_front_right_shutter
         - cover.living_room_garden_shutter
-        - cover.study_shutter
+        - cover.bureau_volet
         - cover.toilets_shutter
         - fan.hotte
         - fan.pedestal_fan
@@ -33,7 +33,7 @@ homekit:
         - light.living_room_ceiling_light
         - light.living_room_floor_lamp
         - light.living_room_sideboard_lamp
-        - light.study_ceiling_light
+        - light.bureau_spots
         - light.study_hue_play
         - light.outdoor_light
         - light.garage_light
