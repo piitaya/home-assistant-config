@@ -1957,7 +1957,7 @@
     above: sensor.yuka_mini_batterie_pour_finir
   - condition: numeric_state
     entity_id: sensor.yuka_mini_progression
-    above: 65
+    above: 50
     below: 100
   - condition: battery.is_charging
     target:
@@ -2513,23 +2513,6 @@
         device_id:
         - 9bbd959dd019d9020300a37a4d9fc610
         - e9c024005008a6f5908c9e63ceea0755
-  mode: single
-- id: '1764360990078'
-  alias: Lumière Chambre d'Ariane - Notification allumage
-  description: Notifie Paul lorsque la lumière de la chambre d'Ariane est allumée.
-  triggers:
-  - trigger: light.turned_on
-    target:
-      entity_id:
-      - light.ariane_bedroom_ceiling_light
-    options:
-      behavior: each
-  conditions: []
-  actions:
-  - action: notify.mobile_app_iphone_de_paul
-    metadata: {}
-    data:
-      message: Ariane a allumé la lumière !
   mode: single
 - id: '1764782414201'
   alias: Veilleuse Palier - Automatique
@@ -3526,7 +3509,7 @@
   description: Éteint la prise anti-moustique chaque jour à 03 h.
   triggers:
   - trigger: time
-    at: 03:00:00
+    at: 02:00:00
   conditions: []
   actions:
   - action: switch.turn_off
@@ -3571,18 +3554,4 @@
       target:
         entity_id: fan.hotte
       data: {}
-  mode: single
-- id: '1782509976364'
-  alias: Nouvelle automatisation
-  description: ''
-  triggers:
-  - trigger: time
-    at: '23:47:00'
-  conditions: []
-  actions:
-  - action: script.turn_on
-    metadata: {}
-    target:
-      entity_id: script.nouveau_script
-    data: {}
   mode: single

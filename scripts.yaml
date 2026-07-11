@@ -496,12 +496,3 @@ notifier_erreur_machine_a_cafe:
   description: Ce script génère une notification en cas d'erreur détectée sur la machine
     à café.
   icon: mdi:coffee-maker
-nouveau_script:
-  sequence:
-  - action: light.turn_on
-    metadata: {}
-    target:
-      entity_id: light.living_room_floor_lamp
-    data: {}
-  alias: Nouveau script
-  description: ''
