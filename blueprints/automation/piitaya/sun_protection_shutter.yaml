@@ -81,8 +81,8 @@ blueprint:
     custom_conditions:
       name: Conditions personnalisées
       description:
-        L'ouverture ou la fermeture des volets ne sera éxecutée que si
-        les conditions sont verifiées.
+        L'ouverture ou la fermeture des volets ne sera exécutée que si
+        les conditions sont vérifiées.
       default: []
       selector:
         condition: {}
@@ -98,38 +98,41 @@ variables:
   shutter_entity: !input shutter
   opening_sensor_entity: !input opening_sensor
 triggers:
-  # - trigger: state
-  #   alias: Quand le volet était fermé et devient totalement ouvert
-  #   entity_id: !input shutter
-  #   attribute: current_position
-  #   from: 0
-  #   to: 100
   - trigger: state
-    alias: Quand la position du soleil change
+    alias: Quand la façade devient exposée au soleil
     entity_id: !input facade
     from: "off"
     to: "on"
   - trigger: state
-    alias: Quand la position du soleil change
+    alias: Quand la façade n'est plus exposée au soleil
     entity_id: !input facade
     from: "on"
     to: "off"
   - trigger: template
-    alias: Quand le capteur d'ouverture passe à l'état ouvert
+    alias: Quand la fenêtre (capteur d'ouverture) s'ouvre
     value_template: "{{ is_state(opening_sensor_entity, 'on') }}"
   - trigger: template
-    alias: Quand le capteur d'ouverture passe à l'état fermé
+    alias: Quand la fenêtre (capteur d'ouverture) se ferme
     value_template: "{{ is_state(opening_sensor_entity, 'off') }}"
   - trigger: template
-    alias: Quand la protection additionnelle passe à l'état ouvert
+    alias: Quand la protection additionnelle s'ouvre
     value_template: "{{ is_state(additional_protection_entity, 'open') }}"
   - trigger: template
-    alias: Quand la protection additionnelle passe à l'état fermé
+    alias: Quand la protection additionnelle se ferme
     value_template: "{{ is_state(additional_protection_entity, 'closed') }}"
   - trigger: state
+    alias: Réévaluation manuelle via le bouton
     entity_id: input_button.set_shutters_sun_position
     to:
   - trigger: event
+    alias: Quand une commande d'ouverture est appelée (individuel ou groupe)
+    event_type: call_service
+    event_data:
+      domain: cover
+      service: open_cover
+    id: open_cover
+  - trigger: event
+    alias: Quand une ouverture totale (position 100%) est appelée
     event_type: call_service
     event_data:
       domain: cover
@@ -137,75 +140,95 @@ triggers:
       service_data:
         position: 100
     id: open_cover
-  - trigger: event
-    event_type: call_service
-    event_data:
-      domain: cover
-      service: open_cover
-    id: open_cover
 conditions:
+  - condition: and
+    alias: Si les conditions personnalisées sont vérifiées
+    conditions: !input custom_conditions
   - condition: or
     conditions:
       - condition: and
+        alias: Réévaluation d'un volet déjà ouvert ou en mouvement
         conditions:
+          - condition: not
+            alias: Si ce n'est pas une ouverture depuis fermé
+            conditions:
+              - condition: trigger
+                id: open_cover
           - condition: state
-            alias: Si le volet est ouvert
+            alias: Si le volet est ouvert ou en mouvement
             entity_id: !input shutter
-            state: "open"
-          - condition: template
-            value_template: >
-              {{ trigger.id != "open_cover" }}
-          - condition: and
-            conditions: !input custom_conditions
+            state:
+              - "open"
+              - "opening"
+              - "closing"
       - condition: and
+        alias: Ouverture d'un volet fermé
         conditions:
+          - condition: trigger
+            alias: Si c'est une commande d'ouverture
+            id: open_cover
           - condition: state
-            alias: Si le volet est fermé
+            alias: Si le volet est encore fermé (capté avant qu'il ne bouge)
             entity_id: !input shutter
             state: "closed"
           - condition: template
+            alias: Si la commande vise bien ce volet (groupe résolu via expand) et n'est pas la nôtre
             value_template: >
               {% set eid = trigger.event.data.service_data.entity_id | default([]) %}
               {{
                 trigger.event.context.id != this.context.id
-                and trigger.id == "open_cover"
                 and shutter_entity in (expand(eid) | map(attribute='entity_id') | list)
               }}
 
 actions:
-  - if:
+  # Sur une ouverture, on laisse la commande d'ouverture s'exécuter d'abord :
+  # sinon, pour un groupe, l'open relayé au volet écraserait la position solaire
+  # qu'on applique juste après.
+  - alias: Laisser passer la commande d'ouverture avant de corriger la position
+    if:
+      - condition: trigger
+        id: open_cover
+    then:
+      - delay:
+          seconds: 2
+  - alias: Régler le volet selon l'exposition au soleil
+    if:
       - condition: not
         alias: Si la fenêtre n'est pas ouverte
         conditions:
           - condition: template
             value_template: "{{ is_state(opening_sensor_entity, 'on') }}"
       - condition: not
-        alias: Si la protection additionnelle n'est pas fermé
+        alias: Si la protection additionnelle n'est pas fermée
         conditions:
           - condition: template
             value_template: "{{ is_state(additional_protection_entity, 'closed') }}"
       - condition: state
-        alias: Si la façace est exposée au soleil
+        alias: Si la façade est exposée au soleil
         entity_id: !input facade
         state: "on"
     then:
       - condition: template
+        alias: Seulement si la position actuelle diffère de la cible exposée
         value_template:
           "{% set shutter_position = state_attr(shutter_entity, 'current_position')
           | int %} {{ (shutter_position - position_exposed) | abs > position_tolerance
           }}"
-      - service: cover.set_cover_position
+      - alias: Régler à la position exposée (protection soleil)
+        service: cover.set_cover_position
         data:
           position: "{{ position_exposed }}"
         target:
           entity_id: !input shutter
     else:
       - condition: template
+        alias: Seulement si la position actuelle diffère de la cible non-exposée
         value_template:
           "{% set shutter_position = state_attr(shutter_entity, 'current_position')
           | int %} {{ (shutter_position - position_unexposed) | abs > position_tolerance
           }}"
-      - service: cover.set_cover_position
+      - alias: Régler à la position non-exposée (ouvert)
+        service: cover.set_cover_position
         data:
           position: "{{ position_unexposed }}"
         target:
