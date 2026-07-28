@@ -653,7 +653,7 @@
       shutter: cover.bureau_volet
       facade: binary_sensor.cemetary_facade_exposed
       custom_conditions: []
-      opening_sensor: binary_sensor.study_window_sensor_opening
+      opening_sensor: binary_sensor.bureau_capteur_fenetre
 - id: '1689070030509'
   alias: Protection solaire - Chambre
   description: Ferme partiellement le volet pour protéger du soleil (blueprint).
@@ -662,7 +662,7 @@
     input:
       shutter: cover.bedroom_shutter
       facade: binary_sensor.front_facade_exposed
-      opening_sensor: binary_sensor.bedroom_window_sensor_opening
+      opening_sensor: binary_sensor.chambre_capteur_fenetre
       custom_conditions: []
 - id: '1689071619165'
   alias: Protection solaire - Buanderie
@@ -1709,8 +1709,9 @@
     offset: -0:1:0
   conditions:
   - condition: state
-    entity_id: binary_sensor.study_presence_sensor_presence_paul_desk
-    state: 'on'
+    entity_id: binary_sensor.bureau_capteur_de_presence_presence_bureau_paul
+    state:
+    - 'on'
   actions:
   - action: light.turn_on
     metadata: {}
@@ -2412,31 +2413,30 @@
   description: Contrôle la lumière du bureau selon la présence et les horaires de
     semaine.
   triggers:
-  - trigger: state
-    entity_id:
-    - binary_sensor.study_presence_sensor_presence_paul_desk
-    from:
-    - 'on'
-    to:
-    - 'off'
-    for:
-      hours: 0
-      minutes: 10
-      seconds: 0
-  - trigger: state
-    entity_id:
-    - binary_sensor.study_presence_sensor_presence_paul_desk
-    from:
-    - 'off'
-    to:
-    - 'on'
+  - trigger: occupancy.detected
+    target:
+      entity_id: binary_sensor.bureau_capteur_de_presence_presence_bureau_paul
+    options:
+      behavior: each
+      for: 00:00:00
+  - trigger: occupancy.cleared
+    target:
+      entity_id: binary_sensor.bureau_capteur_de_presence_presence_bureau_paul
+    options:
+      behavior: each
+      for:
+        hours: 0
+        minutes: 10
+        seconds: 0
   conditions: []
   actions:
   - if:
-    - condition: state
-      entity_id: binary_sensor.study_presence_sensor_presence_paul_desk
-      state:
-      - 'on'
+    - condition: occupancy.is_detected
+      target:
+        entity_id: binary_sensor.bureau_capteur_de_presence_presence_bureau_paul
+      options:
+        behavior: any
+        for: 00:00:00
     then:
     - condition: time
       weekday:
@@ -2756,6 +2756,7 @@
       - target:
           entity_id: scene.stranger_things_restore
         action: scene.turn_on
+        data: {}
     - conditions:
       - condition: trigger
         id: start
@@ -2763,7 +2764,7 @@
       - data:
           scene_id: stranger_things_restore
           snapshot_entities:
-          - light.living_room_ceiling_light
+          - light.salon_spots
           - light.dining_room_bar_lamp
           - light.living_room_floor_lamp
           - light.dining_room_ceiling_light
@@ -2782,7 +2783,7 @@
               state: 'on'
             sequence:
             - target:
-                entity_id: light.living_room_ceiling_light
+                entity_id: light.salon_spots
               data:
                 brightness_pct: '{{ range(20, 100) | random }}'
                 transition: 0
@@ -2790,7 +2791,7 @@
             - delay:
                 milliseconds: '{{ range(400, 800) | random }}'
             - target:
-                entity_id: light.living_room_ceiling_light
+                entity_id: light.salon_spots
               data:
                 transition: 0
               action: light.turn_off
@@ -3256,8 +3257,7 @@
   triggers:
   - trigger: occupancy.detected
     target:
-      entity_id:
-      - binary_sensor.study_presence_sensor_presence
+      entity_id: binary_sensor.bureau_capteur_de_presence_presence
     options:
       behavior: each
     enabled: true
@@ -3554,4 +3554,66 @@
       target:
         entity_id: fan.hotte
       data: {}
+  mode: single
+- id: '1784133155970'
+  alias: Lumières Bureau - Télécommande
+  description: 'Permet de contrôler différentes lumières du bureau (spots, Key Light
+    Mini, Hue Play) à l''aide du Hub 3
+
+    '
+  triggers:
+  - trigger: event.received
+    target:
+      device_id: d4e71e7da01919a7ea62dc0f76e8daf5
+    options:
+      event_type:
+      - initial_press
+    id: button_1
+  - trigger: event.received
+    target:
+      device_id: 30ed97f992a68e757a92913b4a49228a
+    options:
+      event_type:
+      - initial_press
+    id: button_2
+  - trigger: event.received
+    target:
+      device_id: 0e257b8a37d5d37fd7339d087669498d
+    options:
+      event_type:
+      - initial_press
+    id: button_3
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - button_1
+      sequence:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id: light.bureau_spots
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - button_2
+      sequence:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id: light.key_light_mini
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - button_3
+      sequence:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id: light.study_hue_play
+        data: {}
   mode: single
