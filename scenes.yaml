@@ -37,13 +37,13 @@
       friendly_name: Lampe sur pied
       supported_features: 44
       state: 'off'
-    light.living_room_ceiling_light:
+    light.salon_spots:
       supported_color_modes:
       - brightness
       color_mode:
       brightness:
       icon: hue:bulb-group-ceiling-round
-      friendly_name: 'Spots Salon '
+      friendly_name: Spots
       supported_features: 32
       state: 'off'
     light.living_room_sideboard_lamp:
@@ -189,13 +189,13 @@
       friendly_name: Lampe sur pied
       supported_features: 44
       state: 'on'
-    light.living_room_ceiling_light:
+    light.salon_spots:
       supported_color_modes:
       - brightness
       color_mode:
       brightness:
       icon: hue:bulb-group-ceiling-round
-      friendly_name: 'Spots Salon '
+      friendly_name: Spots
       supported_features: 32
       state: 'off'
     light.living_room_sideboard_lamp:
@@ -447,13 +447,13 @@
       friendly_name: Lampe sur pied
       supported_features: 44
       state: 'on'
-    light.living_room_ceiling_light:
+    light.salon_spots:
       supported_color_modes:
       - brightness
       color_mode: brightness
       brightness: 126
       icon: hue:bulb-group-ceiling-round
-      friendly_name: 'Spots Salon '
+      friendly_name: Spots
       supported_features: 32
       state: 'on'
     light.television_backlight:

@@ -119,16 +119,16 @@ play_cinema_mode_scene:
 lights_during_play:
   alias: Régler les lumières durant la lecture
   sequence:
-  - service: light.turn_off
+  - alias: Éteindre la lumière du salon
     data:
       transition: 1
-    alias: Éteindre la lumière du salon
     target:
       entity_id:
-      - light.living_room_ceiling_light
       - light.living_room_sideboard_lamp
       - light.living_room_floor_lamp
       - light.dining_room_ceiling_light
+      - light.salon_spots
+    action: light.turn_off
   mode: single
   icon: mdi:television-play
 lights_during_pause:
@@ -155,29 +155,29 @@ lights_during_pause:
 lights_after_play:
   alias: Régler les lumières après la lecture
   sequence:
-  - parallel:
-    - service: light.turn_on
-      data:
+  - alias: En parallèle
+    parallel:
+    - data:
         transition: 10
         brightness_pct: 100
       target:
         entity_id: light.living_room_floor_lamp
       alias: Allumer la lampe sur pied à 100%
-    - service: light.turn_on
-      data:
+      action: light.turn_on
+    - data:
         transition: 10
         brightness_pct: 40
       target:
         entity_id: light.living_room_sideboard_lamp
       alias: Allumer la lampe du buffet à 40%
-    - service: light.turn_on
+      action: light.turn_on
+    - alias: Allumer les spots du salon 60%
       data:
         transition: 10
         brightness_pct: 60
       target:
-        entity_id: light.living_room_ceiling_light
-      alias: Allumer les spots du salon 60%
-    alias: En parallèle
+        entity_id: light.salon_spots
+      action: light.turn_on
   mode: single
   icon: mdi:television-stop
 set_cover_for_cat:
@@ -191,39 +191,6 @@ set_cover_for_cat:
       - cover.living_room_cemetery_shutter
       - cover.living_room_garden_shutter
   mode: single
-france_inter:
-  alias: France Inter
-  sequence:
-  - if:
-    - condition: state
-      entity_id: media_player.kitchen_homepod
-      state: playing
-    then:
-    - service: media_player.media_stop
-      target:
-        entity_id:
-        - media_player.kitchen_homepod
-      data: {}
-    else:
-    - service: media_player.play_media
-      target:
-        entity_id: media_player.kitchen_homepod
-      data:
-        media_content_id: media-source://radio_browser/71ab8906-a508-4f98-a498-8840b41b79d5
-        media_content_type: audio/mpeg
-      metadata:
-        title: France Inter
-        thumbnail: https://www.radiofrance.fr/client/immutable/assets/franceinter.8675ea98.svg#franceinter-square
-        media_class: music
-        children_media_class:
-        navigateIds:
-        - {}
-        - media_content_type: app
-          media_content_id: media-source://radio_browser
-        - media_content_type: music
-          media_content_id: media-source://radio_browser/country/FR
-  mode: parallel
-  icon: mdi:radio
 coucher_sieste_ariane:
   alias: Coucher/Sieste Ariane
   sequence:
@@ -309,6 +276,9 @@ notifier_porte_du_frigo_de_la_cuisine_ouvert:
         to: 'off'
       default_tag: 604e7672-cb07-4ac7-825a-4844d2cae17d
       persons: []
+      notification_data_advanced:
+        push:
+          interruption-level: time-sensitive
   description: ''
   icon: mdi:fridge-alert
 notifier_porte_du_frigo_du_garage_ouverte:
