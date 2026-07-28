@@ -20,7 +20,8 @@ homekit:
         - cover.bureau_volet
         - cover.toilets_shutter
         - fan.hotte
-        - fan.pedestal_fan
+        - fan.chambre_d_ariane_ventilateur
+        - fan.bureau_ventilateur
         - lawn_mower.yuka_mini
         - light.ariane_bedroom_bedside_lamp
         - light.bedroom_marina_bedside_lamp
@@ -30,7 +31,7 @@ homekit:
         - light.guest_room_bedside_lamp
         - light.kitchen_ceiling_light
         - light.kitchen_worktop_ceiling_light
-        - light.living_room_ceiling_light
+        - light.salon_spots
         - light.living_room_floor_lamp
         - light.living_room_sideboard_lamp
         - light.bureau_spots
@@ -47,7 +48,7 @@ homekit:
         - light.guirlande_buffet
         - light.prise_veilleuse
         - light.hall_ceiling_light
-        - light.spot_toilettes
+        - light.toilettes_spot
         - light.ariane_bedroom_ceiling_light
         - light.spots_salle_de_bain_rez_de_chaussee
         - light.spot_lavabo_rez_de_chaussee
