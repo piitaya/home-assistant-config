@@ -3166,7 +3166,7 @@
       seconds: 0
   - trigger: state
     entity_id:
-    - binary_sensor.seche_serviettes_rez_de_chaussee_boost
+    - binary_sensor.salle_de_bain_du_bas_seche_serviettes_boost
     from:
     - 'on'
     to:
@@ -3189,7 +3189,7 @@
         state:
         - 'on'
       - condition: state
-        entity_id: binary_sensor.seche_serviettes_rez_de_chaussee_boost
+        entity_id: binary_sensor.salle_de_bain_du_bas_seche_serviettes_boost
         state:
         - 'on'
     then:
@@ -3383,7 +3383,7 @@
       seconds: 0
     trigger: state
   - entity_id:
-    - binary_sensor.seche_serviettes_etage_boost
+    - binary_sensor.salle_de_bain_du_haut_seche_serviettes_boost
     from:
     - 'on'
     to:
@@ -3403,7 +3403,7 @@
         state:
         - 'on'
       - condition: state
-        entity_id: binary_sensor.seche_serviettes_etage_boost
+        entity_id: binary_sensor.salle_de_bain_du_haut_seche_serviettes_boost
         state:
         - 'on'
     then:
