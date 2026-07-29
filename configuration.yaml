@@ -13,18 +13,6 @@ frontend:
     - /local/custom/tesla-icons.js
     - /local/community/ha-ui-zoom/ha-ui-zoom.js
 
-http:
-  ip_ban_enabled: true
-  login_attempts_threshold: 10
-  use_x_forwarded_for: true
-  trusted_proxies:
-    - !secret http_trusted_proxy
-  cors_allowed_origins:
-    - http://localhost:8124
-    - !secret http_cors_origin_1
-    - !secret http_cors_origin_2
-    - !secret http_cors_origin_3
-
 logbook:
   exclude:
     entities:
