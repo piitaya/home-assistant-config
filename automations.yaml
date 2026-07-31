@@ -3617,3 +3617,23 @@
           entity_id: light.study_hue_play
         data: {}
   mode: single
+- id: '1785413563714'
+  alias: Tondeuse - Notification problème
+  description: Envoie une notification lorsqu'un problème est détecté par le capteur
+    de diagnostic de la tondeuse.
+  triggers:
+  - trigger: state
+    entity_id:
+    - sensor.jardin_yuka_mini_auto_diagnostic
+    not_to:
+    - none
+  conditions: []
+  actions:
+  - action: notify.send_message
+    metadata: {}
+    target:
+      device_id: 168d63ad0b9956b203b84f2b93a1dbb9
+    data:
+      title: Problème tondeuse
+      message: '{{ state_translated("sensor.jardin_yuka_mini_auto_diagnostic") }}'
+  mode: single
