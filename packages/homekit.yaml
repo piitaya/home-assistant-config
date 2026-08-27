@@ -5,64 +5,65 @@ homekit:
       include_entities:
         - climate.first_floor_thermostat
         - climate.ground_floor_thermostat
-        - cover.ariane_bedroom_shutter
-        - cover.bathroom_shutter
-        - cover.bedroom_shutter
+        - cover.chambre_d_ariane_volet
+        - cover.chambre_volet
+        - cover.salle_de_bain_du_haut_volet
         - cover.garage_door
-        - cover.guest_room_shutter
-        - cover.kitchen_shutter
-        - cover.landing_shutter
-        - cover.laundry_shutter
-        - cover.living_room_cemetery_shutter
-        - cover.living_room_front_left_shutter
-        - cover.living_room_front_right_shutter
-        - cover.living_room_garden_shutter
+        - cover.chambre_d_amis_volet
+        - cover.cuisine_volet
+        - cover.palier_volet
+        - cover.buanderie_volet
+        - cover.salon_volet_cimetiere
+        - cover.salon_volet_droit
+        - cover.salon_volet_gauche
+        - cover.salon_volet_jardin
         - cover.bureau_volet
-        - cover.toilets_shutter
-        - fan.hotte
+        - cover.toilettes_volet
+        - fan.cuisine_hotte
         - fan.chambre_d_ariane_ventilateur
         - fan.bureau_ventilateur
         - lawn_mower.yuka_mini
-        - light.ariane_bedroom_bedside_lamp
-        - light.bedroom_marina_bedside_lamp
-        - light.bedroom_paul_bedside_lamp
-        - light.dining_room_ceiling_light
-        - light.dining_room_bar_lamp
-        - light.guest_room_bedside_lamp
-        - light.kitchen_ceiling_light
-        - light.kitchen_worktop_ceiling_light
+        # - light.ariane_bedroom_bedside_lamp
+        - light.chambre_lampe_de_chevet_paul
+        - light.chambre_lampe_de_chevet_marina
+        - light.salle_a_manger_spots
+        - light.salle_a_manger_lampe_du_bar
+        - light.chambre_d_amis_lampe_de_chevet
+        - light.cuisine_spots
+        - light.cuisine_spots_plan_de_travail
+        - light.cuisine_guirlande
         - light.salon_spots
-        - light.living_room_floor_lamp
-        - light.living_room_sideboard_lamp
+        - light.salon_lampe_sur_pied
+        - light.salon_lampe_du_buffet
         - light.bureau_spots
-        - light.study_hue_play
+        - light.bureau_barres_hue_play
         - light.outdoor_light
-        - light.garage_light
-        - light.lumiere_de_la_hotte
-        - light.sapin_de_noel
-        - light.kitchen_light_string
+        - light.garage_neon
+        - light.cuisine_lumiere_de_la_hotte
+        # - light.sapin_de_noel
         - light.pergola_spa_led
         - light.pergola_table_led
         - light.television_backlight
-        - light.laundry_ceiling_light
-        - light.guirlande_buffet
-        - light.prise_veilleuse
-        - light.hall_ceiling_light
+        - light.buanderie_plafonnier
+        - light.salon_guirlande
+        - light.palier_veilleuse
+        - light.entree_spots
         - light.toilettes_spot
-        - light.ariane_bedroom_ceiling_light
-        - light.spots_salle_de_bain_rez_de_chaussee
-        - light.spot_lavabo_rez_de_chaussee
-        - light.spots_salle_de_bain_etage
-        - light.spot_lavabo_etage
-        #- light.veilleuse
-        - sensor.ariane_bedroom_multi_sensor_temperature
-        - sensor.bathroom_multi_sensor_temperature
-        - sensor.bedroom_multi_sensor_temperature
-        - sensor.guest_room_multi_sensor_temperature
-        - sensor.kitchen_multi_sensor_temperature
-        - sensor.laundry_multi_sensor_temperature
-        - sensor.study_multi_sensor_temperature
-        - sensor.toilets_multi_sensor_temperature
-        - sensor.garage_multi_sensor_temperature
-        - sensor.hall_multi_sensor_temperature
-        - scene.living_room_cosy
+        - light.chambre_d_ariane_spots
+        - light.salle_de_bain_du_bas_spots
+        - light.salle_de_bain_du_bas_spot_lavabo
+        - light.salle_de_bain_du_haut_spots
+        - light.salle_de_bain_du_haut_spot_lavabo
+        # - light.chambre_d_ariane_veilleuse
+        - sensor.chambre_d_ariane_capteur_d_ambiance_temperature
+        - sensor.salle_de_bain_du_haut_capteur_d_ambiance_temperature
+        - sensor.chambre_capteur_d_ambiance_temperature
+        - sensor.chambre_d_amis_capteur_d_ambiance_temperature
+        - sensor.cuisine_capteur_d_ambiance_temperature
+        - sensor.buanderie_capteur_d_ambiance_temperature
+        - sensor.bureau_capteur_d_ambiance_temperature
+        - sensor.toilettes_capteur_d_ambiance_temperature
+        - sensor.garage_capteur_d_ambiance_temperature
+        - sensor.entree_capteur_d_ambiance_temperature
+        - scene.salon_mode_cosy
+        - switch.prise_imprimante

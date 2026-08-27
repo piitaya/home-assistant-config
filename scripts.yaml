@@ -124,32 +124,32 @@ lights_during_play:
       transition: 1
     target:
       entity_id:
-      - light.living_room_sideboard_lamp
-      - light.living_room_floor_lamp
-      - light.dining_room_ceiling_light
       - light.salon_spots
+      - light.salle_a_manger_spots
+      - light.salon_lampe_sur_pied
+      - light.salon_lampe_du_buffet
     action: light.turn_off
   mode: single
   icon: mdi:television-play
 lights_during_pause:
   alias: Régler les lumières durant la pause
   sequence:
-  - parallel:
-    - service: light.turn_on
+  - alias: En parallèle
+    parallel:
+    - alias: Allumer la lampe sur pied à 60%
       data:
         transition: 2
         brightness_pct: 60
       target:
-        entity_id: light.living_room_floor_lamp
-      alias: Allumer la lampe sur pied à 60%
-    - service: light.turn_on
+        entity_id: light.salon_lampe_sur_pied
+      action: light.turn_on
+    - alias: Allumer la lampe du buffet à 30%
       data:
         transition: 10
         brightness_pct: 30
       target:
-        entity_id: light.living_room_sideboard_lamp
-      alias: Allumer la lampe du buffet à 30%
-    alias: En parallèle
+        entity_id: light.salon_lampe_du_buffet
+      action: light.turn_on
   mode: single
   icon: mdi:television-pause
 lights_after_play:
@@ -157,19 +157,19 @@ lights_after_play:
   sequence:
   - alias: En parallèle
     parallel:
-    - data:
+    - alias: Allumer la lampe sur pied à 100%
+      data:
         transition: 10
         brightness_pct: 100
       target:
-        entity_id: light.living_room_floor_lamp
-      alias: Allumer la lampe sur pied à 100%
+        entity_id: light.salon_lampe_sur_pied
       action: light.turn_on
-    - data:
+    - alias: Allumer la lampe du buffet à 40%
+      data:
         transition: 10
         brightness_pct: 40
       target:
-        entity_id: light.living_room_sideboard_lamp
-      alias: Allumer la lampe du buffet à 40%
+        entity_id: light.salon_lampe_du_buffet
       action: light.turn_on
     - alias: Allumer les spots du salon 60%
       data:
@@ -183,35 +183,14 @@ lights_after_play:
 set_cover_for_cat:
   alias: Régler les volets pour le chat
   sequence:
-  - service: cover.set_cover_position
-    data:
+  - data:
       position: 30
     target:
       entity_id:
-      - cover.living_room_cemetery_shutter
-      - cover.living_room_garden_shutter
+      - cover.salon_volet_cimetiere
+      - cover.salon_volet_jardin
+    action: cover.set_cover_position
   mode: single
-coucher_sieste_ariane:
-  alias: Coucher/Sieste Ariane
-  sequence:
-  - condition: state
-    entity_id: cover.ariane_bedroom_shutter
-    state: open
-  - parallel:
-    - metadata: {}
-      data: {}
-      target:
-        floor_id: first_floor
-      action: cover.close_cover
-    - metadata: {}
-      data:
-        brightness_pct: 100
-      target:
-        entity_id:
-        - light.ariane_bedroom_bedside_lamp
-        - light.bureau_spots
-      action: light.turn_on
-  description: ''
 regler_la_pergola_en_position_soleil:
   alias: Régler la pergola en position soleil
   sequence:
@@ -272,8 +251,9 @@ notifier_porte_du_frigo_de_la_cuisine_ouvert:
       discard_when:
       - trigger: state
         entity_id:
-        - binary_sensor.kitchen_fridge_door
-        to: 'off'
+        - binary_sensor.cuisine_porte_frigo
+        to:
+        - 'off'
       default_tag: 604e7672-cb07-4ac7-825a-4844d2cae17d
       persons: []
       notification_data_advanced:
@@ -293,8 +273,9 @@ notifier_porte_du_frigo_du_garage_ouverte:
       discard_when:
       - trigger: state
         entity_id:
-        - binary_sensor.garage_fridge_door
-        to: 'off'
+        - binary_sensor.garage_porte_frigo
+        to:
+        - 'off'
       default_tag: 604e7672-cb07-4ac7-825a-4844d2cae17d
       persons: []
   description: ''
@@ -311,8 +292,9 @@ notifier_porte_du_congelateur_ouverte:
       discard_when:
       - trigger: state
         entity_id:
-        - binary_sensor.freezer_door
-        to: 'off'
+        - binary_sensor.garage_porte_congelateur
+        to:
+        - 'off'
       default_tag: 1ca5944c-ab9c-47a9-84ec-77759c2e94f1
       persons: []
   description: ''

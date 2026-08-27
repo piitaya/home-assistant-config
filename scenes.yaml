@@ -1,7 +1,7 @@
 - id: '1666724777011'
   name: Cinema - Lecture (noir complet)
   entities:
-    light.living_room_floor_lamp:
+    light.salon_lampe_sur_pied:
       min_color_temp_kelvin: 2000
       max_color_temp_kelvin: 6535
       min_mireds: 153
@@ -46,7 +46,7 @@
       friendly_name: Spots
       supported_features: 32
       state: 'off'
-    light.living_room_sideboard_lamp:
+    light.salon_lampe_du_buffet:
       min_color_temp_kelvin: 2000
       max_color_temp_kelvin: 6535
       min_mireds: 153
@@ -82,7 +82,7 @@
       friendly_name: Lampe du buffet
       supported_features: 44
       state: 'off'
-    light.dining_room_bar_lamp:
+    light.salle_a_manger_lampe_du_bar:
       min_color_temp_kelvin: 2202
       max_color_temp_kelvin: 4504
       min_mireds: 222
@@ -110,7 +110,7 @@
       friendly_name: Lampe du bar
       supported_features: 44
       state: 'off'
-    light.guirlande_buffet:
+    light.salon_guirlande:
       effect_list:
       - 0 Peachy
       supported_color_modes:
@@ -121,10 +121,10 @@
       hs_color:
       rgb_color:
       xy_color:
-      friendly_name: Guirlande Buffet
+      friendly_name: Guirlande
       supported_features: 4
       state: 'off'
-    light.kitchen_light_string:
+    light.cuisine_guirlande:
       effect_list: []
       supported_color_modes:
       - rgb
@@ -134,19 +134,19 @@
       hs_color:
       rgb_color:
       xy_color:
-      friendly_name: Guirlande Cuisine
+      friendly_name: Guirlande
       supported_features: 4
       state: 'off'
   icon: mdi:theater
   metadata:
-    light.guirlande_buffet:
+    light.salon_guirlande:
       entity_only: true
-    light.kitchen_light_string:
+    light.cuisine_guirlande:
       entity_only: true
 - id: '1666725067764'
   name: Cinema - Lecture (tamisé)
   entities:
-    light.living_room_floor_lamp:
+    light.salon_lampe_sur_pied:
       min_color_temp_kelvin: 2000
       max_color_temp_kelvin: 6535
       min_mireds: 153
@@ -198,7 +198,7 @@
       friendly_name: Spots
       supported_features: 32
       state: 'off'
-    light.living_room_sideboard_lamp:
+    light.salon_lampe_du_buffet:
       min_color_temp_kelvin: 2000
       max_color_temp_kelvin: 6535
       min_mireds: 153
@@ -241,7 +241,7 @@
       friendly_name: Lampe du buffet
       supported_features: 44
       state: 'on'
-    light.dining_room_bar_lamp:
+    light.salle_a_manger_lampe_du_bar:
       min_color_temp_kelvin: 2202
       max_color_temp_kelvin: 4504
       min_mireds: 222
@@ -276,7 +276,7 @@
       friendly_name: Lampe du bar
       supported_features: 44
       state: 'on'
-    light.kitchen_light_string:
+    light.cuisine_guirlande:
       effect_list: []
       supported_color_modes:
       - rgb
@@ -296,7 +296,7 @@
       friendly_name: Guirlande Cuisine
       supported_features: 4
       state: 'on'
-    light.guirlande_buffet:
+    light.salon_guirlande:
       effect_list:
       - 0 Peachy
       supported_color_modes:
@@ -319,14 +319,14 @@
       state: 'on'
   icon: mdi:theater
   metadata:
-    light.kitchen_light_string:
+    light.cuisine_guirlande:
       entity_only: true
-    light.guirlande_buffet:
+    light.salon_guirlande:
       entity_only: true
 - id: '1683753483390'
   name: Mode cosy
   entities:
-    light.living_room_sideboard_lamp:
+    light.salon_lampe_du_buffet:
       min_color_temp_kelvin: 2000
       max_color_temp_kelvin: 6535
       min_mireds: 153
@@ -369,7 +369,7 @@
       friendly_name: Lampe du buffet
       supported_features: 44
       state: 'on'
-    light.dining_room_bar_lamp:
+    light.salle_a_manger_lampe_du_bar:
       min_color_temp_kelvin: 2202
       max_color_temp_kelvin: 4504
       min_mireds: 222
@@ -404,7 +404,7 @@
       friendly_name: Lampe du bar
       supported_features: 44
       state: 'on'
-    light.living_room_floor_lamp:
+    light.salon_lampe_sur_pied:
       min_color_temp_kelvin: 2000
       max_color_temp_kelvin: 6535
       min_mireds: 153
@@ -499,7 +499,7 @@
       friendly_name: Télévision
       supported_features: 44
       state: 'on'
-    light.kitchen_light_string:
+    light.cuisine_guirlande:
       effect_list: []
       supported_color_modes:
       - rgb
@@ -519,7 +519,7 @@
       friendly_name: Guirlande Cuisine
       supported_features: 4
       state: 'on'
-    light.guirlande_buffet:
+    light.salon_guirlande:
       effect_list:
       - 0 Peachy
       supported_color_modes:
@@ -544,123 +544,7 @@
   metadata:
     light.television_backlight:
       entity_only: true
-    light.kitchen_light_string:
+    light.cuisine_guirlande:
       entity_only: true
-    light.guirlande_buffet:
-      entity_only: true
-- id: '1718472232836'
-  name: Coucher Ariane
-  entities:
-    light.ariane_bedroom_bedside_lamp:
-      min_color_temp_kelvin: 1700
-      max_color_temp_kelvin: 6535
-      min_mireds: 153
-      max_mireds: 588
-      effect_list:
-      - Strobe color
-      - Police
-      - Christmas
-      - RGB
-      - Random Loop
-      - Fast Random Loop
-      - LSD
-      - Slowdown
-      - Night Mode
-      - Date Night
-      - Movie
-      - Sunrise
-      - Sunset
-      - Romance
-      - Happy Birthday
-      - Disco
-      - Strobe epilepsy!
-      - Alarm
-      - Police2
-      - WhatsApp
-      - Facebook
-      - Twitter
-      - Home
-      - Candle Flicker
-      - Tea Time
-      - Slow Temp
-      - Stop
-      supported_color_modes:
-      - color_temp
-      - hs
-      - rgb
-      effect:
-      color_mode: color_temp
-      brightness: 255
-      color_temp_kelvin: 2610
-      color_temp: 383
-      hs_color:
-      - 28.6
-      - 68.678
-      rgb_color:
-      - 255
-      - 163
-      - 79
-      xy_color:
-      - 0.536
-      - 0.389
-      flowing: false
-      music_mode: false
-      night_light: false
-      icon: mdi:lamp
-      friendly_name: Lampe de chevet Ariane
-      supported_features: 44
-      state: 'on'
-    light.bureau_spots:
-      supported_color_modes:
-      - brightness
-      color_mode: brightness
-      brightness: 255
-      icon: hue:bulb-group-ceiling-round
-      friendly_name: 'Spots '
-      supported_features: 32
-      state: 'on'
-    cover.ariane_bedroom_shutter:
-      current_position: 0
-      device_class: shutter
-      friendly_name: 'Volet Chambre Ariane '
-      supported_features: 15
-      state: closed
-    cover.bureau_volet:
-      current_position: 0
-      device_class: shutter
-      friendly_name: Volet
-      supported_features: 15
-      state: closed
-    cover.bedroom_shutter:
-      current_position: 0
-      device_class: shutter
-      friendly_name: 'Volet Chambre '
-      supported_features: 15
-      state: closed
-    cover.bathroom_shutter:
-      current_position: 0
-      device_class: shutter
-      friendly_name: 'Volet Salle de bain '
-      supported_features: 15
-      state: closed
-    cover.landing_shutter:
-      current_position: 0
-      device_class: shutter
-      friendly_name: 'Volet Palier '
-      supported_features: 15
-      state: closed
-  metadata:
-    light.ariane_bedroom_bedside_lamp:
-      entity_only: true
-    light.bureau_spots:
-      entity_only: true
-    cover.ariane_bedroom_shutter:
-      entity_only: true
-    cover.bureau_volet:
-      entity_only: true
-    cover.bedroom_shutter:
-      entity_only: true
-    cover.bathroom_shutter:
-      entity_only: true
-    cover.landing_shutter:
+    light.salon_guirlande:
       entity_only: true

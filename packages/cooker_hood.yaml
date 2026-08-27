@@ -14,7 +14,7 @@ template:
                     data:
                       device: hood
                       command: plus
-      
+
                       num_repeats: "{{ repeats }}"
                     target:
                       entity_id:
@@ -27,7 +27,7 @@ template:
                     data:
                       device: hood
                       command: minus
-      
+
                       num_repeats: "{{ -repeats }}"
                     target:
                       entity_id:
@@ -53,17 +53,17 @@ template:
             target:
               entity_id:
                 - remote.rm4_pro
-        default_entity_id: fan.hotte
+        default_entity_id: fan.cuisine_hotte
         name: Hotte
-        percentage: "{{ states('sensor.hotte_niveau_ventilation') | int * 25 }}"
-        state: "{{ states('sensor.hotte_niveau_ventilation') | int > 0 }}"
+        percentage: "{{ states('sensor.cuisine_hotte_niveau_ventilation') | int * 25 }}"
+        state: "{{ states('sensor.cuisine_hotte_niveau_ventilation') | int > 0 }}"
 
   - light:
       - unique_id: 285641c8-d01b-4de2-8ce7-487684ad1238
         turn_on:
           - condition: state
             entity_id:
-              - binary_sensor.hotte_etat_lumiere
+              - binary_sensor.cuisine_hotte_etat_lumiere
             state: "off"
             match: all
           - action: remote.send_command
@@ -76,7 +76,7 @@ template:
         turn_off:
           - condition: state
             entity_id:
-              - binary_sensor.hotte_etat_lumiere
+              - binary_sensor.cuisine_hotte_etat_lumiere
             state: "on"
             match: all
           - action: remote.send_command
@@ -86,27 +86,27 @@ template:
             target:
               entity_id:
                 - remote.rm4_pro
-        default_entity_id: light.lumiere_de_la_hotte
+        default_entity_id: light.cuisine_lumiere_de_la_hotte
         name: Lumière de la hotte
-        state: "{{ states('binary_sensor.hotte_etat_lumiere') }}"
+        state: "{{ states('binary_sensor.cuisine_hotte_etat_lumiere') }}"
 
   - trigger:
       - trigger: homeassistant
         event: start
       - trigger: state
-        entity_id: sensor.hotte_puissance
+        entity_id: sensor.cuisine_hotte_puissance
         to:
         for:
           seconds: 2
       - trigger: numeric_state
-        entity_id: sensor.hotte_puissance
+        entity_id: sensor.cuisine_hotte_puissance
         below: 4
     binary_sensor:
       - unique_id: 2499d9d0-b1ca-476e-95f2-3a6694e2f4ea
-        default_entity_id: binary_sensor.hotte_etat_lumiere
+        default_entity_id: binary_sensor.cuisine_hotte_etat_lumiere
         name: "Hotte état lumière"
         state: >
-          {% set value = states("sensor.hotte_puissance") | float %}
+          {% set value = states("sensor.cuisine_hotte_puissance") | float %}
           {% set light = "off" %}
           {% if value > 110 %}
           {% set light = "on" %}
@@ -130,10 +130,10 @@ template:
           {{ light }}
     sensor:
       - unique_id: 27efd0b8-cfbd-4af7-8d51-d72ae9efd971
-        default_entity_id: sensor.hotte_niveau_ventilation
+        default_entity_id: sensor.cuisine_hotte_niveau_ventilation
         name: "Hotte niveau ventilation"
         state: >
-          {% set value = states("sensor.hotte_puissance") | float %}
+          {% set value = states("sensor.cuisine_hotte_puissance") | float %}
           {% set fan = 0 %}
           {% if value > 110 %}
           {% set fan = 4 %}

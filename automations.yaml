@@ -273,7 +273,7 @@
       sequence:
       - data: {}
         target:
-          entity_id: cover.laundry_shutter
+          entity_id: cover.palier_volet
         action: cover.close_cover
     - conditions:
       - condition: trigger
@@ -281,7 +281,7 @@
       sequence:
       - data: {}
         target:
-          entity_id: cover.laundry_shutter
+          entity_id: cover.palier_volet
         action: cover.open_cover
     - conditions:
       - condition: trigger
@@ -289,7 +289,7 @@
       sequence:
       - data: {}
         target:
-          entity_id: cover.laundry_shutter
+          entity_id: cover.palier_volet
         action: cover.stop_cover
     default: []
   mode: restart
@@ -399,7 +399,7 @@
           entity_id: input_select.cinema_mode
           state: Désactivé
       - target:
-          entity_id: scene.living_room_cosy
+          entity_id: scene.salon_mode_cosy
         data:
           transition: 10
         action: scene.turn_on
@@ -450,9 +450,12 @@
     above: 23
     trigger: numeric_state
   conditions:
-  - condition: state
-    entity_id: climate.heat_pump
-    state: heat
+  - condition: climate.is_heating
+    target:
+      entity_id: climate.heat_pump
+    options:
+      behavior: any
+      for: 00:00:00
   actions:
   - data:
       message: "\U0001F640 {{ trigger.to_state.attributes.friendly_name }} est réglé
@@ -471,7 +474,7 @@
     invité.
   triggers:
   - entity_id:
-    - cover.guest_room_shutter
+    - cover.chambre_d_amis_volet
     trigger: state
   - entity_id:
     - input_boolean.guest_mode
@@ -485,25 +488,26 @@
     then:
     - if:
       - condition: state
-        entity_id: cover.guest_room_shutter
-        state: closed
+        entity_id: cover.chambre_d_amis_volet
+        state:
+        - closed
       then:
       - data:
           option: NoControl
         target:
-          entity_id: select.guest_room_shutter_rf_protection_state
+          entity_id: select.chambre_d_amis_volet_rf_protection_state
         action: select.select_option
       else:
       - data:
           option: Unprotected
         target:
-          entity_id: select.guest_room_shutter_rf_protection_state
+          entity_id: select.chambre_d_amis_volet_rf_protection_state
         action: select.select_option
     else:
     - data:
         option: Unprotected
       target:
-        entity_id: select.guest_room_shutter_rf_protection_state
+        entity_id: select.chambre_d_amis_volet_rf_protection_state
       action: select.select_option
   mode: single
 - id: '1683749684693'
@@ -527,11 +531,13 @@
         target:
           entity_id: switch.spa_filter
         action: switch.turn_on
+        metadata: {}
     - conditions:
       - condition: trigger
         id: stop
       sequence:
       - data: {}
+        metadata: {}
         target:
           entity_id: switch.spa_filter
         action: switch.turn_off
@@ -596,7 +602,7 @@
     to:
     trigger: state
   - entity_id:
-    - sensor.garage_presence_sensor_illuminance
+    - sensor.garage_capteur_de_presence_illuminance
     below: 85
     trigger: numeric_state
   - trigger: homeassistant
@@ -615,33 +621,36 @@
       state: 'on'
     then:
     - condition: state
-      entity_id: light.garage_light
-      state: 'off'
+      entity_id: light.garage_neon
+      state:
+      - 'off'
     - condition: or
       conditions:
       - condition: not
         conditions:
         - condition: state
-          entity_id: light.garage_light
-          state: 'off'
+          entity_id: light.garage_neon
+          state:
+          - 'off'
           for:
             hours: 0
             minutes: 1
             seconds: 0
       - condition: numeric_state
-        entity_id: sensor.garage_presence_sensor_illuminance
+        entity_id: sensor.garage_capteur_de_presence_illuminance
         below: 85
     - data: {}
       target:
-        entity_id: light.garage_light
+        entity_id: light.garage_neon
       action: light.turn_on
     else:
     - condition: state
-      entity_id: light.garage_light
-      state: 'on'
+      entity_id: light.garage_neon
+      state:
+      - 'on'
     - data: {}
       target:
-        entity_id: light.garage_light
+        entity_id: light.garage_neon
       action: light.turn_off
   mode: single
 - id: '1689065135829'
@@ -653,16 +662,16 @@
       shutter: cover.bureau_volet
       facade: binary_sensor.cemetary_facade_exposed
       custom_conditions: []
-      opening_sensor: binary_sensor.bureau_capteur_fenetre
+      opening_sensor: binary_sensor.bureau_capteur_de_fenetre
 - id: '1689070030509'
   alias: Protection solaire - Chambre
   description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.bedroom_shutter
+      shutter: cover.chambre_volet
       facade: binary_sensor.front_facade_exposed
-      opening_sensor: binary_sensor.chambre_capteur_fenetre
+      opening_sensor: binary_sensor.chambre_capteur_de_fenetre
       custom_conditions: []
 - id: '1689071619165'
   alias: Protection solaire - Buanderie
@@ -670,7 +679,7 @@
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.laundry_shutter
+      shutter: cover.buanderie_volet
       facade: binary_sensor.cemetary_facade_exposed
       position_unexposed: 100
 - id: '1689075253364'
@@ -679,7 +688,7 @@
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.kitchen_shutter
+      shutter: cover.cuisine_volet
       position_exposed: 25
       facade: binary_sensor.cemetary_facade_exposed
 - id: '1689079813108'
@@ -688,7 +697,7 @@
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.living_room_front_right_shutter
+      shutter: cover.salon_volet_droit
       facade: binary_sensor.front_facade_exposed
 - id: '1689079890600'
   alias: Protection solaire - Salon Gauche
@@ -696,7 +705,7 @@
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.living_room_front_left_shutter
+      shutter: cover.salon_volet_gauche
       facade: binary_sensor.front_facade_exposed
 - id: '1689079946593'
   alias: Protection solaire - Toilettes
@@ -704,7 +713,7 @@
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.toilets_shutter
+      shutter: cover.toilettes_volet
       facade: binary_sensor.front_facade_exposed
 - id: '1689085967545'
   alias: Protection solaire - Salon Cimetière
@@ -712,7 +721,7 @@
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.living_room_cemetery_shutter
+      shutter: cover.salon_volet_cimetiere
       position_exposed: 30
       facade: binary_sensor.cemetary_facade_exposed
 - id: '1689086116343'
@@ -721,50 +730,50 @@
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.bathroom_shutter
+      shutter: cover.salle_de_bain_du_haut_volet
       facade: binary_sensor.front_facade_exposed
       custom_conditions: []
-      opening_sensor: binary_sensor.bathroom_window_sensor_opening
+      opening_sensor: binary_sensor.salle_de_bain_du_haut_capteur_de_fenetre
 - id: '1689086189034'
   alias: Protection solaire - Palier
   description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.landing_shutter
+      shutter: cover.palier_volet
       custom_conditions: []
       facade: binary_sensor.front_facade_exposed
-      opening_sensor: binary_sensor.landing_window_sensor_opening
+      opening_sensor: binary_sensor.palier_capteur_de_fenetre
 - id: '1689086502720'
   alias: Protection solaire - Chambre d'Ariane
   description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.ariane_bedroom_shutter
+      shutter: cover.chambre_d_ariane_volet
       facade: binary_sensor.cemetary_facade_exposed
       position_exposed: 20
-      opening_sensor: binary_sensor.ariane_bedroom_window_sensor_opening
+      opening_sensor: binary_sensor.chambre_d_ariane_capteur_de_fenetre
 - id: '1689086745942'
   alias: Protection solaire - Chambre d'amis
   description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.guest_room_shutter
+      shutter: cover.chambre_d_amis_volet
       facade: binary_sensor.front_facade_exposed
       custom_conditions:
       - condition: state
         entity_id: input_boolean.guest_mode
         state: 'off'
-      opening_sensor: binary_sensor.guest_room_window_sensor_opening
+      opening_sensor: binary_sensor.chambre_d_amis_capteur_de_fenetre
 - id: '1689087962070'
   alias: Protection solaire - Salon Jardin
   description: Ferme partiellement le volet pour protéger du soleil (blueprint).
   use_blueprint:
     path: piitaya/sun_protection_shutter.yaml
     input:
-      shutter: cover.living_room_garden_shutter
+      shutter: cover.salon_volet_jardin
       position_exposed: 40
       additionnal_protection: cover.pergola
       facade: binary_sensor.garden_facade_exposed
@@ -853,7 +862,7 @@
       sequence:
       - data: {}
         target:
-          entity_id: scene.living_room_cosy
+          entity_id: scene.salon_mode_cosy
         action: scene.turn_on
     - conditions:
       - condition: trigger
@@ -866,8 +875,8 @@
           - living_room
           - dining_room
           entity_id:
-          - light.kitchen_light_string
-          - light.guirlande_buffet
+          - light.cuisine_guirlande
+          - light.salon_guirlande
         action: light.turn_off
     - conditions:
       - condition: trigger
@@ -966,24 +975,26 @@
   alias: Mode chat - Désactivation automatique
   description: Désactive le mode chat quand la lumière du garage s'allume en journée.
   triggers:
-  - entity_id:
-    - light.garage_light
-    to: 'on'
-    alias: Quand la lumière du garage est allumé
-    trigger: state
+  - trigger: light.turned_on
+    target:
+      entity_id: light.garage_neon
+    options:
+      behavior: each
+      for: 00:00:00
   conditions:
   - condition: time
     after: 05:00:00
     before: '21:00:00'
-  - condition: state
-    entity_id: input_boolean.cat_garage_mode
-    state: 'on'
-    alias: Confirmer que le mode chat dans le garage est activé
+  - condition: switch.is_on
+    target:
+      entity_id: input_boolean.cat_garage_mode
+    options:
+      behavior: any
+      for: 00:00:00
   actions:
   - data: {}
     target:
       entity_id: input_boolean.cat_garage_mode
-    alias: Désactiver le mode chat dans le garage
     action: input_boolean.turn_off
   mode: single
 - id: '1705180879834'
@@ -1072,19 +1083,19 @@
   - alias: Si la consommation d'un des volets devient nulle
     below: '0.1'
     entity_id:
-    - sensor.ariane_bedroom_shutter_power
-    - sensor.bathroom_shutter_power
-    - sensor.bedroom_shutter_power
-    - sensor.guest_room_shutter_power
-    - sensor.kitchen_shutter_power
-    - sensor.living_room_cemetery_shutter_power
-    - sensor.living_room_front_left_shutter_power
-    - sensor.living_room_front_right_shutter_power
-    - sensor.living_room_garden_shutter_power
-    - sensor.laundry_shutter_power
-    - sensor.bureau_spots_puissance
-    - sensor.toilets_shutter_power
-    - sensor.bathroom_shutter_power
+    - sensor.chambre_d_ariane_volet_puissance
+    - sensor.salle_de_bain_du_haut_volet_puissance
+    - sensor.chambre_volet_puissance
+    - sensor.chambre_d_amis_volet_puissance
+    - sensor.cuisine_volet_puissance
+    - sensor.salon_volet_cimetiere_puissance
+    - sensor.salon_volet_gauche_puissance
+    - sensor.salon_volet_droit_puissance
+    - sensor.salon_volet_jardin_puissance
+    - sensor.buanderie_volet_puissance
+    - sensor.bureau_volet_puissance
+    - sensor.toilettes_volet_puissance
+    - sensor.salle_de_bain_du_haut_volet_puissance
     trigger: numeric_state
   conditions: []
   actions:
@@ -1169,7 +1180,7 @@
   use_blueprint:
     path: piitaya/opening_action.yaml
     input:
-      opening_sensor: binary_sensor.kitchen_fridge_door
+      opening_sensor: binary_sensor.cuisine_porte_frigo
       actions:
       - action: script.turn_on
         metadata: {}
@@ -1190,7 +1201,7 @@
   use_blueprint:
     path: piitaya/opening_action.yaml
     input:
-      opening_sensor: binary_sensor.garage_fridge_door
+      opening_sensor: binary_sensor.garage_porte_frigo
       actions:
       - action: script.turn_on
         metadata: {}
@@ -1211,7 +1222,7 @@
   use_blueprint:
     path: piitaya/opening_action.yaml
     input:
-      opening_sensor: binary_sensor.freezer_door
+      opening_sensor: binary_sensor.garage_porte_congelateur
       actions:
       - action: script.turn_on
         metadata: {}
@@ -1646,57 +1657,72 @@
     luminosité.
   triggers:
   - entity_id:
-    - binary_sensor.capteur_de_presence_buanderie_occupancy
+    - binary_sensor.buanderie_capteur_de_presence_occupation
     to:
     trigger: state
-  - entity_id:
-    - sensor.capteur_de_presence_buanderie_illuminance
-    below: 30
-    trigger: numeric_state
+  - trigger: illuminance.crossed_threshold
+    target:
+      area_id: laundry_room
+    options:
+      behavior: each
+      for: 00:00:00
+      threshold:
+        type: below
+        value:
+          active_choice: number
+          number: 30
   - trigger: homeassistant
     event: start
   conditions:
   - condition: state
     entity_id: binary_sensor.home_presence
     state: 'on'
-  - condition: state
-    entity_id: input_boolean.cat_garage_mode
-    state: 'off'
+  - condition: switch.is_off
+    target:
+      entity_id: input_boolean.cat_garage_mode
+    options:
+      behavior: any
+      for: 00:00:00
   actions:
   - if:
-    - condition: state
-      entity_id: binary_sensor.capteur_de_presence_buanderie_occupancy
-      state: 'on'
+    - condition: occupancy.is_detected
+      target:
+        area_id: laundry_room
+      options:
+        behavior: any
     then:
     - condition: state
-      entity_id: light.laundry_ceiling_light
-      state: 'off'
+      entity_id: light.buanderie_plafonnier
+      state:
+      - 'off'
     - condition: or
       conditions:
       - condition: not
         conditions:
         - condition: state
-          entity_id: light.laundry_ceiling_light
-          state: 'off'
+          entity_id: light.buanderie_plafonnier
+          state:
+          - 'off'
           for:
             hours: 0
             minutes: 1
             seconds: 0
       - condition: numeric_state
-        entity_id: sensor.capteur_de_presence_buanderie_illuminance
+        entity_id: sensor.buanderie_capteur_de_presence_eclairement
         below: 30
       enabled: true
     - data: {}
       target:
-        entity_id: light.laundry_ceiling_light
+        entity_id: light.buanderie_plafonnier
       action: light.turn_on
     else:
     - condition: state
-      entity_id: light.laundry_ceiling_light
-      state: 'on'
+      entity_id: light.buanderie_plafonnier
+      state:
+      - 'on'
     - data: {}
       target:
-        entity_id: light.laundry_ceiling_light
+        entity_id: light.buanderie_plafonnier
       action: light.turn_off
   mode: single
 - id: '1741020692355'
@@ -1718,7 +1744,7 @@
     data:
       flash: short
     target:
-      entity_id: light.study_hue_play
+      entity_id: light.bureau_barres_hue_play
   mode: single
 - id: '1741801882779'
   alias: Home Assistant - Tentative de connexion échouée
@@ -1833,7 +1859,7 @@
     metadata: {}
     data: {}
     target:
-      entity_id: light.veilleuse
+      entity_id: light.chambre_d_ariane_veilleuse
   mode: single
 - id: '1744041128353'
   alias: Machine à café - Notification fuite
@@ -1871,13 +1897,13 @@
       metadata: {}
       data: {}
       target:
-        entity_id: switch.hall_camera_pir
+        entity_id: switch.entree_camera_pir
     else:
     - action: switch.turn_off
       metadata: {}
       data: {}
       target:
-        entity_id: switch.hall_camera_pir
+        entity_id: switch.entree_camera_pir
   mode: single
 - id: '1745594581850'
   alias: Machine à laver - Notification fin de cycle
@@ -2082,19 +2108,19 @@
     data:
       refresh_all_values: false
       entity_id:
-      - cover.laundry_shutter
+      - cover.buanderie_volet
       - cover.bureau_volet
-      - cover.bedroom_shutter
-      - cover.guest_room_shutter
-      - cover.ariane_bedroom_shutter
-      - cover.kitchen_shutter
-      - cover.landing_shutter
-      - cover.bathroom_shutter
-      - cover.living_room_cemetery_shutter
-      - cover.living_room_front_right_shutter
-      - cover.living_room_front_left_shutter
-      - cover.living_room_garden_shutter
-      - cover.toilets_shutter
+      - cover.chambre_d_amis_volet
+      - cover.chambre_volet
+      - cover.chambre_d_ariane_volet
+      - cover.cuisine_volet
+      - cover.palier_volet
+      - cover.salle_de_bain_du_haut_volet
+      - cover.salon_volet_droit
+      - cover.salon_volet_gauche
+      - cover.salon_volet_jardin
+      - cover.salon_volet_cimetiere
+      - cover.toilettes_volet
   mode: single
 - id: '1751410702179'
   alias: Prise anti-moustique - Extinction nocturne
@@ -2282,13 +2308,12 @@
   alias: Pergola - Commande des lames
   description: Ouvre ou ferme les lames de la pergola via un bouton Hue.
   triggers:
-  - device_id: a5d695c94e00c20f075a4cb8106f687c
-    domain: hue
-    type: initial_press
-    subtype: 1
-    unique_id: 980de681-e053-4c70-aed9-3651def4b0c5
-    metadata: {}
-    trigger: device
+  - trigger: event.received
+    target:
+      entity_id: event.pergola_interrupteur_bouton_1
+    options:
+      event_type:
+      - initial_press
   conditions: []
   actions:
   - if:
@@ -2365,8 +2390,8 @@
     data: {}
     target:
       entity_id:
-      - light.garage_light
-      - light.laundry_ceiling_light
+      - light.garage_neon
+      - light.buanderie_plafonnier
   mode: single
 - id: '1761597056940'
   alias: Imprimante 3D - Rechargement Bambu Lab
@@ -2394,7 +2419,7 @@
   triggers:
   - trigger: state
     entity_id:
-    - cover.ariane_bedroom_shutter
+    - cover.chambre_d_ariane_volet
     from:
     - opening
     - closed
@@ -2406,19 +2431,13 @@
     metadata: {}
     data: {}
     target:
-      entity_id: light.veilleuse
+      entity_id: light.chambre_d_ariane_veilleuse
   mode: single
 - id: '1763456422814'
   alias: Éclairage automatique - Bureau
   description: Contrôle la lumière du bureau selon la présence et les horaires de
     semaine.
   triggers:
-  - trigger: occupancy.detected
-    target:
-      entity_id: binary_sensor.bureau_capteur_de_presence_presence_bureau_paul
-    options:
-      behavior: each
-      for: 00:00:00
   - trigger: occupancy.cleared
     target:
       entity_id: binary_sensor.bureau_capteur_de_presence_presence_bureau_paul
@@ -2428,6 +2447,12 @@
         hours: 0
         minutes: 10
         seconds: 0
+  - trigger: occupancy.detected
+    target:
+      entity_id: binary_sensor.bureau_capteur_de_presence_presence_bureau_paul
+    options:
+      behavior: each
+      for: 00:00:00
   conditions: []
   actions:
   - if:
@@ -2451,13 +2476,13 @@
       metadata: {}
       data: {}
       target:
-        entity_id: light.study_hue_play
+        entity_id: light.bureau_barres_hue_play
     else:
     - action: light.turn_off
       metadata: {}
       data: {}
       target:
-        entity_id: light.study_hue_play
+        entity_id: light.bureau_barres_hue_play
   mode: single
 - id: '1764320303143'
   alias: Éclairage automatique - Cuisine
@@ -2518,49 +2543,49 @@
   alias: Veilleuse Palier - Automatique
   description: Allume ou éteint la veilleuse du palier selon l'occupation et la luminosité.
   triggers:
-  - trigger: state
-    entity_id:
-    - binary_sensor.prise_veilleuse_occupation
-    - binary_sensor.capteur_de_presence_palier_occupation
-    to:
-    - 'on'
-  - trigger: state
-    entity_id:
-    - binary_sensor.prise_veilleuse_occupation
-    - binary_sensor.capteur_de_presence_palier_occupation
-    to:
-    - 'off'
-    for:
-      hours: 0
-      minutes: 2
-      seconds: 0
+  - trigger: occupancy.detected
+    target:
+      area_id: landing
+    options:
+      for: 00:00:00
+      behavior: each
+  - trigger: occupancy.cleared
+    target:
+      area_id: landing
+    options:
+      for: 00:00:00
+      behavior: all
   conditions: []
   actions:
   - if:
-    - condition: or
-      conditions:
-      - condition: state
-        entity_id: binary_sensor.prise_veilleuse_occupation
-        state:
-        - 'on'
-      - condition: state
-        entity_id: binary_sensor.capteur_de_presence_palier_occupation
-        state:
-        - 'on'
+    - condition: occupancy.is_detected
+      target:
+        area_id: landing
+      options:
+        for: 00:00:00
+        behavior: any
     then:
-    - condition: numeric_state
-      entity_id: sensor.prise_veilleuse_eclairement
-      below: 5
+    - condition: illuminance.is_value
+      options:
+        for: 00:00:00
+        threshold:
+          type: below
+          value:
+            active_choice: number
+            number: 5
+        behavior: any
+      target:
+        entity_id: sensor.palier_veilleuse_eclairement
     - action: light.turn_on
       metadata: {}
       target:
-        entity_id: light.prise_veilleuse
+        entity_id: light.palier_veilleuse
       data: {}
     else:
     - action: light.turn_off
       metadata: {}
       target:
-        entity_id: light.prise_veilleuse
+        entity_id: light.palier_veilleuse
       data: {}
   mode: single
 - id: '1765986483970'
@@ -2589,33 +2614,40 @@
   actions:
   - choose:
     - conditions:
-      - condition: state
-        entity_id: light.veilleuse
-        state:
-        - 'off'
+      - condition: light.is_off
+        target:
+          entity_id: light.chambre_d_ariane_veilleuse
+        options:
+          behavior: any
+          for: 00:00:00
       sequence:
       - action: light.turn_on
         metadata: {}
         target:
-          entity_id: light.veilleuse
+          entity_id: light.chambre_d_ariane_veilleuse
         data: {}
     - conditions:
-      - condition: numeric_state
-        entity_id: light.veilleuse
-        attribute: brightness
-        above: 20
+      - condition: light.is_brightness
+        target:
+          entity_id: light.chambre_d_ariane_veilleuse
+        options:
+          threshold:
+            type: above
+            value:
+              active_choice: number
+              number: 7
       sequence:
       - action: light.turn_on
         metadata: {}
         target:
-          entity_id: light.veilleuse
+          entity_id: light.chambre_d_ariane_veilleuse
         data:
           brightness_pct: 1
     default:
     - action: light.turn_on
       metadata: {}
       target:
-        entity_id: light.veilleuse
+        entity_id: light.chambre_d_ariane_veilleuse
       data:
         brightness_pct: 9
   mode: single
@@ -2765,15 +2797,15 @@
           scene_id: stranger_things_restore
           snapshot_entities:
           - light.salon_spots
-          - light.dining_room_bar_lamp
-          - light.living_room_floor_lamp
-          - light.dining_room_ceiling_light
-          - light.living_room_sideboard_lamp
-          - light.guirlande_buffet
+          - light.salle_a_manger_lampe_du_bar
+          - light.salon_lampe_sur_pied
+          - light.salle_a_manger_spots
+          - light.salon_lampe_du_buffet
+          - light.salon_guirlande
           - light.television_backlight
-          - light.kitchen_ceiling_light
-          - light.kitchen_light_string
-          - light.kitchen_worktop_ceiling_light
+          - light.cuisine_spots
+          - light.cuisine_spots_plan_de_travail
+          - light.cuisine_guirlande
         action: scene.create
       - parallel:
         - repeat:
@@ -2804,7 +2836,7 @@
               state: 'on'
             sequence:
             - target:
-                entity_id: light.dining_room_ceiling_light
+                entity_id: light.salle_a_manger_spots
               data:
                 brightness_pct: '{{ range(15, 90) | random }}'
                 transition: 0
@@ -2812,7 +2844,7 @@
             - delay:
                 milliseconds: '{{ range(450, 850) | random }}'
             - target:
-                entity_id: light.dining_room_ceiling_light
+                entity_id: light.salle_a_manger_spots
               data:
                 transition: 0
               action: light.turn_off
@@ -2825,7 +2857,7 @@
               state: 'on'
             sequence:
             - target:
-                entity_id: light.kitchen_ceiling_light
+                entity_id: light.cuisine_spots
               data:
                 brightness_pct: '{{ range(15, 95) | random }}'
                 transition: 0
@@ -2833,7 +2865,7 @@
             - delay:
                 milliseconds: '{{ range(400, 800) | random }}'
             - target:
-                entity_id: light.kitchen_ceiling_light
+                entity_id: light.cuisine_spots
               data:
                 transition: 0
               action: light.turn_off
@@ -2846,7 +2878,7 @@
               state: 'on'
             sequence:
             - target:
-                entity_id: light.kitchen_worktop_ceiling_light
+                entity_id: light.cuisine_spots_plan_de_travail
               data:
                 brightness_pct: '{{ range(20, 90) | random }}'
                 transition: 0
@@ -2854,7 +2886,7 @@
             - delay:
                 milliseconds: '{{ range(450, 850) | random }}'
             - target:
-                entity_id: light.kitchen_worktop_ceiling_light
+                entity_id: light.cuisine_spots_plan_de_travail
               data:
                 transition: 0
               action: light.turn_off
@@ -2867,7 +2899,7 @@
               state: 'on'
             sequence:
             - target:
-                entity_id: light.living_room_floor_lamp
+                entity_id: light.salon_lampe_sur_pied
               data:
                 brightness_pct: '{{ range(5, 100) | random }}'
                 transition: 0
@@ -2875,7 +2907,7 @@
             - delay:
                 milliseconds: '{{ range(50, 250) | random }}'
             - target:
-                entity_id: light.living_room_floor_lamp
+                entity_id: light.salon_lampe_sur_pied
               data:
                 transition: 0
               action: light.turn_off
@@ -2888,7 +2920,7 @@
               state: 'on'
             sequence:
             - target:
-                entity_id: light.living_room_sideboard_lamp
+                entity_id: light.salon_lampe_du_buffet
               data:
                 brightness_pct: '{{ range(10, 90) | random }}'
                 transition: 0
@@ -2896,7 +2928,7 @@
             - delay:
                 milliseconds: '{{ range(60, 280) | random }}'
             - target:
-                entity_id: light.living_room_sideboard_lamp
+                entity_id: light.salon_lampe_du_buffet
               data:
                 transition: 0
               action: light.turn_off
@@ -2909,7 +2941,7 @@
               state: 'on'
             sequence:
             - target:
-                entity_id: light.dining_room_bar_lamp
+                entity_id: light.salle_a_manger_lampe_du_bar
               data:
                 brightness_pct: '{{ range(5, 85) | random }}'
                 transition: 0
@@ -2917,7 +2949,7 @@
             - delay:
                 milliseconds: '{{ range(70, 300) | random }}'
             - target:
-                entity_id: light.dining_room_bar_lamp
+                entity_id: light.salle_a_manger_lampe_du_bar
               data:
                 transition: 0
               action: light.turn_off
@@ -2930,7 +2962,7 @@
               state: 'on'
             sequence:
             - target:
-                entity_id: light.guirlande_buffet
+                entity_id: light.salon_guirlande
               data:
                 brightness_pct: '{{ range(10, 100) | random }}'
                 transition: 0
@@ -2938,7 +2970,7 @@
             - delay:
                 milliseconds: '{{ range(40, 220) | random }}'
             - target:
-                entity_id: light.guirlande_buffet
+                entity_id: light.salon_guirlande
               data:
                 transition: 0
               action: light.turn_off
@@ -2972,7 +3004,7 @@
               state: 'on'
             sequence:
             - target:
-                entity_id: light.kitchen_light_string
+                entity_id: light.cuisine_guirlande
               data:
                 brightness_pct: '{{ range(10, 100) | random }}'
                 transition: 0
@@ -2980,7 +3012,7 @@
             - delay:
                 milliseconds: '{{ range(40, 230) | random }}'
             - target:
-                entity_id: light.kitchen_light_string
+                entity_id: light.cuisine_guirlande
               data:
                 transition: 0
               action: light.turn_off
@@ -2991,22 +3023,29 @@
   alias: Veilleuse - Maintien faible luminosité (nuit)
   description: Maintient la veilleuse à luminosité minimale pendant le mode nuit.
   triggers:
-  - trigger: numeric_state
-    entity_id:
-    - light.veilleuse
-    attribute: brightness
-    above: 120
+  - trigger: light.brightness_crossed_threshold
+    target:
+      entity_id: light.chambre_d_ariane_veilleuse
+    options:
+      for: 00:00:00
+      threshold:
+        type: above
+        value:
+          active_choice: number
+          number: 50
   conditions:
-  - condition: state
-    entity_id: input_boolean.mode_nuit
-    state:
-    - 'on'
+  - condition: switch.is_on
+    target:
+      entity_id: input_boolean.mode_nuit
+    options:
+      behavior: any
+      for: 00:00:00
     enabled: true
   actions:
   - action: light.turn_on
     metadata: {}
     target:
-      entity_id: light.veilleuse
+      entity_id: light.chambre_d_ariane_veilleuse
     data:
       brightness: '{% set val = trigger.from_state.attributes.brightness | int(15)
         %} {{ 15 if val > 120 else val }}
@@ -3049,8 +3088,8 @@
     data: {}
     target:
       entity_id:
-      - cover.living_room_cemetery_shutter
-      - cover.living_room_garden_shutter
+      - cover.salon_volet_cimetiere
+      - cover.salon_volet_jardin
   - if:
     - condition: lock.is_unlocked
       target:
@@ -3148,14 +3187,14 @@
   triggers:
   - trigger: state
     entity_id:
-    - binary_sensor.capteur_de_presence_salle_de_bain_du_bas_occupation
+    - binary_sensor.salle_de_bain_du_bas_capteur_de_presence_occupation
     from:
     - 'off'
     to:
     - 'on'
   - trigger: state
     entity_id:
-    - binary_sensor.capteur_de_presence_salle_de_bain_du_bas_occupation
+    - binary_sensor.salle_de_bain_du_bas_capteur_de_presence_occupation
     from:
     - 'on'
     to:
@@ -3185,7 +3224,7 @@
     - condition: or
       conditions:
       - condition: state
-        entity_id: binary_sensor.capteur_de_presence_salle_de_bain_du_bas_occupation
+        entity_id: binary_sensor.salle_de_bain_du_bas_capteur_de_presence_occupation
         state:
         - 'on'
       - condition: state
@@ -3203,71 +3242,16 @@
         brightness_pct: 100
       target:
         entity_id:
-        - light.spot_lavabo_rez_de_chaussee
-        - light.spots_salle_de_bain_rez_de_chaussee
+        - light.salle_de_bain_du_bas_spot_lavabo
+        - light.salle_de_bain_du_bas_spots
     else:
     - action: light.turn_off
       metadata: {}
       data: {}
       target:
         entity_id:
-        - light.spot_lavabo_rez_de_chaussee
-        - light.spots_salle_de_bain_rez_de_chaussee
-  mode: single
-- id: '1773851670902'
-  alias: Lumière Chambre d'amis - Allumage par porte
-  description: Allume la lampe de chevet quand la porte de la chambre d'amis s'ouvre.
-  triggers:
-  - type: opened
-    device_id: fc66e38b6a83ba4ab01841dd1ee6da17
-    entity_id: 72ca61f93c985994c408dfe583a1ec57
-    domain: binary_sensor
-    metadata:
-      secondary: false
-    trigger: device
-  - type: not_opened
-    device_id: fc66e38b6a83ba4ab01841dd1ee6da17
-    entity_id: 72ca61f93c985994c408dfe583a1ec57
-    domain: binary_sensor
-    trigger: device
-  conditions: []
-  actions:
-  - if:
-    - condition: state
-      entity_id: binary_sensor.multi_state_sensor_p100_porte
-      state:
-      - 'on'
-    then:
-    - action: light.turn_on
-      metadata: {}
-      target:
-        entity_id: light.guest_room_bedside_lamp
-      data: {}
-    else:
-    - action: light.turn_off
-      metadata: {}
-      target:
-        entity_id: light.guest_room_bedside_lamp
-      data: {}
-  mode: single
-- id: '1774114936057'
-  alias: Qualité de l'air - Synchronisation présence bureau
-  description: Synchronise l'heure du capteur de qualité de l'air sur la présence
-    au bureau.
-  triggers:
-  - trigger: occupancy.detected
-    target:
-      entity_id: binary_sensor.bureau_capteur_de_presence_presence
-    options:
-      behavior: each
-    enabled: true
-  conditions: []
-  actions:
-  - action: button.press
-    metadata: {}
-    target:
-      entity_id: button.capteur_qualite_de_l_air_synchroniser_l_heure
-    data: {}
+        - light.salle_de_bain_du_bas_spot_lavabo
+        - light.salle_de_bain_du_bas_spots
   mode: single
 - id: '1774787085935'
   alias: Imprimante 3D - Purificateur d'air
@@ -3365,14 +3349,14 @@
   description: Gère les spots de la salle de bain du haut selon la présence et l'heure.
   triggers:
   - entity_id:
-    - binary_sensor.capteur_de_presence_salle_de_bain_du_haut_occupation
+    - binary_sensor.salle_de_bain_du_haut_capteur_de_presence_occupation
     from:
     - 'off'
     to:
     - 'on'
     trigger: state
   - entity_id:
-    - binary_sensor.capteur_de_presence_salle_de_bain_du_haut_occupation
+    - binary_sensor.salle_de_bain_du_haut_capteur_de_presence_occupation
     from:
     - 'on'
     to:
@@ -3399,7 +3383,7 @@
     - condition: or
       conditions:
       - condition: state
-        entity_id: binary_sensor.capteur_de_presence_salle_de_bain_du_haut_occupation
+        entity_id: binary_sensor.salle_de_bain_du_haut_capteur_de_presence_occupation
         state:
         - 'on'
       - condition: state
@@ -3419,8 +3403,8 @@
             brightness_pct: 100
           target:
             entity_id:
-            - light.spot_lavabo_etage
-            - light.spots_salle_de_bain_etage
+            - light.salle_de_bain_du_haut_spot_lavabo
+            - light.salle_de_bain_du_haut_spots
       - conditions:
         - condition: time
           after: '19:00:00'
@@ -3431,22 +3415,22 @@
           data:
             brightness_pct: 100
           target:
-            entity_id: light.spot_lavabo_etage
+            entity_id: light.salle_de_bain_du_haut_spot_lavabo
       default:
       - action: light.turn_on
         metadata: {}
         data:
           brightness_pct: 44
         target:
-          entity_id: light.spot_lavabo_etage
+          entity_id: light.salle_de_bain_du_haut_spot_lavabo
     else:
     - action: light.turn_off
       metadata: {}
       data: {}
       target:
         entity_id:
-        - light.spot_lavabo_etage
-        - light.spots_salle_de_bain_etage
+        - light.salle_de_bain_du_haut_spot_lavabo
+        - light.salle_de_bain_du_haut_spots
   mode: single
 - id: '1779539928873'
   alias: Machine à café - Notification erreur
@@ -3472,11 +3456,12 @@
   alias: Musique - Lecture par bouton
   description: Joue une piste et règle le volume après l'appui d'un bouton BTHome.
   triggers:
-  - device_id: d5144e963bf5cb4306e752d6442cfbf6
-    domain: bthome
-    type: button
-    subtype: press
-    trigger: device
+  - trigger: event.received
+    target:
+      entity_id: event.chambre_d_ariane_bouton_musique_button
+    options:
+      event_type:
+      - press
   conditions: []
   actions:
   - action: media_player.play_media
@@ -3545,14 +3530,14 @@
     - action: fan.set_percentage
       metadata: {}
       target:
-        entity_id: fan.hotte
+        entity_id: fan.cuisine_hotte
       data:
         percentage: 100
     else:
     - action: fan.turn_off
       metadata: {}
       target:
-        entity_id: fan.hotte
+        entity_id: fan.cuisine_hotte
       data: {}
   mode: single
 - id: '1784133155970'
@@ -3614,7 +3599,7 @@
       - action: light.toggle
         metadata: {}
         target:
-          entity_id: light.study_hue_play
+          entity_id: light.bureau_barres_hue_play
         data: {}
   mode: single
 - id: '1785413563714'
@@ -3627,6 +3612,7 @@
     - sensor.jardin_yuka_mini_auto_diagnostic
     not_to:
     - none
+    - unavailable
   conditions: []
   actions:
   - action: notify.send_message
@@ -3636,4 +3622,177 @@
     data:
       title: Problème tondeuse
       message: '{{ state_translated("sensor.jardin_yuka_mini_auto_diagnostic") }}'
+  mode: single
+- id: '1785928918596'
+  alias: Test Live Activity iPhone
+  description: Test des Live Activities iOS. A lancer manuellement (bouton Executer).
+    Demarre une activite, la met a jour 10 fois sur 60 s, puis la termine.
+  triggers: []
+  conditions: []
+  actions:
+  - action: notify.mobile_app_iphone_de_paul
+    alias: Demarrer la Live Activity
+    data:
+      data:
+        chronometer: true
+        live_update: true
+        notification_icon: mdi:flask-outline
+        notification_icon_color: '#03A9F4'
+        progress: 0
+        progress_max: 100
+        tag: test_live_activity
+        when: 60
+        when_relative: true
+      message: Demarrage...
+      title: Test Live Activity
+  - alias: Mettre a jour toutes les 6 s
+    repeat:
+      count: 10
+      sequence:
+      - delay: 00:00:06
+      - action: notify.mobile_app_iphone_de_paul
+        data:
+          data:
+            critical_text: '{{ repeat.index * 10 }} %'
+            live_update: true
+            notification_icon: mdi:flask-outline
+            notification_icon_color: '#03A9F4'
+            progress: '{{ repeat.index * 10 }}'
+            progress_max: 100
+            tag: test_live_activity
+          message: Etape {{ repeat.index }} / 10
+          title: Test Live Activity
+  - action: notify.mobile_app_iphone_de_paul
+    alias: Terminer la Live Activity
+    data:
+      data:
+        tag: test_live_activity
+      message: clear_notification
+  mode: restart
+- id: '1786001522124'
+  alias: Tondeuse - Mode demi-tour automatique
+  description: Force le mode de demi-tour de la tondeuse sur 'multipoint' si le mode
+    'zero_turn' est activé pendant plus de 5 secondes.
+  triggers:
+  - trigger: state
+    entity_id:
+    - select.jardin_yuka_mini_mode_demi_tour
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 10
+    to:
+    - zero_turn
+  - trigger: lawn_mower.started_mowing
+    target:
+      entity_id: lawn_mower.yuka_mini
+    options:
+      behavior: each
+      for: 00:00:00
+  conditions:
+  - condition: select.is_option_selected
+    target:
+      entity_id: select.jardin_yuka_mini_mode_demi_tour
+    options:
+      behavior: any
+      for:
+        hours: 0
+        minutes: 0
+        seconds: 0
+      option:
+      - zero_turn
+  actions:
+  - action: select.select_option
+    metadata: {}
+    target:
+      entity_id: select.jardin_yuka_mini_mode_demi_tour
+    data:
+      option: multipoint
+  mode: single
+- id: '1786436984301'
+  alias: Nouvelle automatisation
+  description: ''
+  triggers:
+  - trigger: time
+    at: '10:30:00'
+  - trigger: homeassistant
+    event: start
+  conditions: []
+  actions: []
+  mode: single
+- id: '1787081705242'
+  alias: Machine à café - Détection connectivité
+  description: Met à jour l'état de la machine à café (connectée/déconnectée) en fonction
+    de sa consommation électrique.
+  triggers:
+  - trigger: power.crossed_threshold
+    target:
+      entity_id: sensor.prise_machine_a_cafe_puissance
+    options:
+      behavior: each
+      for: 00:00:00
+      threshold:
+        type: above
+        value:
+          active_choice: number
+          unit_of_measurement: W
+          number: 1
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.machine_a_cafe_connectee
+    state:
+    - 'off'
+  actions:
+  - repeat:
+      count: 4
+      sequence:
+      - delay: 00:00:15
+      - action: homeassistant.update_entity
+        metadata: {}
+        data:
+          entity_id:
+          - binary_sensor.machine_a_cafe_connectee
+  mode: restart
+- id: '1787220214917'
+  alias: Paul - Rappel d'événement calendrier
+  description: Déclenche une notification au début d'un événement dans le calendrier
+    de Paul.
+  triggers:
+  - trigger: calendar
+    event: start
+    offset: -0:0:0
+    entity_id: calendar.paul
+    enabled: true
+  conditions: []
+  actions: []
+  mode: single
+- id: '1787220733820'
+  alias: Plumage - Notification d'achat
+  description: Notifie Paul sur son iPhone lorsqu'un achat est effectué via Plumage.
+  triggers:
+  - trigger: event.received
+    target:
+      entity_id: event.plumage_achat
+    options:
+      event_type:
+      - one_time_charge
+  conditions:
+  - condition: template
+    value_template: '{{ not trigger.to_state.attributes.family_shared }}'
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id: notify.iphone_de_paul
+    data:
+      title: "Plumage \U0001FAB6"
+      message: Achat effectué · {{ ('%.2f' % trigger.to_state.attributes.price) |
+        replace('.', ',') }} {{ trigger.to_state.attributes.currency }} ({{ trigger.to_state.attributes.storefront
+        }})
+  mode: queued
+- id: '1787231603662'
+  alias: Study Lights - Keep On
+  description: Prevents lights in the study from being turned off.
+  triggers: []
+  conditions: []
+  actions: []
   mode: single
