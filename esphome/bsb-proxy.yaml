@@ -14,10 +14,13 @@ logger:
 
 # Enable Home Assistant API
 api:
+  encryption:
+    key: !secret bsb_proxy_api_encryption_key
 
 # Allow Over-The-Air updates
 ota:
-- platform: esphome
+  - platform: esphome
+    password: !secret bsb_proxy_ota_password
 
 wifi:
   ssid: !secret wifi_ssid
