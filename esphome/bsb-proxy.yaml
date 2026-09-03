@@ -26,3 +26,28 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   power_save_mode: none # avoid modem-sleep latency on the bus
+
+uart:
+  id: bsb_uart
+  rx_pin: GPIO16
+  tx_pin: GPIO17
+  baud_rate: 4800
+  data_bits: 8
+  parity: ODD
+  stop_bits: 1
+  rx_buffer_size: 512
+  # Optional: dump every telegram to the ESPHome log during the first tests.
+  # Remove this block afterwards to keep the logs quiet.
+  # debug:
+  #   direction: BOTH
+  #   dummy_receiver: false
+  #   after:
+  #     timeout: 20ms
+  #   sequence:
+  #     - lambda: UARTDebug::log_hex(direction, bytes, ' ');
+
+serial_proxy:
+  - id: bsb_serial
+    uart_id: bsb_uart
+    name: BSB
+    port_type: TTL
