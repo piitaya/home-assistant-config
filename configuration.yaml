@@ -9,6 +9,7 @@ frontend:
     - /hacsfiles/hass-hue-icons/hass-hue-icons.js
     - /hacsfiles/custom-icons/custom-icons.js
     - /hacsfiles/custom-brand-icons/custom-brand-icons.js
+    - /local/custom/piitaya-icons.js
     - /local/custom/mushroom-icons.js
     - /local/custom/tesla-icons.js
     - /local/community/ha-ui-zoom/ha-ui-zoom.js
