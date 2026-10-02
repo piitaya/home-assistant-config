@@ -235,64 +235,6 @@
     alias: Mettre l'alarme en mode présent
     action: alarm_control_panel.alarm_arm_home
   mode: single
-- id: '1665588582897'
-  alias: Volet Buanderie - Télécommande
-  description: Ouvre, ferme ou stoppe le volet de la buanderie via la télécommande
-    ZHA.
-  triggers:
-  - device_id: 75b18d9e893fc853ade15e69377a6906
-    domain: zha
-    type: remote_button_long_press
-    subtype: dim_down
-    id: down
-    trigger: device
-  - device_id: 75b18d9e893fc853ade15e69377a6906
-    domain: zha
-    type: remote_button_long_press
-    subtype: dim_up
-    id: up
-    trigger: device
-  - device_id: 75b18d9e893fc853ade15e69377a6906
-    domain: zha
-    type: remote_button_short_press
-    subtype: turn_on
-    id: stop
-    trigger: device
-  - device_id: 75b18d9e893fc853ade15e69377a6906
-    domain: zha
-    type: remote_button_short_press
-    subtype: turn_off
-    id: stop
-    trigger: device
-  conditions: []
-  actions:
-  - choose:
-    - conditions:
-      - condition: trigger
-        id: down
-      sequence:
-      - data: {}
-        target:
-          entity_id: cover.palier_volet
-        action: cover.close_cover
-    - conditions:
-      - condition: trigger
-        id: up
-      sequence:
-      - data: {}
-        target:
-          entity_id: cover.palier_volet
-        action: cover.open_cover
-    - conditions:
-      - condition: trigger
-        id: stop
-      sequence:
-      - data: {}
-        target:
-          entity_id: cover.palier_volet
-        action: cover.stop_cover
-    default: []
-  mode: restart
 - id: '1666680559161'
   alias: Lumière extérieure - Allumage à l'arrivée
   description: Allume la lumière extérieure 10 min à l'arrivée la nuit.
@@ -558,41 +500,6 @@
       entity_id: climate.spa_thermostat
     action: climate.set_hvac_mode
   mode: single
-- id: '1685859197705'
-  alias: Système - Sauvegarde quotidienne
-  description: Lance une sauvegarde complète chaque nuit à 03 h 15.
-  triggers:
-  - at: 03:15:00
-    trigger: time
-  conditions: []
-  actions:
-  - data:
-      compressed: true
-      location: Ananas
-      name: '{{ now().strftime(''Backup %Y-%m-%d %H:%M'') }}'
-    enabled: true
-    action: hassio.backup_full
-  - metadata: {}
-    data:
-      compressed: true
-      homeassistant: true
-      addons:
-      - core_mosquitto
-      - core_matter_server
-      - core_openwakeword
-      - a0d7b954_zwavejs2mqtt
-      - 402f1039_eufy_security_ws
-      - 5c53de3b_esphome
-      folders:
-      - addons/local
-      - media
-      - share
-      - ssl
-      location: Ananas
-      name: '{{ now().strftime(''Backup %Y-%m-%d %H:%M'') }}'
-    enabled: false
-    action: hassio.backup_partial
-  mode: single
 - id: '1688142384244'
   alias: Éclairage automatique - Garage
   description: Allume ou éteint la lumière du garage selon la présence et la luminosité.
@@ -612,8 +519,9 @@
     entity_id: binary_sensor.home_presence
     state: 'on'
   - condition: state
-    entity_id: input_boolean.cat_garage_mode
-    state: 'off'
+    entity_id: input_boolean.mode_nuit
+    state:
+    - 'off'
   actions:
   - if:
     - condition: state
@@ -971,32 +879,6 @@
     alias: Éteindre la lumière de l'imprimante
     action: light.turn_off
   mode: single
-- id: '1700251414197'
-  alias: Mode chat - Désactivation automatique
-  description: Désactive le mode chat quand la lumière du garage s'allume en journée.
-  triggers:
-  - trigger: light.turned_on
-    target:
-      entity_id: light.garage_neon
-    options:
-      behavior: each
-      for: 00:00:00
-  conditions:
-  - condition: time
-    after: 05:00:00
-    before: '21:00:00'
-  - condition: switch.is_on
-    target:
-      entity_id: input_boolean.cat_garage_mode
-    options:
-      behavior: any
-      for: 00:00:00
-  actions:
-  - data: {}
-    target:
-      entity_id: input_boolean.cat_garage_mode
-    action: input_boolean.turn_off
-  mode: single
 - id: '1705180879834'
   alias: Mode chat - Entrouverture des volets
   description: Entrouvre les volets du rez-de-chaussée fermés l'après-midi pour le
@@ -1013,7 +895,7 @@
   conditions:
   - condition: time
     after: '15:00:00'
-    before: '22:30:00'
+    before: '23:00:00'
   - condition: state
     entity_id: binary_sensor.home_presence
     state: 'on'
@@ -1021,6 +903,7 @@
   - metadata: {}
     data: {}
     action: script.set_cover_for_cat
+    enabled: true
   mode: single
 - id: '1706445548005'
   alias: Projecteur extérieur - Automatique
@@ -1374,53 +1257,6 @@
       data:
         message: L'onduleur fonctionne sur batterie
   mode: single
-- id: '1729756031647'
-  alias: Matter - Surveillance appareils indisponibles
-  description: Notifie Paul quand une serrure Matter reste indisponible plus de 30
-    min.
-  triggers:
-  - trigger: state
-    entity_id:
-    - lock.porte_dentree
-    - lock.porte_arriere
-    from: unavailable
-    for:
-      hours: 0
-      minutes: 30
-      seconds: 0
-  - trigger: state
-    entity_id:
-    - lock.porte_dentree
-    - lock.porte_arriere
-    to: unavailable
-    for:
-      hours: 0
-      minutes: 30
-      seconds: 0
-  conditions: []
-  actions:
-  - action: notify.mobile_app_iphone_de_paul
-    metadata: {}
-    data:
-      message: '{% set entity_id = trigger.entity_id  %}
-
-        {{ device_name(entity_id) }} est devenu "
-
-        {%- if is_state(entity_id, "unavailable") -%}
-
-        indisponible
-
-        {%- else -%}
-
-        {{ state_translated(entity_id) | lower }}
-
-        {%- endif -%}
-
-        "
-
-        '
-  mode: parallel
-  max: 10
 - id: '1734096011930'
   alias: Assistants vocaux - Coupure du micro (absence)
   description: Coupe le micro des assistants vocaux quand la maison est vide.
@@ -1470,64 +1306,6 @@
       - switch.voice_black_mute
       - switch.voice_pokeball_mute
       - switch.voice_minion_mute
-  mode: single
-- id: '1734895688539'
-  alias: Mode chat - Indicateur lumineux
-  description: Affiche un anneau LED rouge ou vert selon l'état du mode chat.
-  triggers:
-  - trigger: state
-    entity_id:
-    - input_boolean.cat_garage_mode
-    to:
-  - trigger: homeassistant
-    event: start
-  conditions: []
-  actions:
-  - if:
-    - condition: state
-      entity_id: input_boolean.cat_garage_mode
-      state: 'on'
-    then:
-    - action: light.turn_on
-      metadata: {}
-      data:
-        rgb_color:
-        - 255
-        - 0
-        - 0
-        brightness_pct: 30
-      target:
-        entity_id: light.voice_black_led_ring
-    else:
-    - action: light.turn_on
-      metadata: {}
-      data:
-        rgb_color:
-        - 0
-        - 255
-        - 0
-        brightness_pct: 30
-      target:
-        entity_id: light.voice_black_led_ring
-  mode: single
-- id: '1734896118812'
-  alias: Mode chat - Bascule par bouton
-  description: Bascule le mode chat du garage sur double-appui du bouton vocal.
-  triggers:
-  - trigger: state
-    entity_id:
-    - event.voice_black_button_press
-  conditions:
-  - condition: state
-    entity_id: event.voice_black_button_press
-    attribute: event_type
-    state: double_press
-  actions:
-  - action: input_boolean.toggle
-    metadata: {}
-    data: {}
-    target:
-      entity_id: input_boolean.cat_garage_mode
   mode: single
 - id: '1735296885870'
   alias: Fenêtres rez-de-chaussée - Notification ouverture
@@ -1679,7 +1457,7 @@
     state: 'on'
   - condition: switch.is_off
     target:
-      entity_id: input_boolean.cat_garage_mode
+      entity_id: input_boolean.mode_nuit
     options:
       behavior: any
       for: 00:00:00
@@ -2071,31 +1849,6 @@
       target:
         entity_id: lock.porte_dentree
   mode: single
-- id: '1749815072987'
-  alias: Barrière escalier - Notification ouverture
-  description: Notifie quand la barrière de l'escalier reste ouverte plus de 30 min.
-  triggers:
-  - trigger: state
-    entity_id:
-    - binary_sensor.barriere_escalier
-    for:
-      hours: 0
-      minutes: 30
-      seconds: 0
-    to: 'on'
-  - trigger: homeassistant
-    event: start
-  conditions:
-  - condition: state
-    entity_id: binary_sensor.barriere_escalier
-    state: 'on'
-  actions:
-  - action: script.turn_on
-    metadata: {}
-    data: {}
-    target:
-      entity_id: script.notifier_barriere_escalier_ouverte
-  mode: single
 - id: '1750155851123'
   alias: Volets - Mise à jour position Z-Wave (périodique)
   description: Rafraîchit la position Z-Wave de tous les volets toutes les 5 min.
@@ -2137,44 +1890,6 @@
       - switch.chambre_anti_moutisques
     data: {}
   mode: single
-- id: '1754896387902'
-  alias: Sonnette - Notification avec analyse IA
-  description: Quand on sonne, génère une analyse IA de la caméra et envoie une notification
-    vidéo.
-  triggers:
-  - trigger: state
-    entity_id:
-    - binary_sensor.sonnette
-    from: 'off'
-    to: 'on'
-  actions:
-  - action: ai_task.generate_data
-    data:
-      attachments:
-        media_content_id: media-source://camera/camera.sonnette
-        media_content_type: application/vnd.apple.mpegurl
-        metadata:
-          title: Sonnette
-          thumbnail: /api/camera_proxy/camera.sonnette
-          media_class: video
-          children_media_class:
-          navigateIds:
-          - {}
-          - media_content_type: app
-            media_content_id: media-source://camera
-      task_name: Personne qui a sonné
-      instructions: 'Qui est à la porte? Y''-il a '
-      structure:
-        title:
-          selector:
-            text:
-        description:
-          selector:
-            text:
-        someone:
-          selector:
-            boolean:
-    response_variable: result
 - id: '1754928418182'
   alias: Lave-vaisselle - Rechargement Home Connect
   description: Recharge l'intégration Home Connect lors d'un changement d'état du
@@ -2224,7 +1939,7 @@
     metadata: {}
     data: {}
     target:
-      entity_id: button.lancer_nettoyage_nocture
+      entity_id: button.alfred_nettoyage_nocturne
   - action: input_boolean.turn_off
     metadata: {}
     data: {}
@@ -2281,28 +1996,6 @@
       option: '{{ states("select.lave_vaisselle_programme_selectionne") }}'
     target:
       entity_id: select.lave_vaisselle_programme_actif
-  mode: single
-- id: '1757927665330'
-  alias: Key Light Mini - Télécommande
-  description: Bascule la Key Light Mini via un bouton de télécommande ZHA.
-  triggers:
-  - device_id: 7f87241d94d2ec45cb03d8868b4d9678
-    domain: zha
-    type: remote_button_short_press
-    subtype: turn_on
-    trigger: device
-  - device_id: 7f87241d94d2ec45cb03d8868b4d9678
-    domain: zha
-    type: remote_button_short_press
-    subtype: turn_off
-    trigger: device
-  conditions: []
-  actions:
-  - action: light.toggle
-    metadata: {}
-    data: {}
-    target:
-      entity_id: light.key_light_mini
   mode: single
 - id: '1758368214609'
   alias: Pergola - Commande des lames
@@ -2372,27 +2065,6 @@
     target:
       entity_id: button.renault_zoe_demarrer_la_climatisation
   mode: single
-- id: '1760997768490'
-  alias: Mode chat - Activation nocturne (garage)
-  description: Active le mode chat et éteint les lumières du garage à minuit.
-  triggers:
-  - trigger: time
-    at: 00:00:00
-  conditions: []
-  actions:
-  - action: input_boolean.turn_on
-    metadata: {}
-    data: {}
-    target:
-      entity_id: input_boolean.cat_garage_mode
-  - action: light.turn_off
-    metadata: {}
-    data: {}
-    target:
-      entity_id:
-      - light.garage_neon
-      - light.buanderie_plafonnier
-  mode: single
 - id: '1761597056940'
   alias: Imprimante 3D - Rechargement Bambu Lab
   description: Recharge l'intégration Bambu Lab quand le flux caméra devient indisponible.
@@ -2440,7 +2112,7 @@
   triggers:
   - trigger: occupancy.cleared
     target:
-      entity_id: binary_sensor.bureau_capteur_de_presence_presence_bureau_paul
+      entity_id: binary_sensor.bureau_capteur_de_presence_presence
     options:
       behavior: each
       for:
@@ -2449,7 +2121,7 @@
         seconds: 0
   - trigger: occupancy.detected
     target:
-      entity_id: binary_sensor.bureau_capteur_de_presence_presence_bureau_paul
+      entity_id: binary_sensor.bureau_capteur_de_presence_presence
     options:
       behavior: each
       for: 00:00:00
@@ -2458,7 +2130,7 @@
   - if:
     - condition: occupancy.is_detected
       target:
-        entity_id: binary_sensor.bureau_capteur_de_presence_presence_bureau_paul
+        entity_id: binary_sensor.bureau_capteur_de_presence_presence
       options:
         behavior: any
         for: 00:00:00
@@ -2587,18 +2259,6 @@
       target:
         entity_id: light.palier_veilleuse
       data: {}
-  mode: single
-- id: '1765986483970'
-  alias: Météo - Bulletin quotidien
-  description: Génère un bulletin météo toutes les trois heures.
-  triggers:
-  - trigger: time_pattern
-    hours: /3
-  conditions: []
-  actions:
-  - action: script.bulletin_meteo_quotidien
-    metadata: {}
-    data: {}
   mode: single
 - id: '1766341772596'
   alias: Veilleuse - Activation par télécommande
@@ -3058,18 +2718,19 @@
   description: À l'activation du mode nuit, éteint les lumières, ferme les volets
     et verrouille.
   triggers:
-  - trigger: state
-    entity_id:
-    - input_boolean.mode_nuit
-    from:
-    - 'off'
-    to:
-    - 'on'
+  - trigger: switch.turned_on
+    target:
+      entity_id: input_boolean.mode_nuit
+    options:
+      behavior: each
+      for: 00:00:00
   conditions:
-  - condition: state
-    entity_id: input_boolean.guest_mode
-    state:
-    - 'off'
+  - condition: switch.is_off
+    target:
+      entity_id: input_boolean.guest_mode
+    options:
+      behavior: any
+      for: 00:00:00
   actions:
   - action: light.turn_off
     metadata: {}
@@ -3077,11 +2738,6 @@
       entity_id:
       - light.lumieres_rez_de_chaussee
       - light.lumieres_exterieur
-    data: {}
-  - action: input_boolean.turn_on
-    metadata: {}
-    target:
-      entity_id: input_boolean.cat_garage_mode
     data: {}
   - action: cover.close_cover
     metadata: {}
@@ -3542,8 +3198,8 @@
   mode: single
 - id: '1784133155970'
   alias: Lumières Bureau - Télécommande
-  description: 'Permet de contrôler différentes lumières du bureau (spots, Key Light
-    Mini, Hue Play) à l''aide du Hub 3
+  description: 'Permet de contrôler différentes lumières du bureau (spots, Key Light,
+    Hue Play) à l''aide du Hub 3
 
     '
   triggers:
@@ -3589,7 +3245,8 @@
       - action: light.toggle
         metadata: {}
         target:
-          entity_id: light.key_light_mini
+          entity_id:
+          - light.bureau_key_light
         data: {}
     - conditions:
       - condition: trigger
@@ -3617,108 +3274,11 @@
   actions:
   - action: notify.send_message
     metadata: {}
-    target:
-      device_id: 168d63ad0b9956b203b84f2b93a1dbb9
     data:
       title: Problème tondeuse
       message: '{{ state_translated("sensor.jardin_yuka_mini_auto_diagnostic") }}'
-  mode: single
-- id: '1785928918596'
-  alias: Test Live Activity iPhone
-  description: Test des Live Activities iOS. A lancer manuellement (bouton Executer).
-    Demarre une activite, la met a jour 10 fois sur 60 s, puis la termine.
-  triggers: []
-  conditions: []
-  actions:
-  - action: notify.mobile_app_iphone_de_paul
-    alias: Demarrer la Live Activity
-    data:
-      data:
-        chronometer: true
-        live_update: true
-        notification_icon: mdi:flask-outline
-        notification_icon_color: '#03A9F4'
-        progress: 0
-        progress_max: 100
-        tag: test_live_activity
-        when: 60
-        when_relative: true
-      message: Demarrage...
-      title: Test Live Activity
-  - alias: Mettre a jour toutes les 6 s
-    repeat:
-      count: 10
-      sequence:
-      - delay: 00:00:06
-      - action: notify.mobile_app_iphone_de_paul
-        data:
-          data:
-            critical_text: '{{ repeat.index * 10 }} %'
-            live_update: true
-            notification_icon: mdi:flask-outline
-            notification_icon_color: '#03A9F4'
-            progress: '{{ repeat.index * 10 }}'
-            progress_max: 100
-            tag: test_live_activity
-          message: Etape {{ repeat.index }} / 10
-          title: Test Live Activity
-  - action: notify.mobile_app_iphone_de_paul
-    alias: Terminer la Live Activity
-    data:
-      data:
-        tag: test_live_activity
-      message: clear_notification
-  mode: restart
-- id: '1786001522124'
-  alias: Tondeuse - Mode demi-tour automatique
-  description: Force le mode de demi-tour de la tondeuse sur 'multipoint' si le mode
-    'zero_turn' est activé pendant plus de 5 secondes.
-  triggers:
-  - trigger: state
-    entity_id:
-    - select.jardin_yuka_mini_mode_demi_tour
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 10
-    to:
-    - zero_turn
-  - trigger: lawn_mower.started_mowing
     target:
-      entity_id: lawn_mower.yuka_mini
-    options:
-      behavior: each
-      for: 00:00:00
-  conditions:
-  - condition: select.is_option_selected
-    target:
-      entity_id: select.jardin_yuka_mini_mode_demi_tour
-    options:
-      behavior: any
-      for:
-        hours: 0
-        minutes: 0
-        seconds: 0
-      option:
-      - zero_turn
-  actions:
-  - action: select.select_option
-    metadata: {}
-    target:
-      entity_id: select.jardin_yuka_mini_mode_demi_tour
-    data:
-      option: multipoint
-  mode: single
-- id: '1786436984301'
-  alias: Nouvelle automatisation
-  description: ''
-  triggers:
-  - trigger: time
-    at: '10:30:00'
-  - trigger: homeassistant
-    event: start
-  conditions: []
-  actions: []
+      entity_id: notify.iphone_de_paul
   mode: single
 - id: '1787081705242'
   alias: Machine à café - Détection connectivité
@@ -3789,10 +3349,236 @@
         replace('.', ',') }} {{ trigger.to_state.attributes.currency }} ({{ trigger.to_state.attributes.storefront
         }})
   mode: queued
-- id: '1787231603662'
-  alias: Study Lights - Keep On
-  description: Prevents lights in the study from being turned off.
-  triggers: []
+- id: '1788207734617'
+  alias: Mode nuit - Extinction matin
+  description: Désactive le mode nuit le matin.
+  triggers:
+  - trigger: cover.shutter_opened
+    target:
+      floor_id: ground_floor
+    options:
+      behavior: each
+      for: 00:00:00
+  - trigger: door.opened
+    target:
+      entity_id: binary_sensor.capteur_porte_arriere
+    options:
+      behavior: each
+      for: 00:00:00
+  - trigger: time
+    at: 09:00:00
+  conditions:
+  - condition: switch.is_on
+    target:
+      entity_id: input_boolean.mode_nuit
+    options:
+      behavior: any
+      for: 00:00:00
+  - condition: time
+    before: 09:05:00
+    after: 05:00:00
+  actions:
+  - action: input_boolean.turn_off
+    metadata: {}
+    target:
+      entity_id: input_boolean.mode_nuit
+    data: {}
+  mode: single
+- id: '1788554681935'
+  alias: Cookeo - Notification maintien au chaud
+  description: Notifie quand le maintien au chaud du Cookeo dure depuis plus de 15
+    minutes.
+  triggers:
+  - trigger: state
+    entity_id:
+    - sensor.cookeo_etat
+    to: keep_warm
+    for: 00:15:00
   conditions: []
-  actions: []
+  actions:
+  - repeat:
+      while:
+      - condition: state
+        entity_id: sensor.cookeo_etat
+        state: keep_warm
+      sequence:
+      - action: script.turn_on
+        target:
+          entity_id: script.notifier_cookeo_maintien_au_chaud
+        note: 'turn_on et pas un appel direct : le script attend son trigger de discard'
+      - delay: 00:15:00
+  mode: restart
+- id: '1789669911654'
+  alias: Mode chat - Notification de détection
+  description: Envoie une notification sur l'iPhone de Paul lorsqu'un mouvement de
+    chat est détecté par la caméra animale.
+  triggers:
+  - trigger: motion.detected
+    target:
+      entity_id: binary_sensor.camera_nounou_animal
+    options:
+      behavior: each
+      for: 00:00:00
+  conditions: []
+  actions:
+  - action: notify.send_message
+    metadata: {}
+    target:
+      entity_id: notify.iphone_de_paul
+    data:
+      message: Chat détecté
+  mode: single
+- id: '1789841701889'
+  alias: Yoto - Rechargement config journalier
+  description: Recharge Yoto chaque jour à 19h00.
+  triggers:
+  - trigger: time
+    at: '19:00:00'
+  conditions: []
+  actions:
+  - action: homeassistant.reload_config_entry
+    metadata: {}
+    data:
+      entry_id: 01KT2MAEJM08NAXPYTTB1TB3PF
+  mode: single
+- id: '1789935379252'
+  alias: Pergola Stores - Télécommande
+  description: Ouvre ou ferme les stores de la pergola via une télécommande.
+  triggers:
+  - device_id: 7f87241d94d2ec45cb03d8868b4d9678
+    domain: zha
+    type: remote_button_short_press
+    subtype: turn_off
+    trigger: device
+    id: down
+  - device_id: 7f87241d94d2ec45cb03d8868b4d9678
+    domain: zha
+    type: remote_button_short_press
+    subtype: turn_on
+    trigger: device
+    id: up
+  conditions: []
+  actions:
+  - if:
+    - condition: trigger
+      id:
+      - up
+    then:
+    - action: cover.open_cover
+      metadata: {}
+      target:
+        entity_id:
+        - cover.pergola_aisle_screen
+        - cover.pergola_cimetery_screen
+        - cover.pergola_garden_large_screen
+        - cover.pergola_garden_small_screen
+      data: {}
+  - if:
+    - condition: trigger
+      id:
+      - down
+    then:
+    - action: cover.close_cover
+      metadata: {}
+      target:
+        entity_id:
+        - cover.pergola_aisle_screen
+        - cover.pergola_cimetery_screen
+        - cover.pergola_garden_large_screen
+        - cover.pergola_garden_small_screen
+      data: {}
+  mode: single
+- id: '1790879694674'
+  alias: Écran e-ink météo
+  description: Affiche la météo de la journée (ou du lendemain après 18h) sur l'écran
+    e-ink OpenDisplay.
+  triggers:
+  - at:
+    - 06:00:00
+    - '12:00:00'
+    - '18:00:00'
+    trigger: time
+  - trigger: event.received
+    target:
+      entity_id: event.e_ink_bouton_1
+    options:
+      event_type:
+      - button_down
+  - event: start
+    trigger: homeassistant
+  actions:
+  - action: weather.get_forecasts
+    data:
+      type: daily
+    response_variable: meteo_d
+    target:
+      entity_id: weather.nieppe
+  - action: weather.get_forecasts
+    data:
+      type: hourly
+    response_variable: meteo_h
+    target:
+      entity_id: weather.nieppe
+  - action: opendisplay.drawcustom
+    data:
+      background: white
+      dither: none
+      dry-run: false
+      payload: "{%- set w = 'weather.nieppe' -%}\n{%- set hourly = meteo_h[w].forecast
+        -%}\n{%- set daily = meteo_d[w].forecast -%}\n{%- set n = now() -%}\n{%- set
+        offset = 1 if n.hour >= 18 else 0 -%}\n{%- set jour = (n + timedelta(days=offset)).date()
+        -%}\n{%- set debut_h = 7 if offset == 1 else [7, n.hour] | max -%}\n{%- set
+        icons = {'clear-night':'weather-night','cloudy':'weather-cloudy','exceptional':'alert-circle-outline','fog':'weather-fog','hail':'weather-hail','lightning':'weather-lightning','lightning-rainy':'weather-lightning-rainy','partlycloudy':'weather-partly-cloudy','pouring':'weather-pouring','rainy':'weather-rainy','snowy':'weather-snowy','snowy-rainy':'weather-snowy-rainy','sunny':'weather-sunny','windy':'weather-windy','windy-variant':'weather-windy-variant'}
+        -%}\n{%- set rang = {'sunny':0,'clear-night':0,'partlycloudy':1,'cloudy':2,'windy':2,'windy-variant':2,'fog':3,'rainy':4,'snowy-rainy':5,'snowy':5,'hail':6,'pouring':6,'lightning':7,'lightning-rainy':7,'exceptional':8}
+        -%}\n{%- set jours = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'] -%}\n{%-
+        set ns = namespace(temps=[], pluie=[], pic=0, cond='sunny') -%}\n{%- for f
+        in hourly -%}\n  {%- set t = as_local(as_datetime(f.datetime)) -%}\n  {%-
+        if t.date() == jour and debut_h <= t.hour <= 21 -%}\n    {%- set ns.temps
+        = ns.temps + [f.temperature] -%}\n    {%- if rang.get(f.condition, 0) > rang.get(ns.cond,
+        0) -%}{%- set ns.cond = f.condition -%}{%- endif -%}\n    {%- if (f.precipitation
+        | default(0)) >= 0.2 -%}\n      {%- set ns.pluie = ns.pluie + [t.hour] -%}\n
+        \     {%- set ns.pic = [ns.pic, f.precipitation] | max -%}\n    {%- endif
+        -%}\n  {%- endif -%}\n{%- endfor -%}\n{%- set d = daily | selectattr('datetime',
+        'search', jour | string) | first | default(none) -%}\n{%- set tmin = (ns.temps
+        | min) if ns.temps else d.templow -%}\n{%- set tmax = (ns.temps | max) if
+        ns.temps else d.temperature -%}\n{%- set tmin = tmin | round(0) | int -%}\n{%-
+        set tmax = tmax | round(0) | int -%}\n{%- if ns.cond == 'sunny' and not ns.temps
+        and d -%}{%- set ns.cond = d.condition -%}{%- endif -%}\n{%- if not ns.pluie
+        -%}\n  {%- set pluie_txt, pluie_icon = 'Pas de pluie', 'water-off-outline'
+        -%}\n{%- else -%}\n  {%- set mot = 'Quelques gouttes' if ns.pic < 1 else 'Pluie
+        faible' if ns.pic < 3 else 'Pluie modérée' if ns.pic < 7 else 'Pluie forte'
+        -%}\n  {%- set a, b = ns.pluie | min, ns.pluie | max -%}\n  {%- set quand
+        = 'toute la journée' if b - a >= 10 else 'vers ' ~ a ~ 'h' if a == b else
+        a ~ 'h-' ~ (b + 1) ~ 'h' -%}\n  {%- set pluie_txt, pluie_icon = mot ~ ' '
+        ~ quand, 'water-outline' -%}\n{%- endif -%}\n{%- set ns2 = namespace(slots=[])
+        -%}\n{%- for h in [8, 13, 18, 21, 23] -%}\n  {%- set cible = n.replace(hour=h,
+        minute=0, second=0, microsecond=0) + timedelta(days=offset) -%}\n  {%- if
+        cible > n and ns2.slots | count < 3 -%}\n    {%- set ns3 = namespace(best=none,
+        diff=99) -%}\n    {%- for f in hourly -%}\n      {%- set ecart = ((as_datetime(f.datetime)
+        - cible).total_seconds() / 3600) | abs -%}\n      {%- if ecart < ns3.diff
+        -%}{%- set ns3.best, ns3.diff = f, ecart -%}{%- endif -%}\n    {%- endfor
+        -%}\n    {%- if ns3.best is not none and ns3.diff <= 2 -%}\n      {%- set
+        ns2.slots = ns2.slots + [{'h': h, 'f': ns3.best}] -%}\n    {%- endif -%}\n
+        \ {%- endif -%}\n{%- endfor -%}\n{%- set t1 = tmin ~ '°' -%}\n{%- set larg
+        = 33 * (t1 | length - 1) + 20 -%}\n{%- set xa = 94 + larg + 22 -%}\n{%- set
+        p = [\n  {'type':'icon','value':icons.get(ns.cond,'weather-cloudy'),'x':46,'y':44,'size':68,'color':'black','anchor':'mm'},\n
+        \ {'type':'text','value':t1,'x':94,'y':46,'size':60,'color':'black','anchor':'lm','font':'rbm.ttf'},\n
+        \ {'type':'line','x_start':xa - 12,'y_start':50,'x_end':xa + 11,'y_end':50,'fill':'black','width':4},\n
+        \ {'type':'line','x_start':xa + 1,'y_start':40,'x_end':xa + 12,'y_end':51,'fill':'black','width':4},\n
+        \ {'type':'line','x_start':xa + 1,'y_start':60,'x_end':xa + 12,'y_end':49,'fill':'black','width':4},\n
+        \ {'type':'text','value':tmax ~ '°','x':xa + 26,'y':46,'size':60,'color':'black','anchor':'lm','font':'rbm.ttf'},\n
+        \ {'type':'text','value':jours[jour.weekday()] ~ ' ' ~ jour.day,'x':374,'y':6,'size':20,'color':'black','anchor':'rt','font':'rbm.ttf'},\n
+        \ {'type':'icon','value':pluie_icon,'x':46,'y':96,'size':30,'color':'black','anchor':'mm'},\n
+        \ {'type':'text','value':pluie_txt,'x':94,'y':96,'size':24,'color':'black','anchor':'lm','font':'rbm.ttf'},\n
+        \ {'type':'line','x_start':10,'y_start':114,'x_end':374,'y_end':114,'fill':'black','width':2}\n]
+        -%}\n{%- set ns4 = namespace(p=p) -%}\n{%- for s in ns2.slots -%}\n  {%- set
+        c = 70 + 121 * loop.index0 -%}\n  {%- set ns4.p = ns4.p + [\n    {'type':'icon','value':icons.get(s.f.condition,'weather-cloudy'),'x':c
+        - 27,'y':142,'size':36,'color':'black','anchor':'mm'},\n    {'type':'text','value':s.h
+        ~ 'h','x':c,'y':128,'size':20,'color':'black','anchor':'lm','font':'rbm.ttf'},\n
+        \   {'type':'text','value':(s.f.temperature | round(0) | int) ~ '°','x':c,'y':154,'size':26,'color':'black','anchor':'lm','font':'rbm.ttf'}\n
+        \ ] -%}\n{%- endfor -%}\n{{ ns4.p }}\n"
+      refresh_type: full
+      rotate: 270
+    target:
+      device_id: 0735cbab9399602f1ef0c4c57508f686
   mode: single

@@ -187,7 +187,6 @@ set_cover_for_cat:
       position: 30
     target:
       entity_id:
-      - cover.salon_volet_cimetiere
       - cover.salon_volet_jardin
     action: cover.set_cover_position
   mode: single
@@ -361,25 +360,6 @@ notifier_machine_a_laver_terminee:
         from: 'off'
   alias: Notifier - Machine à laver terminée
   description: ''
-notifier_barriere_escalier:
-  alias: Notifier - barrière escalier ouverte
-  use_blueprint:
-    path: jlo/power_notification_creator.yaml
-    input:
-      target: send_to_persons_in_zones
-      zones:
-      - zone.home
-      discard_when:
-      - trigger: state
-        entity_id:
-        - binary_sensor.barriere_escalier_etat
-        to: 'off'
-      default_tag: 9e3ad412-0175-4eb7-a710-851a5eb184a5
-      persons: []
-      notification_data_advanced: {}
-      default_message: "La barrière de l'escalier est restée ouverte \U0001F648"
-  description: ''
-  icon: mdi:gate-alert
 notifier_fuite_machine_a_laver:
   alias: Notifier - fuite machine à laver
   use_blueprint:
@@ -448,3 +428,26 @@ notifier_erreur_machine_a_cafe:
   description: Ce script génère une notification en cas d'erreur détectée sur la machine
     à café.
   icon: mdi:coffee-maker
+notifier_cookeo_maintien_au_chaud:
+  alias: Notifier - Cookeo maintien au chaud
+  description: Ce script génère une notification quand le maintien au chaud du Cookeo
+    a été oublié
+  icon: hue:room-kitchen
+  use_blueprint:
+    path: jlo/power_notification_creator.yaml
+    input:
+      target: send_to_persons_in_zones
+      zones:
+      - zone.home
+      persons: []
+      default_tag: e83901f6-c66e-4a54-a750-057cbaf4e078
+      default_title: "Cookeo \U0001F372"
+      default_message: Maintien au chaud toujours actif
+      default_importance: false
+      notification_data_advanced: {}
+      discard_when:
+      - trigger: state
+        entity_id:
+        - sensor.cookeo_etat
+        not_to:
+        - keep_warm
