@@ -504,59 +504,92 @@
   alias: Éclairage automatique - Garage
   description: Allume ou éteint la lumière du garage selon la présence et la luminosité.
   triggers:
-  - entity_id:
-    - binary_sensor.garage_occupancy
-    to:
-    trigger: state
-  - entity_id:
-    - sensor.garage_capteur_de_presence_illuminance
-    below: 85
-    trigger: numeric_state
+  - trigger: occupancy.cleared
+    target:
+      entity_id: binary_sensor.garage_occupancy
+    options:
+      behavior: each
+      for: 00:00:00
+  - trigger: occupancy.detected
+    target:
+      entity_id: binary_sensor.garage_occupancy
+    options:
+      behavior: each
+      for: 00:00:00
+  - trigger: illuminance.crossed_threshold
+    target:
+      entity_id: sensor.garage_capteur_de_presence_illuminance
+    options:
+      behavior: each
+      for: 00:00:00
+      threshold:
+        type: below
+        value:
+          active_choice: number
+          number: 85
   - trigger: homeassistant
     event: start
   conditions:
   - condition: state
     entity_id: binary_sensor.home_presence
     state: 'on'
-  - condition: state
-    entity_id: input_boolean.mode_nuit
-    state:
-    - 'off'
+  - condition: switch.is_off
+    target:
+      entity_id: input_boolean.mode_nuit
+    options:
+      behavior: any
+      for: 00:00:00
   actions:
   - if:
-    - condition: state
-      entity_id: binary_sensor.garage_occupancy
-      state: 'on'
+    - condition: occupancy.is_detected
+      target:
+        entity_id: binary_sensor.garage_occupancy
+      options:
+        behavior: any
+        for: 00:00:00
     then:
-    - condition: state
-      entity_id: light.garage_neon
-      state:
-      - 'off'
+    - condition: light.is_off
+      options:
+        for: 00:00:00
+      target:
+        entity_id: light.garage_neon
     - condition: or
       conditions:
       - condition: not
         conditions:
-        - condition: state
-          entity_id: light.garage_neon
-          state:
-          - 'off'
-          for:
-            hours: 0
-            minutes: 1
-            seconds: 0
-      - condition: numeric_state
-        entity_id: sensor.garage_capteur_de_presence_illuminance
-        below: 85
-    - data: {}
+        - condition: light.is_off
+          target:
+            entity_id: light.garage_neon
+          options:
+            behavior: any
+            for:
+              hours: 0
+              minutes: 1
+              seconds: 0
+      - condition: illuminance.is_value
+        target:
+          entity_id: sensor.garage_capteur_de_presence_illuminance
+        options:
+          behavior: any
+          for: 00:00:00
+          threshold:
+            type: below
+            value:
+              active_choice: number
+              number: 85
+    - metadata: {}
+      data: {}
       target:
         entity_id: light.garage_neon
       action: light.turn_on
     else:
-    - condition: state
-      entity_id: light.garage_neon
-      state:
-      - 'on'
-    - data: {}
+    - condition: light.is_on
+      options:
+        for: 00:00:00
+      target:
+        entity_id: light.garage_neon
+    - metadata: {}
+      data: {}
       target:
         entity_id: light.garage_neon
       action: light.turn_off
