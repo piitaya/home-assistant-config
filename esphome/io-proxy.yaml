@@ -12,6 +12,9 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   min_version: 2026.4.0
+  # Logge les trames radio brutes — utile pendant l'onboarding, à retirer ensuite.
+  build_flags:
+    - -DIOHOME_FRAME_LOG
 
 esp32:
   variant: esp32s3
