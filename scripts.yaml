@@ -188,6 +188,7 @@ set_cover_for_cat:
     target:
       entity_id:
       - cover.salon_volet_jardin
+      - cover.salon_volet_cimetiere
     action: cover.set_cover_position
   mode: single
 regler_la_pergola_en_position_soleil:
