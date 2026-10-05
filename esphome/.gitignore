@@ -6,3 +6,4 @@
 /archive/
 .device-builder.json*
 .device-builder-peer-link-key.bin
+/.dev/

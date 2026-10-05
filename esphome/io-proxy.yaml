@@ -1,8 +1,6 @@
-# Board: Heltec WiFi LoRa 32 V3 / V3.2 (ESP32-S3 + SX1262, TCXO 1.8 V, pas de FEM)
+# Board: Heltec WiFi LoRa 32 V3 (ESP32-S3 + SX1262)
 #
-# IO proxy via home_io_control @ 868 MHz — pilote les devices io-homecontrol
-# (stores, pergola, LED) en local, sans passer par la TaHoma.
-# Doc : https://github.com/laberning/home_io_control
+# IO proxy via home_io_control @ 868 MHz — controls io-homecontrol awnings and LEDs.
 
 substitutions:
   name: io-proxy
@@ -12,9 +10,19 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   min_version: 2026.4.0
-  # Logge les trames radio brutes — utile pendant l'onboarding, à retirer ensuite.
-  build_flags:
-    - -DIOHOME_FRAME_LOG
+  devices:
+    - id: store_allee_device
+      name: Store Allée
+    - id: store_cimetiere_device
+      name: Store Cimetière
+    - id: grand_store_jardin_device
+      name: Grand store Jardin
+    - id: petit_store_jardin_device
+      name: Petit store Jardin
+    - id: led_spa_device
+      name: LED Spa
+    - id: led_table_device
+      name: LED Table
 
 esp32:
   variant: esp32s3
@@ -23,6 +31,11 @@ esp32:
 
 logger:
   level: DEBUG
+  logs:
+    # Constant heat pump ↔ TaHoma radio traffic.
+    home_io_control.soft_phy: ERROR
+    io_frame: WARN
+    io_capture: WARN
 
 api:
   encryption:
@@ -38,9 +51,6 @@ packages:
 external_components:
   - source: github://laberning/home_io_control
 
-# --------------------------------------------------------------------------
-# SX1262 (pinout Heltec V3)
-# --------------------------------------------------------------------------
 spi:
   clk_pin: 9
   mosi_pin: 10
@@ -57,38 +67,54 @@ home_io_control:
   node_id: !secret io_node_id
   system_key: !secret io_system_key
 
-  # Onboarding — à retirer une fois les devices déclarés plus bas.
-  accept_foreign_pairing: true      # switch "Recover System Key" (clé depuis la TaHoma)
-  scan_paired_devices_button: true  # bouton "Scan Paired Devices"
-  discover_and_pair_button: true    # bouton "Discover & Pair" (device neuf / reset)
+cover:
+  - platform: home_io_control
+    id: store_allee
+    name: ""
+    device_id: store_allee_device
+    device_class: shade
+    io_device_id: "AF6B36"
+    io_device_type: awning
+    io_subtype: 0
+  - platform: home_io_control
+    id: store_cimetiere
+    name: ""
+    device_id: store_cimetiere_device
+    device_class: shade
+    io_device_id: "E01101"
+    io_device_type: awning
+    io_subtype: 0
+  - platform: home_io_control
+    id: grand_store_jardin
+    name: ""
+    device_id: grand_store_jardin_device
+    device_class: shade
+    io_device_id: "4AFEB2"
+    io_device_type: awning
+    io_subtype: 0
+  - platform: home_io_control
+    id: petit_store_jardin
+    name: ""
+    device_id: petit_store_jardin_device
+    device_class: shade
+    io_device_id: "8ED107"
+    io_device_type: awning
+    io_subtype: 0
 
-# --------------------------------------------------------------------------
-# Devices — adresses IO issues d'Overkiz (io://<pod>/<décimal> → hex).
-# À décommenter après le scan : reprendre io_device_type / io_subtype du log.
-# --------------------------------------------------------------------------
-# cover:
-#   - platform: home_io_control
-#     name: Store Allée
-#     io_device_id: "AF6B36"
-#   - platform: home_io_control
-#     name: Store Cimetière
-#     io_device_id: "E01101"
-#   - platform: home_io_control
-#     name: Grand store Jardin
-#     io_device_id: "4AFEB2"
-#   - platform: home_io_control
-#     name: Petit store Jardin
-#     io_device_id: "8ED107"
-#   - platform: home_io_control
-#     name: Pergola
-#     io_device_id: "262552"
-#
-# light:
-#   - platform: home_io_control
-#     name: LED Spa
-#     io_device_id: "18DFD9"
-#   - platform: home_io_control
-#     name: LED Table
-#     io_device_id: "1D63A1"
-#
-# Pompe à chaleur : 0E0E36 (climate, expérimental dans home_io_control)
+light:
+  - platform: home_io_control
+    id: led_spa
+    name: ""
+    device_id: led_spa_device
+    io_device_id: "18DFD9"
+    io_device_type: light
+    io_subtype: 0
+    dimmable: true
+  - platform: home_io_control
+    id: led_table
+    name: ""
+    device_id: led_table_device
+    io_device_id: "1D63A1"
+    io_device_type: light
+    io_subtype: 0
+    dimmable: true
